@@ -898,7 +898,7 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
 
   /* === Helpers === */
   function fmt(n){if(Math.abs(n)>=1e10)return n.toExponential(4);return parseFloat(n.toFixed(8)).toString()}
-  function doOp(a,b,op){switch(op){case'+':return a+b;case'-':return a-b;case'\u00d7':return a*b;case'\u00f7':return b!==0?a/b:0;default:return b}}
+  function doOp(a,b,op){switch(op){case'+':return a+b;case'-':return a-b;case'\u00d7':return a*b;case'\u00f7':return b!==0?a/b:NaN;default:return b}}
   function inFtIn(){return ctx.feet!==0||ctx.inches>0||ctx.fNum>0}
   /* Sync canonical inches from current ft-in parts */
   function syncCanon(){ctx.canonInches=ctx.feet*12+ctx.inches+(ctx.fDen?ctx.fNum/ctx.fDen:0)}
@@ -951,7 +951,8 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
   function render(){
     var m=elMain(),s=elSub(),md=elMode(),ex=elExpr(),mi=elMem();if(!m)return;
     // Expression line
-    if(ex){ex.innerHTML='';var sp=document.createElement('span');sp.style.direction='ltr';sp.style.unicodeBidi='bidi-override';sp.textContent=tokStr();ex.appendChild(sp)}
+    var ts=tokStr();if(ctx.showEq&&ts)ts+=' =';
+    if(ex){ex.innerHTML='';var sp=document.createElement('span');sp.style.direction='ltr';sp.style.unicodeBidi='bidi-override';sp.textContent=ts;ex.appendChild(sp)}
     // Main display
     if(ctx.mainOvr){m.textContent=ctx.mainOvr}
     else if(inFtIn()){
@@ -984,6 +985,7 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
   /* === Handlers === */
 
   function digitHandler(key){
+    ctx.showEq=false;lastConv=null;
     var st=ctx.state;
     if(st===READY){ctx.acc=0;ctx.op=null;ctx.tokens=[];resetEntry();ctx.state=ENTERING_STD}
     else if(st===READY_OP){resetEntry();ctx.state=ENTERING_STD}
@@ -1006,7 +1008,13 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
     }
     // From standard digit entry → mark as feet
     if(st===ENTERING_STD){
-      if(ctx.dig!=='0'){ctx.feet=parseInt(ctx.dig)||0}
+      var dv=parseFloat(ctx.dig)||0;
+      if(dv!==0){
+        // If decimal, convert directly to canonical inches
+        ctx.canonInches=dv*12;ctx.fBase=dv*12;
+        showFtIn(dv*12);
+        ctx.state=FEET1;ctx.lastFt=true;render();return;
+      }
       ctx.dig='0';syncCanon();ctx.fBase=ctx.canonInches;
       ctx.state=FEET1;ctx.lastFt=true;
       ctx.subText=fmt(ctx.canonInches/12)+' ft';ctx.modeText='FEET-INCH';
@@ -1125,6 +1133,7 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
   const INCH1='INCH1',INCH2='INCH2',INCH3='INCH3';
 
   function operatorHandler(key){
+    ctx.showEq=false;lastConv=null;
     var st=ctx.state;
     // If already pending an operator, just replace it (don't evaluate with 0)
     if(st===OP_PENDING){
@@ -1179,8 +1188,8 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
     }else{val=getVal();vs=fmtExpr();ft=inFtIn()}
     var r;
     if(ctx.op){
-      // Count final operand's dimension contribution for ×
-      if(ft&&ctx.op==='\u00d7')ctx.dims++;
+      // Count final operand's dimension contribution for × (both sides must be ft-based)
+      if(ft&&ctx.lastFt&&ctx.op==='\u00d7')ctx.dims++;
       if(!hasTrailingNum())pushNum(val,vs,ft);
       r=doOp(ctx.acc,val,ctx.op);
     }else{
@@ -1188,6 +1197,11 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
       r=val;
     }
     ctx.acc=r;ctx.op=null;
+    // ERROR state for div by zero or NaN
+    if(isNaN(r)||!isFinite(r)){
+      resetEntry();ctx.mainOvr='ERROR';ctx.modeText='÷ by 0';ctx.subText='Press C to clear';
+      ctx.state=READY;render();return;
+    }
     var ftUsed=usedFtIn();
     if(ftUsed&&ctx.dims<2){showFtIn(r*12);ctx.fBase=r*12}else{setDec(r)}
     // dims counts feet operands in × chain: 2=area(SF), 3+=volume(CF)
@@ -1198,7 +1212,7 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
       ctx.mainOvr=fmt(r)+' SF';ctx.modeText='SF';
       ctx.subText=fmt(r/9)+' SY';
     }else if(!ftUsed){ctx.modeText='';ctx.subText=''}
-    ctx.lastFt=false;ctx.state=READY;render();
+    ctx.lastFt=false;ctx.showEq=true;ctx.state=READY;render();
   }
 
   function openParenHandler(){
@@ -1241,19 +1255,30 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
     render();
   }
   function backspace(){
-    if(ctx.state===ENTERING_STD){if(ctx.dig.length>1)ctx.dig=ctx.dig.slice(0,-1);else ctx.dig='0'}
+    var st=ctx.state;
+    if(st===ENTERING_STD){if(ctx.dig.length>1)ctx.dig=ctx.dig.slice(0,-1);else ctx.dig='0'}
+    else if(st===ENTERING_INCH){ctx.inches=Math.floor(ctx.inches/10)}
+    else if(st===ENTERING_FEET){ctx.feet=Math.floor(ctx.feet/10)}
+    else if(st===ENTERING_FRAC){if(ctx.fDen>0)ctx.fDen=Math.floor(ctx.fDen/10);else ctx.fNum=Math.floor(ctx.fNum/10)}
     render();
   }
   function percentHandler(){
-    var v=getVal(),vs=fmtExpr();commitEntry();
+    var v=getVal(),vs=fmtExpr(),pv;
+    // Contextual %: for +/- use acc×(v/100), for ×/÷ use v/100
+    if(ctx.op==='+'||ctx.op==='-'){pv=ctx.acc*(v/100)}
+    else{pv=v/100}
+    commitEntry();
     if(hasTrailingNum())ctx.tokens.pop();
-    pushNum(v/100,vs+'%',false);setDec(v/100);ctx.state=READY;render();
+    pushNum(pv,vs+'%',false);setDec(pv);ctx.state=READY;render();
   }
 
   /* Memory */
   function memAdd(){ctx.mem+=getVal();render()}
   function memRcl(){setDec(ctx.mem);ctx.state=ENTERING_STD;render()}
   function memStor(){ctx.mem=getVal();render()}
+
+  /* Conversion toggle state */
+  var lastConv=null; // tracks last conversion for toggle: 'm','Yds'
 
   /* Unary functions */
   function unaryFn(key){
@@ -1263,14 +1288,21 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
       case'Sine':r=Math.sin(v*Math.PI/180);d='sin('+vs+'\u00b0)';md='sin('+vs+'\u00b0) = '+fmt(r);break;
       case'Cos':r=Math.cos(v*Math.PI/180);d='cos('+vs+'\u00b0)';md='cos('+vs+'\u00b0) = '+fmt(r);break;
       case'Tan':r=Math.tan(v*Math.PI/180);d='tan('+vs+'\u00b0)';md='tan('+vs+'\u00b0) = '+fmt(r);break;
-      case'm':r=v*0.3048;d=vs+'ft\u2192m';md=vs+' ft = '+fmt(r)+' m';break;
-      case'Yds':r=v/3;d=vs+'ft\u2192yd';md=vs+' ft = '+fmt(r)+' yd';break;
-      case'Circ':r=2*Math.PI*v;d='\u03c0\u00d7'+vs+'\u00d72';md='CIRCUMF = '+fmt(r);break;
+      case'm':
+        if(lastConv==='m'){r=v/0.3048;d=vs+'m\u2192ft';md=fmt(v)+' m = '+fmt(r)+' ft';lastConv=null}
+        else{r=v*0.3048;d=vs+'ft\u2192m';md=fmt(v)+' ft = '+fmt(r)+' m';lastConv='m'}
+        break;
+      case'Yds':
+        if(lastConv==='Yds'){r=v*3;d=vs+'yd\u2192ft';md=fmt(v)+' yd = '+fmt(r)+' ft';lastConv=null}
+        else{r=v/3;d=vs+'ft\u2192yd';md=fmt(v)+' ft = '+fmt(r)+' yd';lastConv='Yds'}
+        break;
+      case'Circ':r=Math.PI*v;d='\u03c0\u00d7'+vs;md='CIRCUMF(\u00d8'+vs+') = '+fmt(r);break;
       case'Arc':r=v*Math.PI/180;d=vs+'\u00b0\u2192rad';md=vs+'\u00b0 = '+fmt(r)+' rad';break;
       case'x\u00b2':r=v*v;d='('+vs+')\u00b2';md='x\u00b2 = '+fmt(r);break;
       case'x\u00b3':r=v*v*v;d='('+vs+')\u00b3';md='x\u00b3 = '+fmt(r);break;
       default:return;
     }
+    if(key!=='m'&&key!=='Yds')lastConv=null;
     if(hasTrailingNum())ctx.tokens.pop();
     pushNum(r,d,false);setDec(r);ctx.modeText=md;ctx.state=READY;render();
   }
@@ -1309,6 +1341,15 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
     'Height':function(){ctx.modeText='HEIGHT = '+fmt(getVal())+' ft';render()}
   };
   window.kpPress=function(key){var fn=handlers[key];if(fn)fn(key)};
+  /* Keyboard support */
+  var keyMap={'Enter':'=','Escape':'C','Backspace':'\u232b','Delete':'C',
+    '*':'\u00d7','x':'\u00d7','X':'\u00d7','/':'\u00f7',
+    'f':'Feet','F':'Feet','i':'Inch','I':'Inch'};
+  document.addEventListener('keydown',function(e){
+    if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')return;
+    var k=keyMap[e.key]||e.key;
+    if(handlers[k]){e.preventDefault();kpPress(k)}
+  });
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',render);else render();
 })();
 
