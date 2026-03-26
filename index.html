@@ -891,7 +891,7 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
     if(exprEl)exprEl.textContent=expression;
     const mi=memInd();if(mi)mi.className='mem-indicator'+(memory!==0?' active':'');
   }
-  function getCurrentValue(){if(mode==='std')return parseFloat(display)||0;return feetPart+(inchPart+(fracDen?fracNum/fracDen:0))/12}
+  function getCurrentValue(){if(mode==='std'&&!isFtInMode())return parseFloat(display)||0;const stdVal=parseFloat(display)||0;if(mode==='std'&&isFtInMode())return feetPart+(inchPart+(fracDen?fracNum/fracDen:0))/12;return feetPart+(inchPart+(fracDen?fracNum/fracDen:0))/12}
   function setDisplayValue(val){mode='std';display=formatNum(val);entry=val;feetPart=0;inchPart=0;fracNum=0;fracDen=0;updateDisplay()}
   function formatNum(n){if(Math.abs(n)>=1e10)return n.toExponential(4);return parseFloat(n.toFixed(8)).toString()}
   function resetEntry(){display='0';mode='std';feetPart=0;inchPart=0;fracNum=0;fracDen=0}
