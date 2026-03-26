@@ -111,7 +111,9 @@ input:focus,select:focus{border-color:var(--gold)}
 .calc-shell{max-width:420px;margin:0 auto;padding:12px 12px 80px}
 .calc-display{background:#e8ecd8;border:2px solid #888;border-radius:8px;padding:12px 14px 10px;margin-bottom:10px;min-height:80px;position:relative}
 .calc-display-mode{font-family:'IBM Plex Mono',monospace;font-size:.6rem;font-weight:700;color:#556;letter-spacing:.1em;text-transform:uppercase;margin-bottom:2px}
-.calc-display-expr{font-family:'IBM Plex Mono',monospace;font-size:.7rem;color:#778;text-align:right;min-height:16px;line-height:1.3;word-break:break-all;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.calc-display-expr{font-family:'IBM Plex Mono',monospace;font-size:.72rem;color:#556;text-align:right;min-height:18px;line-height:1.3;word-break:break-all;overflow:hidden;direction:rtl;text-overflow:ellipsis;white-space:nowrap;padding:0 2px}
+.calc-display-expr span.op{color:#1a3a5c;font-weight:700}
+.calc-display-expr span.eq{color:#b07010;font-weight:700}
 .calc-display-main{font-family:'IBM Plex Mono',monospace;font-size:1.8rem;font-weight:700;color:#1a1a2e;text-align:right;line-height:1.2;min-height:36px;word-break:break-all}
 .calc-display-sub{font-family:'IBM Plex Mono',monospace;font-size:.75rem;color:#556;text-align:right;margin-top:2px}
 .mem-indicator{position:absolute;top:4px;left:8px;font-size:.5rem;font-weight:700;color:#1a1a2e;opacity:0}
@@ -179,7 +181,7 @@ input:focus,select:focus{border-color:var(--gold)}
 
 <!-- ═══ DSLD Header ═══ -->
 <div class="dsld-header">
-  <div class="dsld-logo">DSLD <span>Homes</span></div>
+  <a href="https://www.dsldhomes.com/" target="_blank" rel="noopener" class="dsld-logo" style="text-decoration:none">DSLD <span>Homes</span></a>
   <div class="dsld-divider"></div>
   <div class="dsld-page" id="dsld-page-label"></div>
   <button class="help-btn" onclick="openGuide()" title="User Guide">?</button>
@@ -865,31 +867,43 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
   let display='0',entry=0,accumulator=0,pendingOp=null,mode='std';
   let feetPart=0,inchPart=0,fracNum=0,fracDen=0,memory=0,justCalculated=false,newEntry=false;
   let pitchVal=null,riseVal=null,runVal=null;
-  let expression='',exprHasValue=false,unitDims=0,lastUsedFeet=false,feetPressCount=0,feetBaseVal=0;
+  let expression='',exprHasValue=false,unitDims=0,lastUsedFeet=false,feetPressCount=0,feetBaseVal=0,exprUsedFtIn=false;
   const dispMain=()=>document.getElementById('kp-main');
   const dispSub=()=>document.getElementById('kp-sub');
   const dispMode=()=>document.getElementById('kp-mode');
   const dispExpr=()=>document.getElementById('kp-expr');
   const memInd=()=>document.getElementById('kp-mem');
 
+  const opSymbols={'+':' + ','-':' \u2212 ','\u00d7':' \u00d7 ','\u00f7':' \u00f7 '};
+
   function isFtInMode(){return feetPart>0||inchPart>0||fracNum>0}
+  function fmtFtInExpr(decFt){const ti=Math.abs(decFt)*12,f=Math.floor(ti/12),ri=ti-f*12,wi=Math.floor(ri),fi=ri-wi;let num=Math.round(fi*16);if(num===16){num=0;wi++}let s=(decFt<0?'\u2212':'');if(f>0)s+=f+'\u2032';if(wi>0||num>0||f===0){if(f>0)s+='-';s+=wi;if(num>0){let n=num,d=16;while(n%2===0&&d%2===0){n/=2;d/=2}s+=' '+n+'/'+d}s+='\u2033'}return s}
   function formatValueForExpr(){
     if(isFtInMode()||mode==='inch'||mode==='frac'){
-      let s='';if(feetPart>0)s+=feetPart+"'";
-      if(inchPart>0||fracNum>0){s+=inchPart;if(fracNum>0&&fracDen>0)s+=' '+fracNum+'/'+fracDen;s+='"'}
+      exprUsedFtIn=true;
+      let s='';if(feetPart>0)s+=feetPart+'\u2032';
+      if(inchPart>0||fracNum>0){if(feetPart>0)s+='-';s+=inchPart;if(fracNum>0&&fracDen>0)s+=' '+fracNum+'/'+fracDen;s+='\u2033'}
       return s||display;
     }
     return display;
   }
+  function renderExpr(){
+    const el=dispExpr();if(!el)return;
+    el.innerHTML='';
+    const span=document.createElement('span');
+    span.style.direction='ltr';span.style.unicodeBidi='bidi-override';
+    span.textContent=expression;
+    el.appendChild(span);
+  }
   function updateDisplay(){
-    const el=dispMain(),sub=dispSub(),modeEl=dispMode(),exprEl=dispExpr();if(!el)return;
+    const el=dispMain(),sub=dispSub(),modeEl=dispMode();if(!el)return;
     if(isFtInMode()||mode==='inch'||mode==='frac'){
       let s='';if(feetPart>0)s+=feetPart+"'";
       if(inchPart>0||mode==='inch'||mode==='frac'){s+=' '+inchPart;if(fracNum>0&&fracDen>0)s+=' '+fracNum+'/'+fracDen;s+='"'}
       if(mode==='std'&&display!=='0')s+=' '+display+'_';
       el.textContent=s||'0';const dec=getCurrentValue();sub.textContent=dec.toFixed(4)+' ft';modeEl.textContent='FEET-INCH';
     }else{el.textContent=display;sub.textContent=display!=='0'?decToFtIn(parseFloat(display)||0):'';modeEl.textContent=''}
-    if(exprEl)exprEl.textContent=expression;
+    renderExpr();
     const mi=memInd();if(mi)mi.className='mem-indicator'+(memory!==0?' active':'');
   }
   function getCurrentValue(){if(mode==='std'&&!isFtInMode())return parseFloat(display)||0;const stdVal=parseFloat(display)||0;if(mode==='std'&&isFtInMode())return feetPart+(inchPart+(fracDen?fracNum/fracDen:0))/12;return feetPart+(inchPart+(fracDen?fracNum/fracDen:0))/12}
@@ -900,7 +914,7 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
   window.kpPress=function(key){
     if(/^[0-9]$/.test(key)||key==='00'||key==='.'){
       feetPressCount=0;
-      if(justCalculated&&!pendingOp){accumulator=0;resetEntry();justCalculated=false;newEntry=false;expression=''}
+      if(justCalculated&&!pendingOp){accumulator=0;resetEntry();justCalculated=false;newEntry=false;expression='';exprUsedFtIn=false}
       if(justCalculated&&pendingOp){resetEntry();justCalculated=false;newEntry=false}
       if(newEntry){resetEntry();newEntry=false}
       if(mode==='frac'){handleFracDigit(key)}
@@ -914,8 +928,15 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
       // Consecutive Feet presses: 2nd=squared(SF), 3rd=cubed(CF)
       if(feetPressCount>=1){
         feetPressCount++;
-        if(feetPressCount===2){const sf=feetBaseVal*feetBaseVal;setDisplayValue(sf);dispMode().textContent=formatNum(sf)+' SF';dispSub().textContent=formatNum(sf/9)+' SY | '+formatNum(sf/43560)+' acres';justCalculated=true;return}
-        if(feetPressCount>=3){const cf=feetBaseVal*feetBaseVal*feetBaseVal;setDisplayValue(cf);dispMode().textContent=formatNum(cf)+' CF ('+formatNum(cf/27)+' CY)';dispSub().textContent=formatNum(cf/27)+' CY | '+Math.ceil(cf/27*45)+' 80lb bags';justCalculated=true;return}
+        if(feetPressCount===2){const sf=feetBaseVal*feetBaseVal;
+          if(pendingOp){expression+='('+feetBaseVal+')\u00b2';exprHasValue=true;setDisplayValue(sf)}
+          else{expression='('+feetBaseVal+')\u00b2 = '+formatNum(sf)+' SF';exprHasValue=true;setDisplayValue(sf);justCalculated=true}
+          dispMode().textContent=formatNum(sf)+' SF';dispSub().textContent=formatNum(sf/9)+' SY | '+formatNum(sf/43560)+' acres';renderExpr();return}
+        if(feetPressCount>=3){const cf=feetBaseVal*feetBaseVal*feetBaseVal;
+          const sqTag='('+feetBaseVal+')\u00b2';
+          if(pendingOp){if(expression.endsWith(sqTag))expression=expression.slice(0,-sqTag.length);expression+='('+feetBaseVal+')\u00b3';exprHasValue=true;setDisplayValue(cf)}
+          else{expression='('+feetBaseVal+')\u00b3 = '+formatNum(cf)+' CF';exprHasValue=true;setDisplayValue(cf);justCalculated=true}
+          dispMode().textContent=formatNum(cf)+' CF ('+formatNum(cf/27)+' CY)';dispSub().textContent=formatNum(cf/27)+' CY | '+Math.ceil(cf/27*45)+' 80lb bags';renderExpr();return}
       }
       // Convert inches to feet
       if(inchPart>0&&feetPart===0&&display==='0'){const inc=inchPart;const v=inc/12;resetEntry();setDisplayValue(v);dispMode().textContent=formatNum(inc)+'" → '+formatNum(v)+' ft';feetPressCount=0;return}
@@ -934,19 +955,39 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
     if(['+','-','\u00d7','\u00f7'].includes(key)){
       const valStr=formatValueForExpr();
       const val=getCurrentValue();
+      const sym=opSymbols[key]||' '+key+' ';
       if(lastUsedFeet&&(key==='\u00d7'))unitDims++;
       if(key==='+'||key==='-')unitDims=0;
       if(pendingOp&&!justCalculated)accumulator=doOp(accumulator,val,pendingOp);else accumulator=val;
-      if(!justCalculated&&!exprHasValue)expression+=valStr+' '+key+' ';
-      else if(exprHasValue){expression+=' '+key+' ';exprHasValue=false;}
-      else expression+=key+' ';
+      // Build expression
+      if(justCalculated&&expression.includes('=')){
+        // After =, start new expression with the result
+        expression=formatNum(accumulator)+sym;
+      }else if(!exprHasValue){
+        expression+=valStr+sym;
+      }else{
+        expression+=sym;exprHasValue=false;
+      }
       lastUsedFeet=false;pendingOp=key;resetEntry();justCalculated=false;newEntry=true;setDisplayValue(accumulator);return;
     }
-    if(key==='='){const valStr=formatValueForExpr();const val=getCurrentValue();if(pendingOp){if(lastUsedFeet&&pendingOp==='\u00d7')unitDims++;if(!exprHasValue)expression+=valStr;expression+=' =';const r=doOp(accumulator,val,pendingOp);setDisplayValue(r);accumulator=r;if(unitDims>=2){dispMode().textContent=formatNum(r)+' CF ('+formatNum(r/27)+' CY)';dispSub().textContent=formatNum(r/27)+' CY | '+Math.ceil(r/27*45)+' 80lb bags'}else if(unitDims===1){dispMode().textContent=formatNum(r)+' SF';dispSub().textContent=formatNum(r/9)+' SY | '+formatNum(r/43560)+' acres'}pendingOp=null}exprHasValue=false;lastUsedFeet=false;justCalculated=true;return}
-    if(key==='C'){resetEntry();accumulator=0;pendingOp=null;justCalculated=false;expression='';exprHasValue=false;unitDims=0;lastUsedFeet=false;feetPressCount=0;feetBaseVal=0;pitchVal=null;riseVal=null;runVal=null;updateDisplay();return}
+    if(key==='='){
+      const valStr=formatValueForExpr();const val=getCurrentValue();
+      if(pendingOp){
+        if(lastUsedFeet&&pendingOp==='\u00d7')unitDims++;
+        if(!exprHasValue)expression+=valStr;
+        const r=doOp(accumulator,val,pendingOp);
+        expression+=' = '+(exprUsedFtIn&&unitDims===0?fmtFtInExpr(r):formatNum(r));
+        setDisplayValue(r);accumulator=r;
+        if(unitDims>=2){dispMode().textContent=formatNum(r)+' CF ('+formatNum(r/27)+' CY)';dispSub().textContent=formatNum(r/27)+' CY | '+Math.ceil(r/27*45)+' 80lb bags'}
+        else if(unitDims===1){dispMode().textContent=formatNum(r)+' SF';dispSub().textContent=formatNum(r/9)+' SY | '+formatNum(r/43560)+' acres'}
+        pendingOp=null;
+      }
+      exprHasValue=false;lastUsedFeet=false;justCalculated=true;renderExpr();return;
+    }
+    if(key==='C'){resetEntry();accumulator=0;pendingOp=null;justCalculated=false;expression='';exprHasValue=false;exprUsedFtIn=false;unitDims=0;lastUsedFeet=false;feetPressCount=0;feetBaseVal=0;pitchVal=null;riseVal=null;runVal=null;updateDisplay();return}
     if(key==='CE'){resetEntry();justCalculated=false;updateDisplay();return}
     if(key==='\u232b'){if(mode==='std'&&display.length>1)display=display.slice(0,-1);else if(mode==='std')display='0';updateDisplay();return}
-    if(key==='%'){setDisplayValue(getCurrentValue()/100);return}
+    if(key==='%'){const vs=formatValueForExpr();const v=getCurrentValue();expression+=vs+'%';exprHasValue=true;setDisplayValue(v/100);renderExpr();return}
     if(key==='M+'){memory+=getCurrentValue();updateDisplay();return}
     if(key==='Rcl'){setDisplayValue(memory);return}
     if(key==='Stor'){memory=getCurrentValue();updateDisplay();return}
@@ -955,20 +996,20 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
     if(key==='Run'){runVal=getCurrentValue();resetEntry();newEntry=true;dispMode().textContent='RUN = '+formatNum(runVal);solvePRR();return}
     if(key==='Diag'){if(riseVal!==null&&runVal!==null){setDisplayValue(Math.sqrt(riseVal**2+runVal**2));dispMode().textContent='DIAG'}return}
     if(key==='Hip/V'){if(runVal!==null&&pitchVal!==null){const r=runVal*pitchVal/12,p=runVal*Math.SQRT2;setDisplayValue(Math.sqrt(p**2+r**2));dispMode().textContent='HIP/VAL'}return}
-    if(key==='Sine'){setDisplayValue(Math.sin(getCurrentValue()*Math.PI/180));dispMode().textContent='SIN';return}
-    if(key==='Cos'){setDisplayValue(Math.cos(getCurrentValue()*Math.PI/180));dispMode().textContent='COS';return}
-    if(key==='Tan'){setDisplayValue(Math.tan(getCurrentValue()*Math.PI/180));dispMode().textContent='TAN';return}
-    if(key==='m'){setDisplayValue(getCurrentValue()*0.3048);dispMode().textContent='METERS';return}
-    if(key==='Yds'){setDisplayValue(getCurrentValue()/3);dispMode().textContent='YARDS';return}
-    if(key==='Circ'){setDisplayValue(2*Math.PI*getCurrentValue());dispMode().textContent='CIRCUMF';return}
+    if(key==='Sine'){const vs=formatValueForExpr();const v=getCurrentValue();expression+='sin('+vs+'\u00b0)';exprHasValue=true;setDisplayValue(Math.sin(v*Math.PI/180));dispMode().textContent='sin('+vs+'\u00b0) = '+formatNum(Math.sin(v*Math.PI/180));justCalculated=true;renderExpr();return}
+    if(key==='Cos'){const vs=formatValueForExpr();const v=getCurrentValue();expression+='cos('+vs+'\u00b0)';exprHasValue=true;setDisplayValue(Math.cos(v*Math.PI/180));dispMode().textContent='cos('+vs+'\u00b0) = '+formatNum(Math.cos(v*Math.PI/180));justCalculated=true;renderExpr();return}
+    if(key==='Tan'){const vs=formatValueForExpr();const v=getCurrentValue();expression+='tan('+vs+'\u00b0)';exprHasValue=true;setDisplayValue(Math.tan(v*Math.PI/180));dispMode().textContent='tan('+vs+'\u00b0) = '+formatNum(Math.tan(v*Math.PI/180));justCalculated=true;renderExpr();return}
+    if(key==='m'){const vs=formatValueForExpr();const v=getCurrentValue();expression+=vs+'ft\u2192m';exprHasValue=true;setDisplayValue(v*0.3048);dispMode().textContent=vs+' ft = '+formatNum(v*0.3048)+' m';justCalculated=true;renderExpr();return}
+    if(key==='Yds'){const vs=formatValueForExpr();const v=getCurrentValue();expression+=vs+'ft\u2192yd';exprHasValue=true;setDisplayValue(v/3);dispMode().textContent=vs+' ft = '+formatNum(v/3)+' yd';justCalculated=true;renderExpr();return}
+    if(key==='Circ'){const vs=formatValueForExpr();const v=getCurrentValue();expression+='\u03c0\u00d7'+vs+'\u00d72';exprHasValue=true;setDisplayValue(2*Math.PI*v);dispMode().textContent='CIRCUMF = '+formatNum(2*Math.PI*v);justCalculated=true;renderExpr();return}
     if(key==='SF'){const v=getCurrentValue();dispMode().textContent=formatNum(v)+' SQ FT';dispSub().textContent=formatNum(v/9)+' SY | '+formatNum(v/43560)+' acres';return}
     if(key==='SY'){const v=getCurrentValue();const sf=v*9;setDisplayValue(sf);dispMode().textContent=formatNum(v)+' SQ YD → '+formatNum(sf)+' SF';return}
     if(key==='CY'){const v=getCurrentValue();const cf=v*27;setDisplayValue(v);dispMode().textContent=formatNum(v)+' CU YD ('+formatNum(cf)+' CF)';dispSub().textContent=formatNum(cf)+' cu ft | '+Math.ceil(v*45)+' 80lb bags';return}
     if(key==='CF'){const v=getCurrentValue();const cy=v/27;setDisplayValue(v);dispMode().textContent=formatNum(v)+' CU FT → '+formatNum(cy)+' CY';dispSub().textContent=formatNum(cy)+' cu yd | '+Math.ceil(cy*45)+' 80lb bags';return}
     if(key==='Acres'){const v=getCurrentValue();const sf=v*43560;setDisplayValue(sf);dispMode().textContent=formatNum(v)+' ACRES → '+formatNum(sf)+' SF';return}
-    if(key==='Arc'){setDisplayValue(getCurrentValue()*Math.PI/180);dispMode().textContent='RADIANS';return}
-    if(key==='x\u00b2'){const vs=formatValueForExpr();const v=getCurrentValue();expression+=vs+'\u00b2';exprHasValue=true;setDisplayValue(v*v);dispMode().textContent='x\u00b2';justCalculated=true;return}
-    if(key==='x\u00b3'){const vs=formatValueForExpr();const v=getCurrentValue();expression+=vs+'\u00b3';exprHasValue=true;setDisplayValue(v*v*v);dispMode().textContent='x\u00b3';justCalculated=true;return}
+    if(key==='Arc'){const vs=formatValueForExpr();const v=getCurrentValue();expression+=vs+'\u00b0\u2192rad';exprHasValue=true;setDisplayValue(v*Math.PI/180);dispMode().textContent=vs+'\u00b0 = '+formatNum(v*Math.PI/180)+' rad';justCalculated=true;renderExpr();return}
+    if(key==='x\u00b2'){const vs=formatValueForExpr();const v=getCurrentValue();expression+='('+vs+')\u00b2';exprHasValue=true;setDisplayValue(v*v);dispMode().textContent='x\u00b2 = '+formatNum(v*v);justCalculated=true;renderExpr();return}
+    if(key==='x\u00b3'){const vs=formatValueForExpr();const v=getCurrentValue();expression+='('+vs+')\u00b3';exprHasValue=true;setDisplayValue(v*v*v);dispMode().textContent='x\u00b3 = '+formatNum(v*v*v);justCalculated=true;renderExpr();return}
     if(key==='Stair'){location.hash='#stair';return}
     if(key==='Length'){dispMode().textContent='LENGTH = '+formatNum(getCurrentValue())+' ft';return}
     if(key==='Width'){dispMode().textContent='WIDTH = '+formatNum(getCurrentValue())+' ft';return}
