@@ -1,0 +1,23 @@
+{
+  "name": "DSLD Construction Calculator",
+  "short_name": "DSLD Calc",
+  "description": "DSLD Homes — Professional construction calculators",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0f1319",
+  "theme_color": "#e8a020",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

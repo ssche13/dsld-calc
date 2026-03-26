@@ -1,0 +1,180 @@
+/* ── Construction Master Keypad Calculator ── */
+
+.calc-shell {
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 12px 12px 60px;
+}
+
+/* Display */
+.calc-display {
+  background: #e8ecd8;
+  border: 2px solid #888;
+  border-radius: 8px;
+  padding: 12px 14px 10px;
+  margin-bottom: 10px;
+  min-height: 80px;
+  position: relative;
+}
+.calc-display-mode {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: .6rem;
+  font-weight: 700;
+  color: #556;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+.calc-display-main {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #1a1a2e;
+  text-align: right;
+  line-height: 1.2;
+  min-height: 36px;
+  word-break: break-all;
+}
+.calc-display-sub {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: .75rem;
+  color: #556;
+  text-align: right;
+  margin-top: 2px;
+}
+.calc-display-labels {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 4px;
+}
+.calc-display-labels span {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: .55rem;
+  font-weight: 700;
+  color: #889;
+  letter-spacing: .08em;
+}
+.calc-display-labels span.active {
+  color: #1a1a2e;
+}
+
+/* Keypad grid */
+.keypad {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.key-row {
+  display: flex;
+  gap: 5px;
+}
+
+.key {
+  flex: 1;
+  min-height: 42px;
+  border: none;
+  border-radius: 5px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: .72rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: filter .1s, transform .05s;
+  touch-action: manipulation;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  line-height: 1.1;
+  padding: 4px 2px;
+  position: relative;
+}
+.key:active {
+  transform: scale(.95);
+  filter: brightness(1.1);
+}
+
+/* Key label (top-left superscript) */
+.key-label {
+  position: absolute;
+  top: 2px;
+  left: 4px;
+  font-size: .42rem;
+  font-weight: 600;
+  color: inherit;
+  opacity: .5;
+  letter-spacing: .04em;
+}
+
+/* Key types */
+.key-num {
+  background: #d0d0d0;
+  color: #1a1a2e;
+}
+.key-num:hover { background: #ddd; }
+
+.key-func {
+  background: #b0b0b0;
+  color: #1a1a2e;
+  font-size: .62rem;
+  letter-spacing: .02em;
+}
+.key-func:hover { background: #bbb; }
+
+.key-op {
+  background: #2c3345;
+  color: #f0f4ff;
+  font-size: .9rem;
+}
+.key-op:hover { background: #3a4458; }
+
+.key-gold {
+  background: var(--gold);
+  color: #0f1319;
+}
+.key-gold:hover { background: #f5b540; }
+
+.key-red {
+  background: var(--red);
+  color: #fff;
+}
+.key-red:hover { background: #e04535; }
+
+.key-navy {
+  background: var(--navy);
+  color: #fff;
+  font-size: .62rem;
+}
+.key-navy:hover { background: var(--navy-lt); }
+
+.key-orange {
+  background: #e07020;
+  color: #fff;
+}
+.key-orange:hover { background: #f08030; }
+
+/* Wide keys */
+.key-wide { flex: 2; }
+
+/* Memory indicator */
+.mem-indicator {
+  position: absolute;
+  top: 4px;
+  left: 8px;
+  font-size: .5rem;
+  font-weight: 700;
+  color: #1a1a2e;
+  opacity: 0;
+}
+.mem-indicator.active { opacity: 1; }
+
+@media (max-width: 380px) {
+  .key { min-height: 38px; font-size: .65rem; }
+  .key-func { font-size: .56rem; }
+  .calc-display-main { font-size: 1.5rem; }
+}
+
+@media (min-width: 500px) {
+  .key { min-height: 48px; font-size: .78rem; }
+}

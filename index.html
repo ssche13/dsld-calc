@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#1a3a5c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>DSLD Construction Calculator</title>
+<link rel="stylesheet" href="css/theme.css">
+<link rel="stylesheet" href="css/home.css">
+<link rel="stylesheet" href="css/calc.css">
+<link rel="stylesheet" href="css/keypad.css">
+<link rel="stylesheet" href="css/guide.css">
+</head>
+<body>
+
+<!-- ═══ DSLD Header ═══ -->
+<div class="dsld-header">
+  <div class="dsld-logo">DSLD <span>Homes</span></div>
+  <div class="dsld-divider"></div>
+  <div class="dsld-page" id="dsld-page-label"></div>
+  <button class="help-btn" onclick="openGuide()" title="User Guide">?</button>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- CONSTRUCTION CALCULATOR (Main Screen)                   -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<section id="view-calculator" class="view active">
+<div class="calc-shell">
+
+  <!-- Display -->
+  <div class="calc-display">
+    <span class="mem-indicator" id="kp-mem">M</span>
+    <div class="calc-display-mode" id="kp-mode"></div>
+    <div class="calc-display-main" id="kp-main">0</div>
+    <div class="calc-display-sub" id="kp-sub"></div>
+  </div>
+
+  <!-- Keypad -->
+  <div class="keypad">
+    <!-- Row 1: Construction functions -->
+    <div class="key-row">
+      <button class="key key-navy" onclick="kpPress('Pitch')"><span class="key-label">Slope</span>Pitch</button>
+      <button class="key key-navy" onclick="kpPress('Rise')">Rise</button>
+      <button class="key key-navy" onclick="kpPress('Run')">Run</button>
+      <button class="key key-navy" onclick="kpPress('Diag')"><span class="key-label">Roof</span>Diag</button>
+      <button class="key key-navy" onclick="kpPress('Hip/V')"><span class="key-label">Ir/Pitch</span>Hip/V</button>
+    </div>
+    <!-- Row 2: Extended functions -->
+    <div class="key-row">
+      <button class="key key-func" onclick="kpPress('Stair')"><span class="key-label">Riser Lim</span>Stair</button>
+      <button class="key key-func" onclick="kpPress('Sine')"><span class="key-label">ArcSine</span>Sine</button>
+      <button class="key key-func" onclick="kpPress('Cos')"><span class="key-label">ArcCos</span>Cos</button>
+      <button class="key key-func" onclick="kpPress('Tan')"><span class="key-label">ArcTan</span>Tan</button>
+      <button class="key key-func" onclick="kpPress('Circ')"><span class="key-label">Column/Cone</span>Circ</button>
+    </div>
+    <!-- Row 3: Units -->
+    <div class="key-row">
+      <button class="key key-func" onclick="kpPress('m')">m</button>
+      <button class="key key-func" onclick="kpPress('Yds')">Yds</button>
+      <button class="key key-gold" onclick="kpPress('Feet')">Feet</button>
+      <button class="key key-gold" onclick="kpPress('Inch')">Inch</button>
+      <button class="key key-func" onclick="kpPress('Frac')"><span class="key-label">x10&#x207F;</span>/</button>
+      <button class="key key-func" onclick="kpPress('Arc')"><span class="key-label">Radius</span>Arc</button>
+    </div>
+    <!-- Row 4: Memory + 7 8 9 -->
+    <div class="key-row">
+      <button class="key key-func" onclick="kpPress('Stor')"><span class="key-label">Prefs</span>Stor</button>
+      <button class="key key-orange" onclick="kpPress('CE')">Conv</button>
+      <button class="key key-num" onclick="kpPress('7')">7</button>
+      <button class="key key-num" onclick="kpPress('8')">8</button>
+      <button class="key key-num" onclick="kpPress('9')">9</button>
+      <button class="key key-op" onclick="kpPress('%')">%</button>
+      <button class="key key-op" onclick="kpPress('&#x232B;')">&larr;</button>
+    </div>
+    <!-- Row 5: Rcl + 4 5 6 -->
+    <div class="key-row">
+      <button class="key key-func" onclick="kpPress('Rcl')"><span class="key-label">Rcl/STO</span>Rcl</button>
+      <button class="key key-num" onclick="kpPress('4')">4</button>
+      <button class="key key-num" onclick="kpPress('5')">5</button>
+      <button class="key key-num" onclick="kpPress('6')">6</button>
+      <button class="key key-gold" onclick="kpPress('&times;')">&times;</button>
+      <button class="key key-gold" onclick="kpPress('&divide;')">&divide;</button>
+    </div>
+    <!-- Row 6: M+ 1 2 3 -->
+    <div class="key-row">
+      <button class="key key-func" onclick="kpPress('M+')">M+</button>
+      <button class="key key-num" onclick="kpPress('1')">1</button>
+      <button class="key key-num" onclick="kpPress('2')">2</button>
+      <button class="key key-num" onclick="kpPress('3')">3</button>
+      <button class="key key-gold" onclick="kpPress('+')">+</button>
+      <button class="key key-gold" onclick="kpPress('-')">&minus;</button>
+    </div>
+    <!-- Row 7: On/C 0 00 . = -->
+    <div class="key-row">
+      <button class="key key-red" onclick="kpPress('C')">On/C</button>
+      <button class="key key-num" onclick="kpPress('0')">0</button>
+      <button class="key key-num" onclick="kpPress('00')">00</button>
+      <button class="key key-num" onclick="kpPress('.')">.</button>
+      <button class="key key-gold key-wide" onclick="kpPress('=')">=</button>
+    </div>
+  </div>
+
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- ROOF FRAMING                                            -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<section id="view-roof" class="view">
+<div class="wrap">
+
+  <!-- Common Rafter -->
+  <div class="card">
+    <div class="ch"><div class="dot"></div><h2>Common Rafter</h2></div>
+    <div class="cb">
+      <div class="logic">
+        <span>Rise</span> = Run &times; Pitch &divide; 12 &nbsp;|&nbsp; <span>Length</span> = &radic;( Run&sup2; + Rise&sup2; )
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label>Run (ft) &mdash; eave to ridge CL</label>
+          <input type="number" id="cr-run" step="0.01" min="0" inputmode="decimal" placeholder="12.50">
+        </div>
+        <div class="field">
+          <label>Pitch (rise per 12&Prime;)</label>
+          <input type="number" id="cr-pitch" step="0.5" min="0" inputmode="decimal" placeholder="8">
+        </div>
+      </div>
+      <button class="btn" onclick="calcCommon()">&#9654;  Calculate</button>
+      <div class="res" id="cr-res">
+        <div class="rrow"><span class="rl">Rise</span><span class="rv" id="cr-rise">&mdash;</span></div>
+        <div class="rrow"><span class="rl">Rafter Length</span><span class="rv hi" id="cr-len">&mdash;</span></div>
+        <div class="rrow"><span class="rl">Slope Angle</span><span class="rv" id="cr-ang">&mdash;</span></div>
+        <div class="rrow"><span class="rl">Plumb Cut</span><span class="rv" id="cr-plumb">&mdash;</span></div>
+        <div class="rrow"><span class="rl">Seat / Level Cut</span><span class="rv" id="cr-seat">&mdash;</span></div>
+        <div class="rrow"><span class="rl">Unit Length per ft Run</span><span class="rv" id="cr-unit">&mdash;</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Equal Pitch Hip/Valley -->
+  <div class="card">
+    <div class="ch"><div class="dot"></div><h2>Hip / Valley &mdash; Same Pitch</h2></div>
+    <div class="cb">
+      <div class="logic">
+        <span>Plan length</span> = Run &times; &radic;2 &nbsp;|&nbsp; <span>Actual length</span> = &radic;( PlanLen&sup2; + Rise&sup2; )
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label>Run (ft)</label>
+          <input type="number" id="ep-run" step="0.01" min="0" inputmode="decimal" placeholder="12.50">
+        </div>
+        <div class="field">
+          <label>Pitch (/12)</label>
+          <input type="number" id="ep-pitch" step="0.5" min="0" inputmode="decimal" placeholder="8">
+        </div>
+      </div>
+      <button class="btn" onclick="calcEqualHip()">&#9654;  Calculate</button>
+      <div class="res" id="ep-res">
+        <div class="rrow"><span class="rl">Rise</span><span class="rv" id="ep-rise">&mdash;</span></div>
+        <div class="rrow"><span class="rl">Plan Length</span><span class="rv" id="ep-plan">&mdash;</span></div>
+        <div class="rrow"><span class="rl">Actual Length</span><span class="rv hi" id="ep-len">&mdash;</span></div>
+        <div class="rrow"><span class="rl">Slope Angle</span><span class="rv" id="ep-slope">&mdash;</span></div>
+        <div class="rrow"><span class="rl">Plumb Cut</span><span class="rv" id="ep-plumb">&mdash;</span></div>
+        <div class="rrow"><span class="rl">Cheek / Side Cut</span><span class="rv" id="ep-cheek">&mdash;</span></div>
+        <div class="rrow"><span class="rl">Backing Bevel</span><span class="rv" id="ep-back">&mdash;</span></div>
+        <div class="rrow"><span class="rl">Unit Length</span><span class="rv" id="ep-unit">&mdash;</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Unequal Pitch Hip/Valley -->
+  <div class="card">
+    <div class="ch r"><div class="dot r"></div><h2>Hip / Valley &mdash; Unequal Pitch</h2></div>
+    <div class="cb">
+      <div class="logic">
+        Direction vector = <span>( PitchA, PitchB )</span> &nbsp;|&nbsp; <span>Backing angles</span> differ each side
+      </div>
+      <div class="row2">
+        <div>
+          <div class="slbl">&#9656; Roof A</div>
+          <div class="field"><label>Run A (ft)</label><input type="number" id="up-runA" step="0.01" min="0" inputmode="decimal" placeholder="14.0"></div>
+          <div class="field"><label>Pitch A (/12)</label><input type="number" id="up-pA" step="0.5" min="0" inputmode="decimal" placeholder="8"></div>
+        </div>
+        <div>
+          <div class="slbl b">&#9656; Roof B</div>
+          <div class="field"><label>Run B (ft)</label><input type="number" id="up-runB" step="0.01" min="0" inputmode="decimal" placeholder="10.0"></div>
+          <div class="field"><label>Pitch B (/12)</label><input type="number" id="up-pB" step="0.5" min="0" inputmode="decimal" placeholder="6"></div>
+        </div>
+      </div>
+      <button class="btn r" onclick="calcUneq()">&#9654;  Calculate</button>
+      <div class="res" id="up-res">
+        <div class="res2">
+          <div>
+            <div class="rsect"><div class="rtitle">Plan Geometry</div>
+              <div class="rrow"><span class="rl">Angle from Wall A</span><span class="rv" id="up-angA">&mdash;</span></div>
+              <div class="rrow"><span class="rl">Angle from Wall B</span><span class="rv" id="up-angB">&mdash;</span></div>
+              <div class="rrow"><span class="rl">Plan length</span><span class="rv" id="up-plan">&mdash;</span></div>
+              <div class="rrow"><span class="rl">Along Wall A</span><span class="rv" id="up-xEnd">&mdash;</span></div>
+              <div class="rrow"><span class="rl">Along Wall B</span><span class="rv" id="up-yEnd">&mdash;</span></div>
+              <div class="rrow"><span class="rl">Terminates at</span><span class="rv" id="up-term">&mdash;</span></div>
+            </div>
+            <div class="rsect"><div class="rtitle">Ridge Heights</div>
+              <div class="rrow"><span class="rl">Ridge A</span><span class="rv" id="up-ridA">&mdash;</span></div>
+              <div class="rrow"><span class="rl">Ridge B</span><span class="rv" id="up-ridB">&mdash;</span></div>
+              <div class="rrow"><span class="rl">Difference</span><span class="rv hi2" id="up-diff">&mdash;</span></div>
+            </div>
+          </div>
+          <div>
+            <div class="rsect"><div class="rtitle">Hip / Valley Rafter</div>
+              <div class="rrow"><span class="rl">Rise</span><span class="rv" id="up-rise">&mdash;</span></div>
+              <div class="rrow"><span class="rl">Actual length</span><span class="rv hi" id="up-len">&mdash;</span></div>
+              <div class="rrow"><span class="rl">Slope angle</span><span class="rv" id="up-slope">&mdash;</span></div>
+              <div class="rrow"><span class="rl">Plumb cut</span><span class="rv" id="up-plumb">&mdash;</span></div>
+            </div>
+            <div class="rsect"><div class="rtitle">Backing Angles</div>
+              <div class="rrow"><span class="rl">Roof A side</span><span class="rv" id="up-backA">&mdash;</span></div>
+              <div class="rrow"><span class="rl">Roof B side</span><span class="rv" id="up-backB">&mdash;</span></div>
+            </div>
+            <div class="rsect"><div class="rtitle">Common Rafters</div>
+              <div class="rrow"><span class="rl">Roof A</span><span class="rv" id="up-comA">&mdash;</span></div>
+              <div class="rrow"><span class="rl">Roof B</span><span class="rv" id="up-comB">&mdash;</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- ROOF AREA ON SLOPE                                      -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<section id="view-roofarea" class="view">
+<div class="wrap">
+
+  <div class="card">
+    <div class="ch"><div class="dot"></div><h2>Roof Area &mdash; Flat to Slope</h2></div>
+    <div class="cb">
+      <div class="logic">
+        <span>Slope factor</span> = &radic;(1 + (Pitch/12)&sup2;) &nbsp;|&nbsp; <span>Sloped area</span> = Flat area &times; Slope factor<br>
+        <span>Squares</span> = Sloped area &divide; 100
+      </div>
+
+      <div id="ra-rows"></div>
+
+      <div class="dyn-actions">
+        <button class="btn-sm" onclick="raAddRow()">+ Add Area</button>
+      </div>
+
+      <button class="btn" onclick="calcRoofArea()">&#9654;  Calculate Total</button>
+      <div class="res" id="ra-results"></div>
+    </div>
+  </div>
+
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- STAIR LAYOUT                                            -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<section id="view-stair" class="view">
+<div class="wrap">
+
+  <div class="card">
+    <div class="ch"><div class="dot"></div><h2>Stair Layout</h2></div>
+    <div class="cb">
+      <div class="logic">
+        <span>Risers</span> = round( TotalRise &divide; TargetRiser ) &nbsp;|&nbsp; <span>Stringer</span> = &radic;( Run&sup2; + Rise&sup2; )<br>
+        Landings add to total run &amp; split stair into flights
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label>Total Rise (inches)</label>
+          <input type="number" id="st-rise" step="0.125" min="0" inputmode="decimal" placeholder="108">
+        </div>
+        <div class="field">
+          <label>Target Riser (inches)</label>
+          <input type="number" id="st-riser" step="0.125" min="0" inputmode="decimal" placeholder="7.5" value="7.5">
+        </div>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label>Tread Depth (inches)</label>
+          <input type="number" id="st-tread" step="0.125" min="0" inputmode="decimal" placeholder="10" value="10">
+        </div>
+        <div class="field">
+          <label>Nosing (inches)</label>
+          <input type="number" id="st-nosing" step="0.125" min="0" inputmode="decimal" placeholder="1.25" value="1.25">
+        </div>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label>Headroom (inches)</label>
+          <input type="number" id="st-headroom" step="0.125" min="0" inputmode="decimal" placeholder="96">
+        </div>
+        <div class="field">
+          <label>Number of Landings</label>
+          <input type="number" id="st-landings" step="1" min="0" max="5" inputmode="numeric" placeholder="0" value="0" oninput="stairToggleLandings()">
+        </div>
+      </div>
+      <div id="st-landing-fields" style="display:none">
+        <div class="field">
+          <label>Landing Depth (inches)</label>
+          <input type="number" id="st-landingdepth" step="0.5" min="0" inputmode="decimal" placeholder="36" value="36">
+        </div>
+      </div>
+      <button class="btn" onclick="calcStair()">&#9654;  Calculate</button>
+      <div class="res" id="st-res">
+        <div class="rsect"><div class="rtitle">Layout</div>
+          <div class="rrow"><span class="rl">Number of Risers</span><span class="rv hi" id="st-numrisers">&mdash;</span></div>
+          <div class="rrow"><span class="rl">Number of Treads</span><span class="rv" id="st-numtreads">&mdash;</span></div>
+          <div class="rrow"><span class="rl">Actual Riser Height</span><span class="rv" id="st-actriser">&mdash;</span></div>
+          <div class="rrow"><span class="rl">Total Run</span><span class="rv" id="st-totalrun">&mdash;</span></div>
+        </div>
+        <div class="rsect"><div class="rtitle">Stringer</div>
+          <div class="rrow"><span class="rl">Stringer Length</span><span class="rv hi" id="st-strlen">&mdash;</span></div>
+          <div class="rrow"><span class="rl">Stringer Angle</span><span class="rv" id="st-strang">&mdash;</span></div>
+        </div>
+        <div class="rsect" id="st-landing-res" style="display:none"></div>
+        <div class="rsect"><div class="rtitle">Feet-Inches</div>
+          <div class="rrow"><span class="rl">Total Rise</span><span class="rv" id="st-riseftin">&mdash;</span></div>
+          <div class="rrow"><span class="rl">Total Run</span><span class="rv" id="st-runftin">&mdash;</span></div>
+          <div class="rrow"><span class="rl">Stringer Length</span><span class="rv" id="st-strftin">&mdash;</span></div>
+        </div>
+        <div class="rsect"><div class="rtitle">Code Compliance (IRC R311.7)</div>
+          <div class="rrow"><span class="rl">Riser Height (4&Prime;&ndash;7&frac34;&Prime;)</span><span class="rv" id="st-riserchk">&mdash;</span></div>
+          <div class="rrow"><span class="rl">Tread Depth (&ge; 10&Prime;)</span><span class="rv" id="st-treadchk">&mdash;</span></div>
+          <div class="rrow"><span class="rl">Rise + Run Sum (17&Prime;&ndash;18&Prime;)</span><span class="rv" id="st-riserun">&mdash;</span></div>
+          <div class="rrow"><span class="rl">Headroom Clearance</span><span class="rv" id="st-headclr">&mdash;</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- CONCRETE & MATERIAL                                     -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<section id="view-concrete" class="view">
+<div class="wrap">
+
+  <div class="card" data-tabs>
+    <div class="calc-tabs">
+      <button class="calc-tab active" data-tab="slab">Slab / Pad</button>
+      <button class="calc-tab" data-tab="footing">Footings</button>
+      <button class="calc-tab" data-tab="column">Column / Tube</button>
+    </div>
+
+    <!-- Slab Tab -->
+    <div class="tab-panel active" data-panel="slab">
+      <div class="cb">
+        <div class="logic"><span>Volume</span> = L &times; W &times; (Thick &divide; 12) &nbsp;|&nbsp; <span>Yards</span> = CuFt &divide; 27</div>
+        <div class="row2">
+          <div class="field"><label>Length (ft)</label><input type="number" id="sl-len" step="0.01" min="0" inputmode="decimal" placeholder="20"></div>
+          <div class="field"><label>Width (ft)</label><input type="number" id="sl-wid" step="0.01" min="0" inputmode="decimal" placeholder="30"></div>
+        </div>
+        <div class="field"><label>Thickness (inches)</label><input type="number" id="sl-thick" step="0.25" min="0" inputmode="decimal" placeholder="4"></div>
+        <div class="check-row"><input type="checkbox" id="slab-waste" checked><label for="slab-waste">Add 10% waste</label></div>
+        <button class="btn" onclick="calcConcrete('slab')">&#9654;  Calculate</button>
+        <div class="res" id="slab-res">
+          <div class="rrow"><span class="rl">Volume</span><span class="rv" id="slab-cuft">&mdash;</span></div>
+          <div class="rrow"><span class="rl">Cubic Yards</span><span class="rv hi" id="slab-cuyd">&mdash;</span></div>
+          <div class="rrow"><span class="rl">80 lb Bags</span><span class="rv" id="slab-b80">&mdash;</span></div>
+          <div class="rrow"><span class="rl">60 lb Bags</span><span class="rv" id="slab-b60">&mdash;</span></div>
+          <p class="fnote" id="slab-wastelbl"></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footing Tab (Multi-Footing) -->
+    <div class="tab-panel" data-panel="footing">
+      <div class="cb">
+        <div class="logic">Add multiple footing entries with preset or custom sizes. Total calculated at bottom.</div>
+        <div id="ft-rows"></div>
+        <div class="dyn-actions">
+          <button class="btn-sm" onclick="ftAddRow()">+ Add Footing</button>
+          <button class="btn-sm red" onclick="ftClearAll()">Clear All</button>
+        </div>
+        <div class="check-row"><input type="checkbox" id="footing-waste" checked><label for="footing-waste">Add 10% waste</label></div>
+        <button class="btn" onclick="calcFootings()">&#9654;  Calculate Total</button>
+        <div class="res" id="footing-res"></div>
+      </div>
+    </div>
+
+    <!-- Column Tab -->
+    <div class="tab-panel" data-panel="column">
+      <div class="cb">
+        <div class="logic"><span>Volume</span> = &pi; &times; (Dia&divide;2)&sup2; &times; Height</div>
+        <div class="row2">
+          <div class="field"><label>Diameter (inches)</label><input type="number" id="co-dia" step="0.5" min="0" inputmode="decimal" placeholder="12"></div>
+          <div class="field"><label>Height (inches)</label><input type="number" id="co-height" step="0.5" min="0" inputmode="decimal" placeholder="48"></div>
+        </div>
+        <div class="check-row"><input type="checkbox" id="column-waste" checked><label for="column-waste">Add 10% waste</label></div>
+        <button class="btn" onclick="calcConcrete('column')">&#9654;  Calculate</button>
+        <div class="res" id="column-res">
+          <div class="rrow"><span class="rl">Volume</span><span class="rv" id="column-cuft">&mdash;</span></div>
+          <div class="rrow"><span class="rl">Cubic Yards</span><span class="rv hi" id="column-cuyd">&mdash;</span></div>
+          <div class="rrow"><span class="rl">80 lb Bags</span><span class="rv" id="column-b80">&mdash;</span></div>
+          <div class="rrow"><span class="rl">60 lb Bags</span><span class="rv" id="column-b60">&mdash;</span></div>
+          <p class="fnote" id="column-wastelbl"></p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- FEET-INCHES CONVERTER                                   -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<section id="view-converter" class="view">
+<div class="wrap">
+
+  <div class="card">
+    <div class="ch"><div class="dot g"></div><h2>Feet-Inches Converter</h2></div>
+    <div class="cb">
+      <div class="live-label"><div class="live-dot"></div><label style="margin-bottom:0">Live conversion</label></div>
+
+      <div class="slbl">&#9656; Decimal Feet</div>
+      <div class="field"><label>Decimal Feet</label><input type="number" id="cv-decimal" step="0.0001" min="0" inputmode="decimal" placeholder="12.5417"></div>
+
+      <div class="slbl" style="margin-top:16px">&#9656; Feet &mdash; Inches &mdash; Fraction</div>
+      <div class="row3">
+        <div class="field"><label>Feet</label><input type="number" id="cv-feet" step="1" min="0" inputmode="numeric" placeholder="12"></div>
+        <div class="field"><label>Inches</label><input type="number" id="cv-inches" step="1" min="0" max="11" inputmode="numeric" placeholder="6"></div>
+        <div class="field"><label>Fraction</label>
+          <select id="cv-frac">
+            <option value="0">0</option>
+            <option value="0.0625">1/16</option>
+            <option value="0.125">1/8</option>
+            <option value="0.1875">3/16</option>
+            <option value="0.25">1/4</option>
+            <option value="0.3125">5/16</option>
+            <option value="0.375">3/8</option>
+            <option value="0.4375">7/16</option>
+            <option value="0.5">1/2</option>
+            <option value="0.5625">9/16</option>
+            <option value="0.625">5/8</option>
+            <option value="0.6875">11/16</option>
+            <option value="0.75">3/4</option>
+            <option value="0.8125">13/16</option>
+            <option value="0.875">7/8</option>
+            <option value="0.9375">15/16</option>
+          </select>
+        </div>
+      </div>
+      <div class="rrow" style="margin-top:8px;border-bottom:none">
+        <span class="rl">Formatted</span><span class="rv hi" id="cv-display">&mdash;</span>
+      </div>
+
+      <div class="slbl b" style="margin-top:16px">&#9656; Metric</div>
+      <div class="row3">
+        <div class="field"><label>Meters</label><input type="number" id="cv-meters" step="0.0001" min="0" inputmode="decimal" placeholder="3.8100"></div>
+        <div class="field"><label>Centimeters</label><input type="number" id="cv-cm" step="0.01" min="0" inputmode="decimal" placeholder="381.00"></div>
+        <div class="field"><label>Millimeters</label><input type="number" id="cv-mm" step="0.1" min="0" inputmode="decimal" placeholder="3810.0"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</section>
+
+<!-- ═══ Swipe Dots ═══ -->
+<div class="swipe-dots">
+  <div class="swipe-dot active" title="Calculator"></div>
+  <div class="swipe-dot" title="Roof Framing"></div>
+  <div class="swipe-dot" title="Roof Area"></div>
+  <div class="swipe-dot" title="Stair Layout"></div>
+  <div class="swipe-dot" title="Concrete"></div>
+  <div class="swipe-dot" title="Converter"></div>
+</div>
+
+<!-- ═══ Install Banner ═══ -->
+<div id="install-banner" class="install-banner hidden">
+  <span>Install to Home Screen</span>
+  <div>
+    <button onclick="installApp()">Install</button>
+    <button class="dismiss" onclick="dismissInstall()">&times;</button>
+  </div>
+</div>
+
+<!-- ═══ User Guide ═══ -->
+<div id="guide-backdrop" class="guide-backdrop" onclick="closeGuide()"></div>
+<div id="guide-panel" class="guide-panel">
+  <div class="guide-hdr">
+    <h2>User Guide</h2>
+    <button class="guide-close" onclick="closeGuide()">&times;</button>
+  </div>
+  <div class="guide-nav">
+    <button class="guide-nav-btn active" data-guide="guide-calc" onclick="showGuideSection('guide-calc')">Calculator</button>
+    <button class="guide-nav-btn" data-guide="guide-roof" onclick="showGuideSection('guide-roof')">Roof</button>
+    <button class="guide-nav-btn" data-guide="guide-roofarea" onclick="showGuideSection('guide-roofarea')">Roof Area</button>
+    <button class="guide-nav-btn" data-guide="guide-stair" onclick="showGuideSection('guide-stair')">Stairs</button>
+    <button class="guide-nav-btn" data-guide="guide-concrete" onclick="showGuideSection('guide-concrete')">Concrete</button>
+    <button class="guide-nav-btn" data-guide="guide-converter" onclick="showGuideSection('guide-converter')">Converter</button>
+  </div>
+  <div class="guide-body">
+
+    <!-- Calculator -->
+    <div id="guide-calc" class="guide-section active">
+      <div class="guide-title">Construction Calculator</div>
+      <div class="guide-desc">A full construction math calculator with feet-inches support, just like the Construction Master Pro.</div>
+
+      <div class="guide-block">
+        <div class="guide-block-title">Feet-Inches Entry</div>
+        <p>Type a number, then press <span class="guide-key">Feet</span> to lock it as feet. Type the next number, press <span class="guide-key">Inch</span> for inches.</p>
+        <p>All math (+, -, &times;, &divide;) works in decimal feet internally, but the display shows feet-inches too.</p>
+        <div class="guide-example">
+          12 <span class="guide-key">Feet</span> 6 <span class="guide-key">Inch</span> + 3 <span class="guide-key">Feet</span> 2 <span class="guide-key">Inch</span> =<br>
+          <span class="result">= 15' 8"</span>
+        </div>
+        <button class="guide-try" onclick="tryKeypadExample()">&#9654; Try It</button>
+      </div>
+
+      <div class="guide-block">
+        <div class="guide-block-title">Pitch / Rise / Run</div>
+        <p>Enter any two of the three values, and the calculator solves for the third.</p>
+        <p>Type a number, then press <span class="guide-key">Pitch</span>, <span class="guide-key">Rise</span>, or <span class="guide-key">Run</span>. When two are set, the third appears automatically.</p>
+        <p>Example: enter 8 <span class="guide-key">Pitch</span> then 12 <span class="guide-key">Run</span> &rarr; Rise is solved.</p>
+      </div>
+
+      <div class="guide-block">
+        <div class="guide-block-title">Memory</div>
+        <p><span class="guide-key">Stor</span> &mdash; saves current value to memory</p>
+        <p><span class="guide-key">Rcl</span> &mdash; recalls the stored value</p>
+        <p><span class="guide-key">M+</span> &mdash; adds current value to memory (running total)</p>
+        <p>An <strong>M</strong> indicator appears in the display when memory has a value.</p>
+      </div>
+
+      <div class="guide-block">
+        <div class="guide-block-title">Swipe Navigation</div>
+        <p>Swipe left or right anywhere on the screen to switch between calculators. The dots at the bottom show which calculator you're on.</p>
+      </div>
+    </div>
+
+    <!-- Roof Framing -->
+    <div id="guide-roof" class="guide-section">
+      <div class="guide-title">Roof Framing</div>
+      <div class="guide-desc">Calculate rafter lengths, angles, and cuts for common rafters, hip/valley at equal or unequal pitches.</div>
+
+      <div class="guide-block">
+        <div class="guide-block-title">Common Rafter</div>
+        <p><strong>Run</strong> &mdash; horizontal distance from eave to ridge centerline (in feet)</p>
+        <p><strong>Pitch</strong> &mdash; rise per 12 inches of run (e.g., 8 means 8/12 pitch)</p>
+        <p>Outputs: Rise, Rafter Length, Slope Angle, Plumb Cut, Seat Cut</p>
+        <div class="guide-example">
+          Run = 12.5 ft, Pitch = 8/12<br>
+          <span class="result">Rafter Length = 15.02 ft</span>
+        </div>
+        <button class="guide-try" onclick="tryExample('roof', {'cr-run':'12.5','cr-pitch':'8'}, true)">&#9654; Try It</button>
+      </div>
+
+      <div class="guide-block">
+        <div class="guide-block-title">Hip / Valley</div>
+        <p><strong>Same Pitch</strong> &mdash; both sides of a 90&deg; corner have the same pitch. Enter Run and Pitch.</p>
+        <p><strong>Unequal Pitch</strong> &mdash; two different pitches meeting at a corner. Enter Run and Pitch for each side (A and B).</p>
+      </div>
+    </div>
+
+    <!-- Roof Area -->
+    <div id="guide-roofarea" class="guide-section">
+      <div class="guide-title">Roof Area on Slope</div>
+      <div class="guide-desc">Convert flat (plan view) area to actual sloped area for material ordering. Handles multiple roof sections at different pitches.</div>
+
+      <div class="guide-block">
+        <div class="guide-block-title">How It Works</div>
+        <p>A sloped roof has more surface area than its footprint. The <strong>slope factor</strong> = &radic;(1 + (pitch/12)&sup2;).</p>
+        <p>At 8/12 pitch, the slope factor is 1.2019 &mdash; meaning 20% more area than flat.</p>
+        <p>Results include <strong>roofing squares</strong> (1 square = 100 sq ft) with a 10% waste estimate.</p>
+      </div>
+
+      <div class="guide-block">
+        <div class="guide-block-title">Adding Multiple Areas</div>
+        <p>Click <strong>+ Add Area</strong> for each roof section. Enter length, width, and pitch for each. Different sections can have different pitches.</p>
+        <div class="guide-example">
+          40' &times; 25' @ 8/12 = 1201.9 sq ft<br>
+          30' &times; 20' @ 6/12 = 670.8 sq ft<br>
+          <span class="result">Total = 18.73 squares (21 with waste)</span>
+        </div>
+        <button class="guide-try" onclick="tryRoofAreaExample()">&#9654; Try It</button>
+      </div>
+    </div>
+
+    <!-- Stairs -->
+    <div id="guide-stair" class="guide-section">
+      <div class="guide-title">Stair Layout</div>
+      <div class="guide-desc">Calculate risers, treads, stringer length, and check IRC code compliance. Supports landings.</div>
+
+      <div class="guide-block">
+        <div class="guide-block-title">Inputs</div>
+        <p><strong>Total Rise</strong> &mdash; floor-to-floor height in inches</p>
+        <p><strong>Target Riser</strong> &mdash; desired riser height (default 7.5")</p>
+        <p><strong>Tread Depth</strong> &mdash; horizontal depth of each tread (default 10")</p>
+        <p><strong>Headroom</strong> &mdash; available clearance in inches</p>
+      </div>
+
+      <div class="guide-block">
+        <div class="guide-block-title">Landings</div>
+        <p>Set <strong>Number of Landings</strong> to split the stair into flights. Each landing adds its depth to the total run.</p>
+        <p>The results show a flight-by-flight breakdown with risers, treads, and stringer length per flight.</p>
+        <div class="guide-example">
+          108" total rise, 7.5" riser, 1 landing<br>
+          <span class="result">2 flights: 7R/7T + 7R/6T, 13.83 ft span</span>
+        </div>
+        <button class="guide-try" onclick="tryExample('stair', {'st-rise':'108','st-riser':'7.5','st-tread':'10','st-headroom':'96','st-landings':'1','st-landingdepth':'36'}, true)">&#9654; Try It</button>
+      </div>
+
+      <div class="guide-block">
+        <div class="guide-block-title">Code Compliance</div>
+        <p>Results are color-coded per IRC R311.7:</p>
+        <div class="guide-legend">
+          <span><div class="dot-g"></div> Within code</span>
+          <span><div class="dot-r"></div> Out of range</span>
+        </div>
+        <p style="margin-top:6px">Riser: 4"&ndash;7&frac34;" | Tread: &ge;10" | Headroom: &ge;80"</p>
+      </div>
+    </div>
+
+    <!-- Concrete -->
+    <div id="guide-concrete" class="guide-section">
+      <div class="guide-title">Concrete &amp; Material</div>
+      <div class="guide-desc">Calculate concrete volume in cubic yards and bags for slabs, footings, and columns.</div>
+
+      <div class="guide-block">
+        <div class="guide-block-title">Slab / Pad</div>
+        <p>Enter Length (ft) &times; Width (ft) &times; Thickness (inches).</p>
+        <div class="guide-example">
+          20' &times; 30' &times; 4" thick<br>
+          <span class="result">= 8.15 cu yd (with 10% waste)</span>
+        </div>
+        <button class="guide-try" onclick="tryExample('concrete', {'sl-len':'20','sl-wid':'30','sl-thick':'4'}, true)">&#9654; Try It</button>
+      </div>
+
+      <div class="guide-block">
+        <div class="guide-block-title">Multiple Footings</div>
+        <p>The <strong>Footings</strong> tab lets you add multiple footing entries. Choose a <strong>preset size</strong> (16"&times;8", 20"&times;10", etc.) or select <strong>Custom</strong> to enter your own width and depth.</p>
+        <p>Click <strong>+ Add Footing</strong> for each footing run. Enter the length in feet for each. The total is calculated at the bottom.</p>
+        <button class="guide-try" onclick="tryFootingExample()">&#9654; Try It</button>
+      </div>
+
+      <div class="guide-block">
+        <div class="guide-block-title">Column / Sono Tube</div>
+        <p>Enter Diameter (inches) and Height (inches). Uses &pi;r&sup2;h formula.</p>
+      </div>
+
+      <div class="guide-block">
+        <div class="guide-block-title">Waste Factor</div>
+        <p>The <strong>10% waste</strong> checkbox adds 10% to the calculated volume. This accounts for spillage, over-excavation, and uneven forms. Uncheck it for exact volume only.</p>
+      </div>
+    </div>
+
+    <!-- Converter -->
+    <div id="guide-converter" class="guide-section">
+      <div class="guide-title">Feet-Inches Converter</div>
+      <div class="guide-desc">Live bidirectional conversion between decimal feet, feet-inches-fractions, and metric.</div>
+
+      <div class="guide-block">
+        <div class="guide-block-title">How It Works</div>
+        <p>Edit <strong>any</strong> field and all others update instantly &mdash; no calculate button needed.</p>
+        <p>The green dot indicates live mode is active.</p>
+      </div>
+
+      <div class="guide-block">
+        <div class="guide-block-title">Three Formats</div>
+        <p><strong>Decimal Feet</strong> &mdash; e.g., 12.5417</p>
+        <p><strong>Feet-Inches-Fraction</strong> &mdash; separate fields for feet, whole inches, and fraction (to 1/16")</p>
+        <p><strong>Metric</strong> &mdash; meters, centimeters, and millimeters (all linked)</p>
+        <div class="guide-example">
+          12.5417 ft = 12' 6 1/2" = 3.8227 m
+        </div>
+        <button class="guide-try" onclick="tryExample('converter', {'cv-decimal':'12.5417'}, false)">&#9654; Try It</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══ Scripts ═══ -->
+<script src="js/app.js"></script>
+<script src="js/keypad.js"></script>
+<script src="js/roof.js"></script>
+<script src="js/roofarea.js"></script>
+<script src="js/stair.js"></script>
+<script src="js/concrete.js"></script>
+<script src="js/converter.js"></script>
+<script src="js/guide.js"></script>
+
+</body>
+</html>
