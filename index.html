@@ -1088,9 +1088,11 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
       ctx.dig='0';syncCanon();ctx.fBase=ctx.canonInches;
       ctx.state=ENTERING_INCH;render();return;
     }
-    // From inch entry → if we have feet parts, convert to total inches
+    // From inch entry → lock the inches (confirm ft-in entry)
     if(st===ENTERING_INCH){
-      if(ctx.feet>0){syncCanon();ctx.fBase=ctx.canonInches;showInches(ctx.canonInches);ctx.state=INCH1;}
+      syncCanon();ctx.fBase=ctx.canonInches;
+      ctx.state=FEET1;ctx.lastFt=true;
+      ctx.subText=fmt(ctx.canonInches/12)+' ft';ctx.modeText='FEET-INCH';
       render();return;
     }
     // === INCH CYCLE: Inch → ft-in → decimal → Inch ===
