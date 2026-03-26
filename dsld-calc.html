@@ -224,6 +224,7 @@ input:focus,select:focus{border-color:var(--gold)}
       <button class="key key-navy" onclick="kpPress('Diag')"><span class="key-label">Roof</span>Diag</button>
       <button class="key key-navy" onclick="kpPress('Hip/V')"><span class="key-label">Ir/Pitch</span>Hip/V</button>
       <button class="key key-navy" onclick="kpPress('Jack')"><span class="key-label">Ir/Jack</span>Jack</button>
+      <button class="key key-func" onclick="kpPress('Sqrt')">&radic;</button>
     </div>
     <!-- Row 2: Extended -->
     <div class="key-row">
@@ -255,8 +256,9 @@ input:focus,select:focus{border-color:var(--gold)}
       <button class="key key-op" onclick="kpPress('%')">%</button>
       <button class="key key-op" onclick="kpPress('&#x232B;')">&larr;</button>
     </div>
-    <!-- Row 5: Rcl + 4 5 6 -->
+    <!-- Row 5: ( Rcl + 4 5 6 -->
     <div class="key-row">
+      <button class="key key-op" onclick="kpPress('(')">(</button>
       <button class="key key-func" onclick="kpPress('Rcl')"><span class="key-label">Rcl/STO</span>Rcl</button>
       <button class="key key-num" onclick="kpPress('4')">4</button>
       <button class="key key-num" onclick="kpPress('5')">5</button>
@@ -264,8 +266,9 @@ input:focus,select:focus{border-color:var(--gold)}
       <button class="key key-gold" onclick="kpPress('&times;')">&times;</button>
       <button class="key key-gold" onclick="kpPress('&divide;')">&divide;</button>
     </div>
-    <!-- Row 6: M+ 1 2 3 -->
+    <!-- Row 6: ) M+ 1 2 3 -->
     <div class="key-row">
+      <button class="key key-op" onclick="kpPress(')')">)</button>
       <button class="key key-func" onclick="kpPress('M+')">M+</button>
       <button class="key key-num" onclick="kpPress('1')">1</button>
       <button class="key key-num" onclick="kpPress('2')">2</button>
@@ -273,13 +276,13 @@ input:focus,select:focus{border-color:var(--gold)}
       <button class="key key-gold" onclick="kpPress('+')">+</button>
       <button class="key key-gold" onclick="kpPress('-')">&minus;</button>
     </div>
-    <!-- Row 7: On/C 0 00 . = -->
+    <!-- Row 7: CE On/C 0 00 . = -->
     <div class="key-row">
+      <button class="key key-func" onclick="kpPress('CE')">CE</button>
       <button class="key key-red" onclick="kpPress('C')">On/C</button>
-      <button class="key key-num" onclick="kpPress('0')">0</button>
-      <button class="key key-num" onclick="kpPress('00')">00</button>
+      <button class="key key-num" style="flex:2" onclick="kpPress('0')">0</button>
       <button class="key key-num" onclick="kpPress('.')">.</button>
-      <button class="key key-gold key-wide" onclick="kpPress('=')">=</button>
+      <button class="key key-gold" style="flex:2" onclick="kpPress('=')">=</button>
     </div>
   </div>
 </div>
@@ -839,9 +842,12 @@ function decToFtIn(decFt,denom=16){
   if(isNaN(decFt)||decFt<0)return'—';
   const ti=decFt*12,f=Math.floor(ti/12),ri=ti-f*12,wi=Math.floor(ri),fi=ri-wi;
   let num=Math.round(fi*denom);
+  if(num===denom){num=0;wi++}
+  if(wi>=12){wi-=12;f++}
+  if(num===0&&wi===0)return f+"'";
   if(num===0)return f+"' "+wi+'"';
-  if(num===denom)return f+"' "+(wi+1)+'"';
   let n=num,d=denom;while(n%2===0&&d%2===0){n/=2;d/=2}
+  if(wi===0)return f+"' "+n+'/'+d+'"';
   return f+"' "+wi+' '+n+'/'+d+'"';
 }
 function ftToM(f){return f*0.3048}
@@ -862,169 +868,380 @@ window.addEventListener('hashchange',()=>navigate(location.hash));
 function toggleConv(){const p=document.getElementById('conv-panel');p.classList.toggle('open');const b=document.getElementById('conv-btn');b.style.background=p.classList.contains('open')?'var(--gold)':''}
 
 
-/* ── Keypad Calculator ── */
+/* ── Keypad Calculator (FSM + Token Array) ── */
 (function(){
-  let display='0',entry=0,accumulator=0,pendingOp=null,mode='std';
-  let feetPart=0,inchPart=0,fracNum=0,fracDen=0,memory=0,justCalculated=false,newEntry=false;
-  let pitchVal=null,riseVal=null,runVal=null;
-  let expression='',exprHasValue=false,unitDims=0,lastUsedFeet=false,feetPressCount=0,feetBaseVal=0,exprUsedFtIn=false;
-  const dispMain=()=>document.getElementById('kp-main');
-  const dispSub=()=>document.getElementById('kp-sub');
-  const dispMode=()=>document.getElementById('kp-mode');
-  const dispExpr=()=>document.getElementById('kp-expr');
-  const memInd=()=>document.getElementById('kp-mem');
+  /* === States === */
+  const READY='READY',READY_OP='READY_OP',ENTERING_STD='ENTERING_STD',
+    ENTERING_FEET='ENTERING_FEET',ENTERING_INCH='ENTERING_INCH',ENTERING_FRAC='ENTERING_FRAC',
+    OP_PENDING='OP_PENDING',FEET1='FEET1',FEET2='FEET2',FEET3='FEET3',FEET4='FEET4',
+    PAREN_OPEN='PAREN_OPEN';
 
-  const opSymbols={'+':' + ','-':' \u2212 ','\u00d7':' \u00d7 ','\u00f7':' \u00f7 '};
-
-  function isFtInMode(){return feetPart>0||inchPart>0||fracNum>0}
-  function fmtFtInExpr(decFt){const ti=Math.abs(decFt)*12,f=Math.floor(ti/12),ri=ti-f*12,wi=Math.floor(ri),fi=ri-wi;let num=Math.round(fi*16);if(num===16){num=0;wi++}let s=(decFt<0?'\u2212':'');if(f>0)s+=f+'\u2032';if(wi>0||num>0||f===0){if(f>0)s+='-';s+=wi;if(num>0){let n=num,d=16;while(n%2===0&&d%2===0){n/=2;d/=2}s+=' '+n+'/'+d}s+='\u2033'}return s}
-  function formatValueForExpr(){
-    if(isFtInMode()||mode==='inch'||mode==='frac'){
-      exprUsedFtIn=true;
-      let s='';if(feetPart>0)s+=feetPart+'\u2032';
-      if(inchPart>0||fracNum>0){if(feetPart>0)s+='-';s+=inchPart;if(fracNum>0&&fracDen>0)s+=' '+fracNum+'/'+fracDen;s+='\u2033'}
-      return s||display;
-    }
-    return display;
-  }
-  function renderExpr(){
-    const el=dispExpr();if(!el)return;
-    el.innerHTML='';
-    const span=document.createElement('span');
-    span.style.direction='ltr';span.style.unicodeBidi='bidi-override';
-    span.textContent=expression;
-    el.appendChild(span);
-  }
-  function updateDisplay(){
-    const el=dispMain(),sub=dispSub(),modeEl=dispMode();if(!el)return;
-    if(isFtInMode()||mode==='inch'||mode==='frac'){
-      let s='';if(feetPart>0)s+=feetPart+"'";
-      if(inchPart>0||mode==='inch'||mode==='frac'){s+=' '+inchPart;if(fracNum>0&&fracDen>0)s+=' '+fracNum+'/'+fracDen;s+='"'}
-      if(mode==='std'&&display!=='0')s+=' '+display+'_';
-      el.textContent=s||'0';const dec=getCurrentValue();sub.textContent=dec.toFixed(4)+' ft';modeEl.textContent='FEET-INCH';
-    }else{el.textContent=display;sub.textContent=display!=='0'?decToFtIn(parseFloat(display)||0):'';modeEl.textContent=''}
-    renderExpr();
-    const mi=memInd();if(mi)mi.className='mem-indicator'+(memory!==0?' active':'');
-  }
-  function getCurrentValue(){if(mode==='std'&&!isFtInMode())return parseFloat(display)||0;const stdVal=parseFloat(display)||0;if(mode==='std'&&isFtInMode())return feetPart+(inchPart+(fracDen?fracNum/fracDen:0))/12;return feetPart+(inchPart+(fracDen?fracNum/fracDen:0))/12}
-  function setDisplayValue(val){mode='std';display=formatNum(val);entry=val;feetPart=0;inchPart=0;fracNum=0;fracDen=0;updateDisplay()}
-  function formatNum(n){if(Math.abs(n)>=1e10)return n.toExponential(4);return parseFloat(n.toFixed(8)).toString()}
-  function resetEntry(){display='0';mode='std';feetPart=0;inchPart=0;fracNum=0;fracDen=0}
-
-  window.kpPress=function(key){
-    if(/^[0-9]$/.test(key)||key==='00'||key==='.'){
-      feetPressCount=0;
-      if(justCalculated&&!pendingOp){accumulator=0;resetEntry();justCalculated=false;newEntry=false;expression='';exprUsedFtIn=false}
-      if(justCalculated&&pendingOp){resetEntry();justCalculated=false;newEntry=false}
-      if(newEntry){resetEntry();newEntry=false}
-      if(mode==='frac'){handleFracDigit(key)}
-      else if(mode==='inch'){if(key==='.')return;inchPart=inchPart*10+parseInt(key);if(inchPart>99)inchPart=parseInt(key)}
-      else if(mode==='feet'){if(key==='.')return;feetPart=feetPart*10+parseInt(key)}
-      else{if(display==='0'&&key!=='.'&&key!=='00')display=key;else if(key==='.'&&display.includes('.'))return;else display+=key}
-      updateDisplay();return;
-    }
-    if(key==='Feet'){
-      if(newEntry){resetEntry();newEntry=false}
-      // Consecutive Feet presses: 2nd=squared(SF), 3rd=cubed(CF)
-      if(feetPressCount>=1){
-        feetPressCount++;
-        if(feetPressCount===2){const sf=feetBaseVal*feetBaseVal;
-          if(pendingOp){expression+='('+feetBaseVal+')\u00b2';exprHasValue=true;setDisplayValue(sf)}
-          else{expression='('+feetBaseVal+')\u00b2 = '+formatNum(sf)+' SF';exprHasValue=true;setDisplayValue(sf);justCalculated=true}
-          dispMode().textContent=formatNum(sf)+' SF';dispSub().textContent=formatNum(sf/9)+' SY | '+formatNum(sf/43560)+' acres';renderExpr();return}
-        if(feetPressCount>=3){const cf=feetBaseVal*feetBaseVal*feetBaseVal;
-          const sqTag='('+feetBaseVal+')\u00b2';
-          if(pendingOp){if(expression.endsWith(sqTag))expression=expression.slice(0,-sqTag.length);expression+='('+feetBaseVal+')\u00b3';exprHasValue=true;setDisplayValue(cf)}
-          else{expression='('+feetBaseVal+')\u00b3 = '+formatNum(cf)+' CF';exprHasValue=true;setDisplayValue(cf);justCalculated=true}
-          dispMode().textContent=formatNum(cf)+' CF ('+formatNum(cf/27)+' CY)';dispSub().textContent=formatNum(cf/27)+' CY | '+Math.ceil(cf/27*45)+' 80lb bags';renderExpr();return}
-      }
-      // Convert inches to feet
-      if(inchPart>0&&feetPart===0&&display==='0'){const inc=inchPart;const v=inc/12;resetEntry();setDisplayValue(v);dispMode().textContent=formatNum(inc)+'" → '+formatNum(v)+' ft';feetPressCount=0;return}
-      // Normal: lock current number as feet
-      if(mode==='std'&&display!=='0'){feetPart=parseInt(display)||0;feetBaseVal=feetPart;feetPressCount=1}
-      display='0';mode='std';justCalculated=false;lastUsedFeet=true;unitDims=0;updateDisplay();return}
-    if(key==='Inch'){
-      if(newEntry){resetEntry();newEntry=false}
-      feetPressCount=0;
-      // Convert feet to inches if feet entered and no new digits typed
-      if(feetPart>0&&display==='0'&&inchPart===0){
-        const ft=feetPart;const inches=ft*12;resetEntry();setDisplayValue(inches);dispMode().textContent=formatNum(ft)+'\' → '+formatNum(inches)+'"';return}
-      if(mode==='std'&&display!=='0')inchPart=parseInt(display)||0;
-      display='0';mode='inch';justCalculated=false;updateDisplay();return}
-    if(key==='Frac'){mode='frac';fracNum=0;fracDen=0;justCalculated=false;updateDisplay();return}
-    if(['+','-','\u00d7','\u00f7'].includes(key)){
-      const valStr=formatValueForExpr();
-      const val=getCurrentValue();
-      const sym=opSymbols[key]||' '+key+' ';
-      if(lastUsedFeet&&(key==='\u00d7'))unitDims++;
-      if(key==='+'||key==='-')unitDims=0;
-      if(pendingOp&&!justCalculated)accumulator=doOp(accumulator,val,pendingOp);else accumulator=val;
-      // Build expression
-      if(justCalculated&&expression.includes('=')){
-        // After =, start new expression with the result
-        expression=formatNum(accumulator)+sym;
-      }else if(!exprHasValue){
-        expression+=valStr+sym;
-      }else{
-        expression+=sym;exprHasValue=false;
-      }
-      lastUsedFeet=false;pendingOp=key;resetEntry();justCalculated=false;newEntry=true;setDisplayValue(accumulator);return;
-    }
-    if(key==='='){
-      const valStr=formatValueForExpr();const val=getCurrentValue();
-      if(pendingOp){
-        if(lastUsedFeet&&pendingOp==='\u00d7')unitDims++;
-        if(!exprHasValue)expression+=valStr;
-        const r=doOp(accumulator,val,pendingOp);
-        expression+=' = '+(exprUsedFtIn&&unitDims===0?fmtFtInExpr(r):formatNum(r));
-        setDisplayValue(r);accumulator=r;
-        if(unitDims>=2){dispMode().textContent=formatNum(r)+' CF ('+formatNum(r/27)+' CY)';dispSub().textContent=formatNum(r/27)+' CY | '+Math.ceil(r/27*45)+' 80lb bags'}
-        else if(unitDims===1){dispMode().textContent=formatNum(r)+' SF';dispSub().textContent=formatNum(r/9)+' SY | '+formatNum(r/43560)+' acres'}
-        pendingOp=null;
-      }
-      exprHasValue=false;lastUsedFeet=false;justCalculated=true;renderExpr();return;
-    }
-    if(key==='C'){resetEntry();accumulator=0;pendingOp=null;justCalculated=false;expression='';exprHasValue=false;exprUsedFtIn=false;unitDims=0;lastUsedFeet=false;feetPressCount=0;feetBaseVal=0;pitchVal=null;riseVal=null;runVal=null;updateDisplay();return}
-    if(key==='CE'){resetEntry();justCalculated=false;updateDisplay();return}
-    if(key==='\u232b'){if(mode==='std'&&display.length>1)display=display.slice(0,-1);else if(mode==='std')display='0';updateDisplay();return}
-    if(key==='%'){const vs=formatValueForExpr();const v=getCurrentValue();expression+=vs+'%';exprHasValue=true;setDisplayValue(v/100);renderExpr();return}
-    if(key==='M+'){memory+=getCurrentValue();updateDisplay();return}
-    if(key==='Rcl'){setDisplayValue(memory);return}
-    if(key==='Stor'){memory=getCurrentValue();updateDisplay();return}
-    if(key==='Pitch'){pitchVal=getCurrentValue();resetEntry();newEntry=true;dispMode().textContent='PITCH = '+pitchVal;solvePRR();return}
-    if(key==='Rise'){riseVal=getCurrentValue();resetEntry();newEntry=true;dispMode().textContent='RISE = '+formatNum(riseVal);solvePRR();return}
-    if(key==='Run'){runVal=getCurrentValue();resetEntry();newEntry=true;dispMode().textContent='RUN = '+formatNum(runVal);solvePRR();return}
-    if(key==='Diag'){if(riseVal!==null&&runVal!==null){setDisplayValue(Math.sqrt(riseVal**2+runVal**2));dispMode().textContent='DIAG'}return}
-    if(key==='Hip/V'){if(runVal!==null&&pitchVal!==null){const r=runVal*pitchVal/12,p=runVal*Math.SQRT2;setDisplayValue(Math.sqrt(p**2+r**2));dispMode().textContent='HIP/VAL'}return}
-    if(key==='Sine'){const vs=formatValueForExpr();const v=getCurrentValue();expression+='sin('+vs+'\u00b0)';exprHasValue=true;setDisplayValue(Math.sin(v*Math.PI/180));dispMode().textContent='sin('+vs+'\u00b0) = '+formatNum(Math.sin(v*Math.PI/180));justCalculated=true;renderExpr();return}
-    if(key==='Cos'){const vs=formatValueForExpr();const v=getCurrentValue();expression+='cos('+vs+'\u00b0)';exprHasValue=true;setDisplayValue(Math.cos(v*Math.PI/180));dispMode().textContent='cos('+vs+'\u00b0) = '+formatNum(Math.cos(v*Math.PI/180));justCalculated=true;renderExpr();return}
-    if(key==='Tan'){const vs=formatValueForExpr();const v=getCurrentValue();expression+='tan('+vs+'\u00b0)';exprHasValue=true;setDisplayValue(Math.tan(v*Math.PI/180));dispMode().textContent='tan('+vs+'\u00b0) = '+formatNum(Math.tan(v*Math.PI/180));justCalculated=true;renderExpr();return}
-    if(key==='m'){const vs=formatValueForExpr();const v=getCurrentValue();expression+=vs+'ft\u2192m';exprHasValue=true;setDisplayValue(v*0.3048);dispMode().textContent=vs+' ft = '+formatNum(v*0.3048)+' m';justCalculated=true;renderExpr();return}
-    if(key==='Yds'){const vs=formatValueForExpr();const v=getCurrentValue();expression+=vs+'ft\u2192yd';exprHasValue=true;setDisplayValue(v/3);dispMode().textContent=vs+' ft = '+formatNum(v/3)+' yd';justCalculated=true;renderExpr();return}
-    if(key==='Circ'){const vs=formatValueForExpr();const v=getCurrentValue();expression+='\u03c0\u00d7'+vs+'\u00d72';exprHasValue=true;setDisplayValue(2*Math.PI*v);dispMode().textContent='CIRCUMF = '+formatNum(2*Math.PI*v);justCalculated=true;renderExpr();return}
-    if(key==='SF'){const v=getCurrentValue();dispMode().textContent=formatNum(v)+' SQ FT';dispSub().textContent=formatNum(v/9)+' SY | '+formatNum(v/43560)+' acres';return}
-    if(key==='SY'){const v=getCurrentValue();const sf=v*9;setDisplayValue(sf);dispMode().textContent=formatNum(v)+' SQ YD → '+formatNum(sf)+' SF';return}
-    if(key==='CY'){const v=getCurrentValue();const cf=v*27;setDisplayValue(v);dispMode().textContent=formatNum(v)+' CU YD ('+formatNum(cf)+' CF)';dispSub().textContent=formatNum(cf)+' cu ft | '+Math.ceil(v*45)+' 80lb bags';return}
-    if(key==='CF'){const v=getCurrentValue();const cy=v/27;setDisplayValue(v);dispMode().textContent=formatNum(v)+' CU FT → '+formatNum(cy)+' CY';dispSub().textContent=formatNum(cy)+' cu yd | '+Math.ceil(cy*45)+' 80lb bags';return}
-    if(key==='Acres'){const v=getCurrentValue();const sf=v*43560;setDisplayValue(sf);dispMode().textContent=formatNum(v)+' ACRES → '+formatNum(sf)+' SF';return}
-    if(key==='Arc'){const vs=formatValueForExpr();const v=getCurrentValue();expression+=vs+'\u00b0\u2192rad';exprHasValue=true;setDisplayValue(v*Math.PI/180);dispMode().textContent=vs+'\u00b0 = '+formatNum(v*Math.PI/180)+' rad';justCalculated=true;renderExpr();return}
-    if(key==='x\u00b2'){const vs=formatValueForExpr();const v=getCurrentValue();expression+='('+vs+')\u00b2';exprHasValue=true;setDisplayValue(v*v);dispMode().textContent='x\u00b2 = '+formatNum(v*v);justCalculated=true;renderExpr();return}
-    if(key==='x\u00b3'){const vs=formatValueForExpr();const v=getCurrentValue();expression+='('+vs+')\u00b3';exprHasValue=true;setDisplayValue(v*v*v);dispMode().textContent='x\u00b3 = '+formatNum(v*v*v);justCalculated=true;renderExpr();return}
-    if(key==='Stair'){location.hash='#stair';return}
-    if(key==='Length'){dispMode().textContent='LENGTH = '+formatNum(getCurrentValue())+' ft';return}
-    if(key==='Width'){dispMode().textContent='WIDTH = '+formatNum(getCurrentValue())+' ft';return}
-    if(key==='Height'){dispMode().textContent='HEIGHT = '+formatNum(getCurrentValue())+' ft';return}
-    if(key==='Jack'){if(runVal!==null&&pitchVal!==null){const oc=getCurrentValue();const rise=oc*pitchVal/12;const jack=Math.sqrt(oc**2+rise**2);setDisplayValue(jack);dispMode().textContent='JACK @ '+oc+'" OC'}return}
+  /* === Context === */
+  const ctx={
+    state:READY,
+    dig:'0', feet:0, inches:0, fNum:0, fDen:0,
+    canonInches:0, // single source of truth for ft-in values (decimal inches)
+    acc:0, op:null,
+    tokens:[], parenStack:[],
+    dims:0, lastFt:false, fBase:0,
+    pitchVal:null, riseVal:null, runVal:null,
+    mem:0,
+    modeText:'', subText:'', mainOvr:null
   };
-  function handleFracDigit(key){if(key==='.'||key==='00')return;const d=parseInt(key);if(fracDen===0){if(fracNum===0)fracNum=d;else fracDen=d}else if(fracDen<100)fracDen=fracDen*10+d}
+
+  /* === DOM refs === */
+  const elMain=()=>document.getElementById('kp-main');
+  const elSub=()=>document.getElementById('kp-sub');
+  const elMode=()=>document.getElementById('kp-mode');
+  const elExpr=()=>document.getElementById('kp-expr');
+  const elMem=()=>document.getElementById('kp-mem');
+
+  /* === Helpers === */
+  function fmt(n){if(Math.abs(n)>=1e10)return n.toExponential(4);return parseFloat(n.toFixed(8)).toString()}
   function doOp(a,b,op){switch(op){case'+':return a+b;case'-':return a-b;case'\u00d7':return a*b;case'\u00f7':return b!==0?a/b:0;default:return b}}
-  function solvePRR(){
-    const known=(pitchVal!==null?1:0)+(riseVal!==null?1:0)+(runVal!==null?1:0);if(known<2)return;
-    if(pitchVal!==null&&runVal!==null&&riseVal===null){riseVal=runVal*pitchVal/12;setDisplayValue(riseVal);dispMode().textContent='RISE (solved)'}
-    else if(pitchVal!==null&&riseVal!==null&&runVal===null){runVal=riseVal/(pitchVal/12);setDisplayValue(runVal);dispMode().textContent='RUN (solved)'}
-    else if(riseVal!==null&&runVal!==null&&pitchVal===null){pitchVal=(riseVal/runVal)*12;setDisplayValue(pitchVal);dispMode().textContent='PITCH (solved)'}
+  function inFtIn(){return ctx.feet>0||ctx.inches>0||ctx.fNum>0}
+  /* Sync canonical inches from current ft-in parts */
+  function syncCanon(){ctx.canonInches=ctx.feet*12+ctx.inches+(ctx.fDen?ctx.fNum/ctx.fDen:0)}
+  function getVal(){
+    if(inFtIn()){syncCanon();return ctx.canonInches/12} // return decimal feet for arithmetic compat
+    return parseFloat(ctx.dig)||0;
   }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',updateDisplay);else updateDisplay();
+  function resetEntry(){ctx.dig='0';ctx.feet=0;ctx.inches=0;ctx.fNum=0;ctx.fDen=0;ctx.canonInches=0;ctx.mainOvr=null;ctx.modeText='';ctx.subText=''}
+  function setDec(v){ctx.dig=fmt(v);ctx.feet=0;ctx.inches=0;ctx.fNum=0;ctx.fDen=0;ctx.canonInches=0;ctx.mainOvr=null}
+  /* Convert decimal inches → ft-in parts (canonical inches is source of truth) */
+  function showFtIn(totalInches){
+    var ti=Math.abs(totalInches);
+    var f=Math.floor(ti/12),ri=ti-f*12,wi=Math.floor(ri),fi=ri-wi;
+    var num=Math.round(fi*16),den=16;if(num===16){num=0;wi++}if(wi>=12){wi=0;f++}
+    if(num>0){var a=num,b=den;while(a%2===0&&b%2===0){a/=2;b/=2}num=a;den=b}
+    ctx.feet=f;ctx.inches=wi;ctx.fNum=num;ctx.fDen=num>0?den:0;ctx.dig='0';
+    ctx.canonInches=totalInches;
+    ctx.subText=fmt(totalInches/12)+' ft';ctx.modeText='FEET-INCH';
+  }
+  /* Show as total inches display */
+  function showInches(totalInches){
+    resetEntry();
+    ctx.canonInches=totalInches;
+    ctx.inches=Math.round(totalInches);ctx.dig='0';
+    ctx.state=ENTERING_INCH;
+    var ftLabel=fmt(totalInches/12)+"'";
+    ctx.modeText='FT \u2192 IN';ctx.subText=ftLabel+' = '+Math.round(totalInches)+'"';
+  }
+  function fmtExpr(){
+    if(inFtIn()){
+      let s='';if(ctx.feet>0)s+=ctx.feet+'\u2032';
+      if(ctx.inches>0||ctx.fNum>0){if(ctx.feet>0)s+='-';s+=ctx.inches;if(ctx.fNum>0&&ctx.fDen>0)s+=' '+ctx.fNum+'/'+ctx.fDen;s+='\u2033'}
+      return s||ctx.dig;
+    }
+    return ctx.dig;
+  }
+  function handleFrac(key){if(key==='.')return;const d=parseInt(key);if(ctx.fDen===0){if(ctx.fNum===0)ctx.fNum=d;else ctx.fDen=d}else if(ctx.fDen<100)ctx.fDen=ctx.fDen*10+d}
+
+  /* === Token helpers === */
+  const opSym={'+':' + ','-':' \u2212 ','\u00d7':' \u00d7 ','\u00f7':' \u00f7 '};
+  function pushNum(v,d,ftIn){ctx.tokens.push({type:'num',value:v,display:d,isFtIn:!!ftIn})}
+  function pushOp(op){ctx.tokens.push({type:'op',value:op,display:opSym[op]||' '+op+' '})}
+  function pushParen(ch){ctx.tokens.push({type:ch==='('?'open':'close',value:ch,display:ch})}
+  function tokStr(){return ctx.tokens.map(function(t){return t.display}).join('')}
+  function lastTok(){return ctx.tokens.length?ctx.tokens[ctx.tokens.length-1]:null}
+  function hasTrailingNum(){var t=lastTok();return t&&(t.type==='num'||t.type==='close')}
+  function usedFtIn(){return ctx.tokens.some(function(t){return t.isFtIn})}
+
+  /* === Display === */
+  function render(){
+    var m=elMain(),s=elSub(),md=elMode(),ex=elExpr(),mi=elMem();if(!m)return;
+    // Expression line
+    if(ex){ex.innerHTML='';var sp=document.createElement('span');sp.style.direction='ltr';sp.style.unicodeBidi='bidi-override';sp.textContent=tokStr();ex.appendChild(sp)}
+    // Main display
+    if(ctx.mainOvr){m.textContent=ctx.mainOvr}
+    else if(inFtIn()){
+      var t='';if(ctx.feet>0)t+=ctx.feet+"'";
+      if(ctx.inches>0||ctx.state===ENTERING_INCH||ctx.state===ENTERING_FRAC){t+=' '+ctx.inches;if(ctx.fNum>0&&ctx.fDen>0)t+=' '+ctx.fNum+'/'+ctx.fDen;t+='"'}
+      m.textContent=t||'0';
+    }else{m.textContent=ctx.dig}
+    // Sub + mode
+    s.textContent=ctx.subText||'';md.textContent=ctx.modeText||'';
+    // Memory indicator
+    if(mi)mi.className='mem-indicator'+(ctx.mem!==0?' active':'');
+  }
+
+  /* === Commit current entry as token === */
+  function commitEntry(){
+    if(hasTrailingNum())return;
+    var v=getVal(),d=fmtExpr(),ft=inFtIn();
+    pushNum(v,d,ft);
+  }
+
+  /* === PRR solver === */
+  function solvePRR(){
+    var known=(ctx.pitchVal!==null?1:0)+(ctx.riseVal!==null?1:0)+(ctx.runVal!==null?1:0);if(known<2)return;
+    if(ctx.pitchVal!==null&&ctx.runVal!==null&&ctx.riseVal===null){ctx.riseVal=ctx.runVal*ctx.pitchVal/12;setDec(ctx.riseVal);ctx.modeText='RISE (solved)'}
+    else if(ctx.pitchVal!==null&&ctx.riseVal!==null&&ctx.runVal===null){ctx.runVal=ctx.riseVal/(ctx.pitchVal/12);setDec(ctx.runVal);ctx.modeText='RUN (solved)'}
+    else if(ctx.riseVal!==null&&ctx.runVal!==null&&ctx.pitchVal===null){ctx.pitchVal=(ctx.riseVal/ctx.runVal)*12;setDec(ctx.pitchVal);ctx.modeText='PITCH (solved)'}
+    ctx.state=READY;render();
+  }
+
+  /* === Handlers === */
+
+  function digitHandler(key){
+    var st=ctx.state;
+    if(st===READY){ctx.acc=0;ctx.op=null;ctx.tokens=[];resetEntry();ctx.state=ENTERING_STD}
+    else if(st===READY_OP){resetEntry();ctx.state=ENTERING_STD}
+    else if(st===OP_PENDING||st===PAREN_OPEN){resetEntry();ctx.state=ENTERING_STD}
+    else if(st===FEET1){ctx.inches=0;ctx.fNum=0;ctx.fDen=0;ctx.mainOvr=null;ctx.modeText='';ctx.subText='';ctx.dig='0';ctx.state=ENTERING_INCH}
+    else if(st===FEET2||st===FEET3||st===FEET4){resetEntry();ctx.tokens=[];ctx.acc=0;ctx.op=null;ctx.state=ENTERING_STD}
+
+    if(ctx.state===ENTERING_FRAC){handleFrac(key)}
+    else if(ctx.state===ENTERING_INCH){if(key==='.')return;ctx.inches=ctx.inches*10+parseInt(key);if(ctx.inches>99)ctx.inches=parseInt(key)}
+    else if(ctx.state===ENTERING_FEET){if(key==='.')return;ctx.feet=ctx.feet*10+parseInt(key)}
+    else{if(ctx.dig==='0'&&key!=='.')ctx.dig=key;else if(key==='.'&&ctx.dig.includes('.'))return;else ctx.dig+=key}
+    if(inFtIn()){ctx.subText=getVal().toFixed(4)+' ft';ctx.modeText='FEET-INCH'}
+    render();
+  }
+
+  function feetHandler(){
+    var st=ctx.state;
+    if(st===OP_PENDING||st===PAREN_OPEN){
+      resetEntry();ctx.state=ENTERING_STD;st=ENTERING_STD;
+    }
+    // From standard digit entry → mark as feet
+    if(st===ENTERING_STD){
+      if(ctx.dig!=='0'){ctx.feet=parseInt(ctx.dig)||0}
+      ctx.dig='0';syncCanon();ctx.fBase=ctx.canonInches;
+      ctx.state=FEET1;ctx.lastFt=true;ctx.dims=0;
+      ctx.subText=fmt(ctx.canonInches/12)+' ft';ctx.modeText='FEET-INCH';
+      render();return;
+    }
+    // From inch entry → convert inches to ft-in display
+    if(st===ENTERING_INCH){
+      syncCanon();ctx.fBase=ctx.canonInches;
+      showFtIn(ctx.canonInches);
+      ctx.state=FEET1;ctx.lastFt=true;ctx.dims=0;render();return;
+    }
+    // From fraction or feet entry → lock in as feet
+    if(st===ENTERING_FRAC||st===ENTERING_FEET){
+      syncCanon();ctx.fBase=ctx.canonInches;
+      ctx.state=FEET1;ctx.lastFt=true;
+      ctx.subText=fmt(ctx.canonInches/12)+' ft';ctx.modeText='FEET-INCH';
+      render();return;
+    }
+    // From result display → convert decimal to ft-in
+    if(st===READY||st===READY_OP){
+      var decFt=parseFloat(ctx.dig)||0;ctx.fBase=decFt*12;
+      showFtIn(decFt*12);
+      ctx.state=FEET1;ctx.lastFt=true;ctx.dims=0;render();return;
+    }
+    // === FEET CYCLE: display-only, tokens NOT modified ===
+    var baseIn=ctx.fBase; // canonical inches
+    var baseFt=baseIn/12;
+    if(st===FEET1){
+      // Show ft² notation (display only — value stays as linear feet for arithmetic)
+      var sf=baseFt*baseFt;
+      ctx.mainOvr=fmt(baseFt)+"'\u00b2";ctx.modeText='SF';
+      ctx.subText=fmt(sf)+' SF | '+fmt(sf/9)+' SY';
+      ctx.state=FEET2;render();return;
+    }
+    if(st===FEET2){
+      // Show ft³ notation (display only)
+      var cf=baseFt*baseFt*baseFt;
+      ctx.mainOvr=fmt(baseFt)+"'\u00b3";ctx.modeText='CF';
+      ctx.subText=fmt(cf)+' CF | '+fmt(cf/27)+' CY';
+      ctx.state=FEET3;render();return;
+    }
+    if(st===FEET3){
+      // Show decimal feet
+      setDec(baseFt);ctx.fBase=baseIn; // restore fBase after setDec clears it
+      ctx.modeText='DECIMAL';ctx.subText=decToFtIn(baseFt);
+      ctx.state=FEET4;render();return;
+    }
+    if(st===FEET4){
+      // Back to ft-in
+      showFtIn(baseIn);ctx.fBase=baseIn;
+      ctx.state=FEET1;render();return;
+    }
+  }
+
+  function inchHandler(){
+    var st=ctx.state;
+    // From ft-in display or FEET1 cycle → show as total inches
+    if(st===ENTERING_FEET||st===FEET1){
+      syncCanon();var ti=ctx.canonInches;ctx.fBase=ti;
+      showInches(ti);render();return;
+    }
+    // From FEET2/3/4 cycle → convert base value to inches
+    if(st===FEET2||st===FEET3||st===FEET4){
+      var ti2=ctx.fBase; // already in inches
+      showInches(ti2);render();return;
+    }
+    // From result → convert decimal feet to inches
+    if(st===READY||st===READY_OP){
+      var ft=parseFloat(ctx.dig)||0;ctx.fBase=ft*12;
+      showInches(ft*12);render();return;
+    }
+    // From digit entry → mark as inches
+    if(st===ENTERING_STD){
+      if(ctx.dig!=='0')ctx.inches=parseInt(ctx.dig)||0;
+      ctx.dig='0';syncCanon();ctx.fBase=ctx.canonInches;
+      ctx.state=ENTERING_INCH;render();return;
+    }
+    // From inch entry → if we have feet parts, convert to total inches; otherwise no-op
+    if(st===ENTERING_INCH){
+      if(ctx.feet>0){syncCanon();ctx.fBase=ctx.canonInches;showInches(ctx.canonInches);render();}
+      return;
+    }
+    // After operator or paren → start fresh inch entry
+    if(st===OP_PENDING||st===PAREN_OPEN){
+      resetEntry();ctx.state=ENTERING_INCH;render();return;
+    }
+  }
+
+  function fracHandler(){ctx.fNum=0;ctx.fDen=0;ctx.state=ENTERING_FRAC;render()}
+
+  function operatorHandler(key){
+    var st=ctx.state;
+    // If in feet display cycle, use the base value (linear feet), not the ²/³ display
+    var val,vs,ft;
+    if(st===FEET1||st===FEET2||st===FEET3||st===FEET4){
+      val=ctx.fBase/12; // canonical inches → decimal feet
+      // Restore ft-in parts so fmtExpr works
+      showFtIn(ctx.fBase);ctx.mainOvr=null;
+      vs=fmtExpr();ft=true;
+    }else{
+      val=getVal();vs=fmtExpr();ft=inFtIn();
+    }
+    if(ctx.lastFt&&key==='\u00d7')ctx.dims++;
+    if(key==='+'||key==='-')ctx.dims=0;
+    if(ctx.op&&st!==READY&&st!==READY_OP)ctx.acc=doOp(ctx.acc,val,ctx.op);else ctx.acc=val;
+    if(st===READY||st===READY_OP){ctx.tokens=[];pushNum(ctx.acc,fmt(ctx.acc),false)}
+    else if(!hasTrailingNum()){pushNum(val,vs,ft)}
+    pushOp(key);
+    ctx.op=key;ctx.lastFt=false;resetEntry();setDec(ctx.acc);ctx.state=OP_PENDING;render();
+  }
+
+  function equalsHandler(){
+    while(ctx.parenStack.length>0)closeParenHandler();
+    var st=ctx.state;
+    var val,vs,ft;
+    if(st===FEET1||st===FEET2||st===FEET3||st===FEET4){
+      val=ctx.fBase/12;showFtIn(ctx.fBase);ctx.mainOvr=null;vs=fmtExpr();ft=true;
+    }else{val=getVal();vs=fmtExpr();ft=inFtIn()}
+    var r;
+    if(ctx.op){
+      if(ctx.lastFt&&ctx.op==='\u00d7')ctx.dims++;
+      if(!hasTrailingNum())pushNum(val,vs,ft);
+      r=doOp(ctx.acc,val,ctx.op);
+    }else{
+      if(!hasTrailingNum())pushNum(val,vs,ft);
+      r=val;
+    }
+    ctx.acc=r;ctx.op=null;
+    var ftUsed=usedFtIn();
+    if(ftUsed&&ctx.dims===0){showFtIn(r*12);ctx.fBase=r*12}else{setDec(r)}
+    if(ctx.dims>=2){ctx.modeText='CF';ctx.subText=fmt(r/27)+' CY | '+Math.ceil(r/27*45)+' 80lb bags'}
+    else if(ctx.dims===1){ctx.modeText='SF';ctx.subText=fmt(r/9)+' SY'}
+    else if(!ftUsed){ctx.modeText='';ctx.subText=''}
+    ctx.lastFt=false;ctx.state=READY;render();
+  }
+
+  function openParenHandler(){
+    var st=ctx.state;
+    if(st===READY){ctx.acc=0;ctx.op=null;ctx.tokens=[]}
+    ctx.parenStack.push({acc:ctx.acc,op:ctx.op});
+    pushParen('(');
+    ctx.acc=0;ctx.op=null;resetEntry();ctx.state=PAREN_OPEN;render();
+  }
+
+  function closeParenHandler(){
+    if(ctx.parenStack.length===0)return;
+    var val=getVal(),vs=fmtExpr(),ft=inFtIn(),r;
+    if(ctx.op){if(!hasTrailingNum())pushNum(val,vs,ft);r=doOp(ctx.acc,val,ctx.op)}
+    else{if(!hasTrailingNum())pushNum(val,vs,ft);r=val}
+    pushParen(')');
+    var frame=ctx.parenStack.pop();
+    ctx.acc=frame.acc;ctx.op=frame.op;
+    setDec(r);ctx.state=ENTERING_STD;render();
+  }
+
+  function clearAll(){
+    resetEntry();ctx.acc=0;ctx.op=null;ctx.tokens=[];ctx.parenStack=[];
+    ctx.dims=0;ctx.lastFt=false;ctx.fBase=0;ctx.canonInches=0;
+    ctx.pitchVal=null;ctx.riseVal=null;ctx.runVal=null;
+    ctx.state=READY;render();
+  }
+  function clearEntry(){resetEntry();
+    if(ctx.op)ctx.state=OP_PENDING;else ctx.state=ENTERING_STD;
+    render();
+  }
+  function backspace(){
+    if(ctx.state===ENTERING_STD){if(ctx.dig.length>1)ctx.dig=ctx.dig.slice(0,-1);else ctx.dig='0'}
+    render();
+  }
+  function percentHandler(){
+    var v=getVal(),vs=fmtExpr();commitEntry();
+    if(hasTrailingNum())ctx.tokens.pop();
+    pushNum(v/100,vs+'%',false);setDec(v/100);ctx.state=READY;render();
+  }
+
+  /* Memory */
+  function memAdd(){ctx.mem+=getVal();render()}
+  function memRcl(){setDec(ctx.mem);ctx.state=ENTERING_STD;render()}
+  function memStor(){ctx.mem=getVal();render()}
+
+  /* Unary functions */
+  function unaryFn(key){
+    var v=getVal(),vs=fmtExpr(),r,d,md;
+    switch(key){
+      case'Sqrt':r=Math.sqrt(Math.abs(v));d='\u221a('+vs+')';md='\u221a'+vs+' = '+fmt(r);break;
+      case'Sine':r=Math.sin(v*Math.PI/180);d='sin('+vs+'\u00b0)';md='sin('+vs+'\u00b0) = '+fmt(r);break;
+      case'Cos':r=Math.cos(v*Math.PI/180);d='cos('+vs+'\u00b0)';md='cos('+vs+'\u00b0) = '+fmt(r);break;
+      case'Tan':r=Math.tan(v*Math.PI/180);d='tan('+vs+'\u00b0)';md='tan('+vs+'\u00b0) = '+fmt(r);break;
+      case'm':r=v*0.3048;d=vs+'ft\u2192m';md=vs+' ft = '+fmt(r)+' m';break;
+      case'Yds':r=v/3;d=vs+'ft\u2192yd';md=vs+' ft = '+fmt(r)+' yd';break;
+      case'Circ':r=2*Math.PI*v;d='\u03c0\u00d7'+vs+'\u00d72';md='CIRCUMF = '+fmt(r);break;
+      case'Arc':r=v*Math.PI/180;d=vs+'\u00b0\u2192rad';md=vs+'\u00b0 = '+fmt(r)+' rad';break;
+      case'x\u00b2':r=v*v;d='('+vs+')\u00b2';md='x\u00b2 = '+fmt(r);break;
+      case'x\u00b3':r=v*v*v;d='('+vs+')\u00b3';md='x\u00b3 = '+fmt(r);break;
+      default:return;
+    }
+    if(hasTrailingNum())ctx.tokens.pop();
+    pushNum(r,d,false);setDec(r);ctx.modeText=md;ctx.state=READY;render();
+  }
+
+  /* Display-only conversions */
+  function sfHandler(){var v=getVal();ctx.modeText=fmt(v)+' SQ FT';ctx.subText=fmt(v/9)+' SY';render()}
+  function syHandler(){var v=getVal(),sf=v*9;setDec(sf);ctx.modeText=fmt(v)+' SQ YD \u2192 '+fmt(sf)+' SF';ctx.state=READY;render()}
+  function cyHandler(){var v=getVal();setDec(v);ctx.modeText=fmt(v)+' CU YD ('+fmt(v*27)+' CF)';ctx.subText=fmt(v*27)+' cu ft | '+Math.ceil(v*45)+' 80lb bags';ctx.state=READY;render()}
+  function cfHandler(){var v=getVal(),cy=v/27;setDec(v);ctx.modeText=fmt(v)+' CU FT \u2192 '+fmt(cy)+' CY';ctx.subText=fmt(cy)+' cu yd | '+Math.ceil(cy*45)+' 80lb bags';ctx.state=READY;render()}
+  function acresHandler(){var v=getVal(),sf=v*43560;setDec(sf);ctx.modeText=fmt(v)+' ACRES \u2192 '+fmt(sf)+' SF';ctx.state=READY;render()}
+
+  /* PRR handlers */
+  function pitchH(){ctx.pitchVal=getVal();resetEntry();ctx.modeText='PITCH = '+ctx.pitchVal;ctx.state=OP_PENDING;solvePRR();render()}
+  function riseH(){ctx.riseVal=getVal();resetEntry();ctx.modeText='RISE = '+fmt(ctx.riseVal);ctx.state=OP_PENDING;solvePRR();render()}
+  function runH(){ctx.runVal=getVal();resetEntry();ctx.modeText='RUN = '+fmt(ctx.runVal);ctx.state=OP_PENDING;solvePRR();render()}
+  function diagH(){if(ctx.riseVal!==null&&ctx.runVal!==null){var r=Math.sqrt(ctx.riseVal**2+ctx.runVal**2);setDec(r);ctx.modeText='DIAG';ctx.state=READY;render()}}
+  function hipH(){if(ctx.runVal!==null&&ctx.pitchVal!==null){var r=ctx.runVal*ctx.pitchVal/12,p=ctx.runVal*Math.SQRT2;var hv=Math.sqrt(p**2+r**2);setDec(hv);ctx.modeText='HIP/VAL';ctx.state=READY;render()}}
+  function jackH(){if(ctx.runVal!==null&&ctx.pitchVal!==null){var oc=getVal(),rise=oc*ctx.pitchVal/12,jack=Math.sqrt(oc**2+rise**2);setDec(jack);ctx.modeText='JACK @ '+oc+'" OC';ctx.state=READY;render()}}
+
+  /* === Dispatch === */
+  var handlers={
+    '0':digitHandler,'1':digitHandler,'2':digitHandler,'3':digitHandler,'4':digitHandler,
+    '5':digitHandler,'6':digitHandler,'7':digitHandler,'8':digitHandler,'9':digitHandler,'.':digitHandler,
+    'Feet':feetHandler,'Inch':inchHandler,'Frac':fracHandler,
+    '+':operatorHandler,'-':operatorHandler,'\u00d7':operatorHandler,'\u00f7':operatorHandler,
+    '=':equalsHandler,'(':openParenHandler,')':closeParenHandler,
+    'C':clearAll,'CE':clearEntry,'\u232b':backspace,'%':percentHandler,
+    'M+':memAdd,'Rcl':memRcl,'Stor':memStor,
+    'Pitch':pitchH,'Rise':riseH,'Run':runH,'Diag':diagH,'Hip/V':hipH,'Jack':jackH,
+    'Sqrt':function(){unaryFn('Sqrt')},'Sine':function(){unaryFn('Sine')},'Cos':function(){unaryFn('Cos')},'Tan':function(){unaryFn('Tan')},
+    'm':function(){unaryFn('m')},'Yds':function(){unaryFn('Yds')},'Circ':function(){unaryFn('Circ')},'Arc':function(){unaryFn('Arc')},
+    'x\u00b2':function(){unaryFn('x\u00b2')},'x\u00b3':function(){unaryFn('x\u00b3')},
+    'SF':sfHandler,'SY':syHandler,'CY':cyHandler,'CF':cfHandler,'Acres':acresHandler,
+    'Stair':function(){location.hash='#stair'},'Length':function(){ctx.modeText='LENGTH = '+fmt(getVal())+' ft';render()},
+    'Width':function(){ctx.modeText='WIDTH = '+fmt(getVal())+' ft';render()},
+    'Height':function(){ctx.modeText='HEIGHT = '+fmt(getVal())+' ft';render()}
+  };
+  window.kpPress=function(key){var fn=handlers[key];if(fn)fn(key)};
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',render);else render();
 })();
 
 /* ── Roof Framing ── */
