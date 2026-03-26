@@ -1,21 +1,8 @@
-const CACHE_NAME = 'dsld-calc-v4';
+const CACHE_NAME = 'dsld-calc-v5';
 const ASSETS = [
   './',
   './index.html',
   './manifest.json',
-  './css/theme.css',
-  './css/home.css',
-  './css/calc.css',
-  './css/keypad.css',
-  './css/guide.css',
-  './js/app.js',
-  './js/keypad.js',
-  './js/roof.js',
-  './js/roofarea.js',
-  './js/stair.js',
-  './js/concrete.js',
-  './js/converter.js',
-  './js/guide.js',
   './icons/icon-192.png',
   './icons/icon-512.png'
 ];
@@ -41,14 +28,12 @@ self.addEventListener('fetch', e => {
     caches.match(e.request).then(cached => {
       if (cached) return cached;
       return fetch(e.request).then(response => {
-        // Cache Google Fonts on first load
         if (e.request.url.includes('fonts.googleapis.com') || e.request.url.includes('fonts.gstatic.com')) {
           const clone = response.clone();
           caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
         }
         return response;
       }).catch(() => {
-        // Offline fallback for navigation
         if (e.request.mode === 'navigate') {
           return caches.match('./index.html');
         }
