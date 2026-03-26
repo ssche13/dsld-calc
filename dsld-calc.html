@@ -906,7 +906,7 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
     if(inFtIn()){syncCanon();return ctx.canonInches/12} // return decimal feet for arithmetic compat
     return parseFloat(ctx.dig)||0;
   }
-  function resetEntry(){ctx.dig='0';ctx.feet=0;ctx.inches=0;ctx.fNum=0;ctx.fDen=0;ctx.canonInches=0;ctx.mainOvr=null;ctx.modeText='';ctx.subText=''}
+  function resetEntry(){ctx.dig='0';ctx.feet=0;ctx.inches=0;ctx.fNum=0;ctx.fDen=0;ctx.canonInches=0;ctx.inchLocked=false;ctx.mainOvr=null;ctx.modeText='';ctx.subText=''}
   function setDec(v){ctx.dig=fmt(v);ctx.feet=0;ctx.inches=0;ctx.fNum=0;ctx.fDen=0;ctx.canonInches=0;ctx.mainOvr=null}
   /* Convert decimal inches → ft-in parts (canonical inches is source of truth) */
   function showFtIn(totalInches){
@@ -990,7 +990,15 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
     if(st===READY){ctx.acc=0;ctx.op=null;ctx.tokens=[];resetEntry();ctx.state=ENTERING_STD}
     else if(st===READY_OP){resetEntry();ctx.state=ENTERING_STD}
     else if(st===OP_PENDING||st===PAREN_OPEN){resetEntry();ctx.state=ENTERING_STD}
-    else if(st===FEET1){ctx.inches=0;ctx.fNum=0;ctx.fDen=0;ctx.mainOvr=null;ctx.modeText='';ctx.subText='';ctx.dig='0';ctx.state=ENTERING_INCH}
+    else if(st===FEET1){
+      ctx.mainOvr=null;ctx.modeText='';ctx.subText='';ctx.dig='0';
+      // After Inch was pressed (inchLocked), digits go to fraction
+      if(ctx.inchLocked){
+        ctx.fNum=0;ctx.fDen=0;ctx.state=ENTERING_FRAC;
+      }else{
+        ctx.inches=0;ctx.fNum=0;ctx.fDen=0;ctx.state=ENTERING_INCH;
+      }
+    }
     else if(st===FEET2||st===FEET3||st===FEET4||st===INCH1||st===INCH2||st===INCH3){resetEntry();ctx.tokens=[];ctx.acc=0;ctx.op=null;ctx.state=ENTERING_STD}
 
     if(ctx.state===ENTERING_FRAC){handleFrac(key)}
@@ -1099,7 +1107,7 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
     // From inch entry → lock the inches (confirm ft-in entry)
     if(st===ENTERING_INCH){
       syncCanon();ctx.fBase=ctx.canonInches;
-      ctx.state=FEET1;ctx.lastFt=true;
+      ctx.state=FEET1;ctx.lastFt=true;ctx.inchLocked=true;
       ctx.subText=fmt(ctx.canonInches/12)+' ft';ctx.modeText='FEET-INCH';
       render();return;
     }
@@ -1127,7 +1135,15 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
     }
   }
 
-  function fracHandler(){ctx.fNum=0;ctx.fDen=0;ctx.state=ENTERING_FRAC;render()}
+  function fracHandler(){
+    // If already in fraction mode, don't reset (/ is just separator)
+    if(ctx.state===ENTERING_FRAC)return;
+    // From inch entry: the current inches value stays, start fraction
+    if(ctx.state===ENTERING_INCH||ctx.state===FEET1){
+      ctx.fNum=0;ctx.fDen=0;ctx.state=ENTERING_FRAC;render();return;
+    }
+    ctx.fNum=0;ctx.fDen=0;ctx.state=ENTERING_FRAC;render();
+  }
 
   /* === Inch cycle states === */
   const INCH1='INCH1',INCH2='INCH2',INCH3='INCH3';
