@@ -1,28 +1,69 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="80" fill="#0f1319"/>
-  <rect x="40" y="40" width="432" height="432" rx="60" fill="#171c25" stroke="#2c3345" stroke-width="4"/>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1a3a5c"/>
+      <stop offset="100%" stop-color="#0d2540"/>
+    </linearGradient>
+    <linearGradient id="body" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#c8ccd0"/>
+      <stop offset="100%" stop-color="#a0a4a8"/>
+    </linearGradient>
+    <linearGradient id="screen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#d4dca0"/>
+      <stop offset="100%" stop-color="#c8d490"/>
+    </linearGradient>
+  </defs>
+  <!-- Background -->
+  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
+  <!-- Gold border accent -->
+  <rect x="8" y="8" width="496" height="496" rx="88" fill="none" stroke="#e8a020" stroke-width="4" opacity=".5"/>
   <!-- Calculator body -->
-  <rect x="120" y="100" width="272" height="340" rx="20" fill="#1d2330" stroke="#e8a020" stroke-width="3"/>
-  <!-- Display -->
-  <rect x="145" y="125" width="222" height="60" rx="8" fill="#141820" stroke="#2c3345" stroke-width="2"/>
-  <text x="348" y="168" font-family="monospace" font-size="36" font-weight="bold" fill="#e8a020" text-anchor="end">12.50</text>
-  <!-- Row 1 -->
-  <rect x="145" y="210" width="48" height="40" rx="6" fill="#2c3345"/><text x="169" y="237" font-family="sans-serif" font-size="18" fill="#d4dae6" text-anchor="middle">7</text>
-  <rect x="205" y="210" width="48" height="40" rx="6" fill="#2c3345"/><text x="229" y="237" font-family="sans-serif" font-size="18" fill="#d4dae6" text-anchor="middle">8</text>
-  <rect x="265" y="210" width="48" height="40" rx="6" fill="#2c3345"/><text x="289" y="237" font-family="sans-serif" font-size="18" fill="#d4dae6" text-anchor="middle">9</text>
-  <rect x="325" y="210" width="42" height="40" rx="6" fill="#c0392b"/><text x="346" y="237" font-family="sans-serif" font-size="16" fill="#fff" text-anchor="middle">C</text>
-  <!-- Row 2 -->
-  <rect x="145" y="262" width="48" height="40" rx="6" fill="#2c3345"/><text x="169" y="289" font-family="sans-serif" font-size="18" fill="#d4dae6" text-anchor="middle">4</text>
-  <rect x="205" y="262" width="48" height="40" rx="6" fill="#2c3345"/><text x="229" y="289" font-family="sans-serif" font-size="18" fill="#d4dae6" text-anchor="middle">5</text>
-  <rect x="265" y="262" width="48" height="40" rx="6" fill="#2c3345"/><text x="289" y="289" font-family="sans-serif" font-size="18" fill="#d4dae6" text-anchor="middle">6</text>
-  <rect x="325" y="262" width="42" height="40" rx="6" fill="#e8a020"/><text x="346" y="289" font-family="sans-serif" font-size="20" fill="#0f1319" text-anchor="middle">+</text>
-  <!-- Row 3 -->
-  <rect x="145" y="314" width="48" height="40" rx="6" fill="#2c3345"/><text x="169" y="341" font-family="sans-serif" font-size="18" fill="#d4dae6" text-anchor="middle">1</text>
-  <rect x="205" y="314" width="48" height="40" rx="6" fill="#2c3345"/><text x="229" y="341" font-family="sans-serif" font-size="18" fill="#d4dae6" text-anchor="middle">2</text>
-  <rect x="265" y="314" width="48" height="40" rx="6" fill="#2c3345"/><text x="289" y="341" font-family="sans-serif" font-size="18" fill="#d4dae6" text-anchor="middle">3</text>
-  <rect x="325" y="314" width="42" height="40" rx="6" fill="#e8a020"/><text x="346" y="341" font-family="sans-serif" font-size="20" fill="#0f1319" text-anchor="middle">=</text>
-  <!-- Row 4 -->
-  <rect x="145" y="366" width="108" height="40" rx="6" fill="#2c3345"/><text x="199" y="393" font-family="sans-serif" font-size="18" fill="#d4dae6" text-anchor="middle">0</text>
-  <rect x="265" y="366" width="48" height="40" rx="6" fill="#2c3345"/><text x="289" y="393" font-family="sans-serif" font-size="18" fill="#d4dae6" text-anchor="middle">.</text>
-  <rect x="325" y="366" width="42" height="40" rx="6" fill="#3d8ef0"/><text x="346" y="389" font-family="sans-serif" font-size="14" fill="#fff" text-anchor="middle">FT</text>
+  <rect x="80" y="60" width="352" height="400" rx="24" fill="url(#body)" stroke="#888" stroke-width="3"/>
+  <!-- Top bezel (dark) -->
+  <rect x="80" y="60" width="352" height="80" rx="24" fill="#2a2a2e"/>
+  <rect x="80" y="100" width="352" height="40" fill="#2a2a2e"/>
+  <!-- Screen -->
+  <rect x="110" y="75" width="292" height="60" rx="6" fill="url(#screen)" stroke="#777" stroke-width="2"/>
+  <!-- Screen text -->
+  <text x="385" y="108" font-family="monospace" font-size="28" font-weight="bold" fill="#1a1a2e" text-anchor="end">23'-2 3/32"</text>
+  <text x="125" y="95" font-family="monospace" font-size="11" font-weight="bold" fill="#556" text-anchor="start">FEET</text>
+  <text x="340" y="95" font-family="monospace" font-size="11" font-weight="bold" fill="#556" text-anchor="start">INCH</text>
+  <!-- Row 1: Navy construction keys -->
+  <rect x="100" y="152" width="56" height="34" rx="5" fill="#1a3a5c"/><text x="128" y="174" font-family="sans-serif" font-size="11" font-weight="bold" fill="#fff" text-anchor="middle">Pitch</text>
+  <rect x="164" y="152" width="56" height="34" rx="5" fill="#1a3a5c"/><text x="192" y="174" font-family="sans-serif" font-size="11" font-weight="bold" fill="#fff" text-anchor="middle">Rise</text>
+  <rect x="228" y="152" width="56" height="34" rx="5" fill="#1a3a5c"/><text x="256" y="174" font-family="sans-serif" font-size="11" font-weight="bold" fill="#fff" text-anchor="middle">Run</text>
+  <rect x="292" y="152" width="56" height="34" rx="5" fill="#1a3a5c"/><text x="320" y="174" font-family="sans-serif" font-size="11" font-weight="bold" fill="#fff" text-anchor="middle">Diag</text>
+  <rect x="356" y="152" width="56" height="34" rx="5" fill="#1a3a5c"/><text x="384" y="174" font-family="sans-serif" font-size="11" font-weight="bold" fill="#fff" text-anchor="middle">Hip/V</text>
+  <!-- Row 2: Function keys -->
+  <rect x="100" y="194" width="56" height="34" rx="5" fill="#b0b0b0"/><text x="128" y="216" font-family="sans-serif" font-size="11" font-weight="bold" fill="#1a1a2e" text-anchor="middle">Stair</text>
+  <rect x="164" y="194" width="56" height="34" rx="5" fill="#e8a020"/><text x="192" y="216" font-family="sans-serif" font-size="12" font-weight="bold" fill="#0f1319" text-anchor="middle">Feet</text>
+  <rect x="228" y="194" width="56" height="34" rx="5" fill="#e8a020"/><text x="256" y="216" font-family="sans-serif" font-size="12" font-weight="bold" fill="#0f1319" text-anchor="middle">Inch</text>
+  <rect x="292" y="194" width="56" height="34" rx="5" fill="#b0b0b0"/><text x="320" y="216" font-family="sans-serif" font-size="11" font-weight="bold" fill="#1a1a2e" text-anchor="middle">Cos</text>
+  <rect x="356" y="194" width="56" height="34" rx="5" fill="#b0b0b0"/><text x="384" y="216" font-family="sans-serif" font-size="11" font-weight="bold" fill="#1a1a2e" text-anchor="middle">Circ</text>
+  <!-- Row 3: 7 8 9 -->
+  <rect x="100" y="244" width="56" height="40" rx="5" fill="#e07020"/><text x="128" y="270" font-family="sans-serif" font-size="13" font-weight="bold" fill="#fff" text-anchor="middle">Conv</text>
+  <rect x="164" y="244" width="56" height="40" rx="5" fill="#d0d0d0"/><text x="192" y="272" font-family="sans-serif" font-size="20" fill="#1a1a2e" text-anchor="middle">7</text>
+  <rect x="228" y="244" width="56" height="40" rx="5" fill="#d0d0d0"/><text x="256" y="272" font-family="sans-serif" font-size="20" fill="#1a1a2e" text-anchor="middle">8</text>
+  <rect x="292" y="244" width="56" height="40" rx="5" fill="#d0d0d0"/><text x="320" y="272" font-family="sans-serif" font-size="20" fill="#1a1a2e" text-anchor="middle">9</text>
+  <rect x="356" y="244" width="56" height="40" rx="5" fill="#2c3345"/><text x="384" y="272" font-family="sans-serif" font-size="20" fill="#f0f4ff" text-anchor="middle">%</text>
+  <!-- Row 4: 4 5 6 -->
+  <rect x="100" y="292" width="56" height="40" rx="5" fill="#b0b0b0"/><text x="128" y="318" font-family="sans-serif" font-size="13" font-weight="bold" fill="#1a1a2e" text-anchor="middle">Rcl</text>
+  <rect x="164" y="292" width="56" height="40" rx="5" fill="#d0d0d0"/><text x="192" y="320" font-family="sans-serif" font-size="20" fill="#1a1a2e" text-anchor="middle">4</text>
+  <rect x="228" y="292" width="56" height="40" rx="5" fill="#d0d0d0"/><text x="256" y="320" font-family="sans-serif" font-size="20" fill="#1a1a2e" text-anchor="middle">5</text>
+  <rect x="292" y="292" width="56" height="40" rx="5" fill="#d0d0d0"/><text x="320" y="320" font-family="sans-serif" font-size="20" fill="#1a1a2e" text-anchor="middle">6</text>
+  <rect x="356" y="292" width="56" height="40" rx="5" fill="#e8a020"/><text x="384" y="320" font-family="sans-serif" font-size="22" font-weight="bold" fill="#0f1319" text-anchor="middle">×</text>
+  <!-- Row 5: 1 2 3 -->
+  <rect x="100" y="340" width="56" height="40" rx="5" fill="#b0b0b0"/><text x="128" y="366" font-family="sans-serif" font-size="13" font-weight="bold" fill="#1a1a2e" text-anchor="middle">M+</text>
+  <rect x="164" y="340" width="56" height="40" rx="5" fill="#d0d0d0"/><text x="192" y="368" font-family="sans-serif" font-size="20" fill="#1a1a2e" text-anchor="middle">1</text>
+  <rect x="228" y="340" width="56" height="40" rx="5" fill="#d0d0d0"/><text x="256" y="368" font-family="sans-serif" font-size="20" fill="#1a1a2e" text-anchor="middle">2</text>
+  <rect x="292" y="340" width="56" height="40" rx="5" fill="#d0d0d0"/><text x="320" y="368" font-family="sans-serif" font-size="20" fill="#1a1a2e" text-anchor="middle">3</text>
+  <rect x="356" y="340" width="56" height="40" rx="5" fill="#e8a020"/><text x="384" y="368" font-family="sans-serif" font-size="22" font-weight="bold" fill="#0f1319" text-anchor="middle">+</text>
+  <!-- Row 6: 0 = -->
+  <rect x="100" y="388" width="56" height="40" rx="5" fill="#c0392b"/><text x="128" y="414" font-family="sans-serif" font-size="12" font-weight="bold" fill="#fff" text-anchor="middle">On/C</text>
+  <rect x="164" y="388" width="56" height="40" rx="5" fill="#d0d0d0"/><text x="192" y="416" font-family="sans-serif" font-size="20" fill="#1a1a2e" text-anchor="middle">0</text>
+  <rect x="228" y="388" width="56" height="40" rx="5" fill="#d0d0d0"/><text x="256" y="416" font-family="sans-serif" font-size="20" fill="#1a1a2e" text-anchor="middle">.</text>
+  <rect x="292" y="388" width="120" height="40" rx="5" fill="#e8a020"/><text x="352" y="416" font-family="sans-serif" font-size="22" font-weight="bold" fill="#0f1319" text-anchor="middle">=</text>
+  <!-- DSLD branding at bottom -->
+  <text x="256" y="455" font-family="sans-serif" font-size="16" font-weight="bold" fill="#fff" text-anchor="middle" letter-spacing="2">DSLD</text>
+  <text x="256" y="472" font-family="sans-serif" font-size="11" fill="#e8a020" text-anchor="middle" letter-spacing="3">HOMES</text>
 </svg>
