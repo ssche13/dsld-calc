@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#1a3a5c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>DSLD Construction Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ══ Theme ══ */
+:root {
+  --bg:#0f1319;--panel:#171c25;--card:#1d2330;--border:#2c3345;--line:#232b3a;
+  --gold:#e8a020;--red:#c0392b;--blue:#3d8ef0;--green:#27ae60;
+  --navy:#1a3a5c;--navy-lt:#2a5a8c;
+  --text:#d4dae6;--muted:#6b7896;--label:#8a9bbf;--val:#f0f4ff;--inp:#141820;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'IBM Plex Sans',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-tap-highlight-color:transparent;overscroll-behavior:none}
+.view{display:none}.view.active{display:block}.hidden{display:none!important}
+
+/* ══ DSLD Header ══ */
+.dsld-header{background:linear-gradient(135deg,var(--navy) 0%,#0d2540 100%);border-bottom:2px solid var(--gold);padding:10px 16px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:100}
+.dsld-logo{font-family:'IBM Plex Sans',sans-serif;font-size:1.1rem;font-weight:700;color:#fff;letter-spacing:.04em}
+.dsld-logo span{color:var(--gold)}
+.dsld-divider{width:1px;height:20px;background:rgba(255,255,255,.2)}
+.dsld-page{flex:1;font-family:'IBM Plex Mono',monospace;font-size:.72rem;font-weight:600;color:rgba(255,255,255,.7);letter-spacing:.06em}
+.help-btn{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);border-radius:50%;width:28px;height:28px;color:var(--gold);font-family:'IBM Plex Mono',monospace;font-size:.85rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s}
+.help-btn:hover,.help-btn:active{background:rgba(232,160,32,.2)}
+
+/* Swipe dots */
+.swipe-dots{display:flex;justify-content:center;gap:8px;padding:10px 0;position:fixed;bottom:0;left:0;right:0;background:linear-gradient(transparent,var(--bg) 40%);padding-bottom:14px;padding-top:20px;z-index:90}
+.swipe-dot{width:8px;height:8px;border-radius:50%;background:var(--border);transition:background .2s,transform .2s}
+.swipe-dot.active{background:var(--gold);transform:scale(1.3)}
+
+/* Wrap */
+.wrap{max-width:920px;margin:0 auto;padding:20px 16px 80px;display:flex;flex-direction:column;gap:16px}
+
+/* Install banner */
+.install-banner{position:fixed;bottom:0;left:0;right:0;background:var(--gold);color:#0f1319;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:.82rem;font-weight:700;z-index:200}
+.install-banner button{background:rgba(0,0,0,.15);border:none;color:#0f1319;padding:6px 14px;border-radius:4px;font-family:inherit;font-weight:700;font-size:.78rem;cursor:pointer}
+.install-banner .dismiss{background:none;font-size:1.2rem;padding:4px 8px}
+
+/* ══ Cards ══ */
+.card{background:var(--card);border:1px solid var(--border);border-radius:6px;overflow:hidden}
+.ch{display:flex;align-items:center;gap:10px;background:var(--panel);border-bottom:1px solid var(--border);padding:10px 16px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--gold);flex-shrink:0}
+.dot.r{background:var(--red)}.dot.b{background:var(--blue)}.dot.g{background:var(--green)}
+.ch h2{font-size:.78rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--label)}
+.ch.r h2{color:#d07060}
+.cb{padding:16px}
+.logic{background:rgba(0,0,0,.25);border:1px solid var(--border);border-left:3px solid var(--muted);border-radius:3px;padding:10px 12px;margin-bottom:14px;font-family:'IBM Plex Mono',monospace;font-size:.66rem;color:var(--muted);line-height:1.8}
+.logic span{color:var(--label)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.field{margin-bottom:10px}.field:last-of-type{margin-bottom:0}
+label{display:block;font-size:.65rem;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+input[type=number],input[type=text],select{width:100%;background:var(--inp);border:1.5px solid var(--border);border-radius:4px;color:var(--val);font-family:'IBM Plex Mono',monospace;font-size:.9rem;padding:9px 10px;outline:none;transition:border-color .15s;-moz-appearance:textfield}
+input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none}
+select{-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%236b7896'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px}
+input:focus,select:focus{border-color:var(--gold)}
+.slbl{font-size:.63rem;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:var(--gold);padding-bottom:8px;border-bottom:1px solid var(--line);margin-bottom:10px}
+.slbl.b{color:var(--blue)}.slbl.g{color:var(--green)}
+.btn{width:100%;margin-top:14px;padding:10px;background:var(--gold);color:#0f1319;border:none;border-radius:4px;font-family:'IBM Plex Mono',monospace;font-size:.82rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;cursor:pointer;transition:background .12s;touch-action:manipulation}
+.btn:hover{background:#f5b540}.btn:active{transform:scale(.98)}
+.btn.r{background:var(--red);color:#fff}.btn.r:hover{background:#e04535}
+.btn.b{background:var(--blue);color:#fff}.btn.b:hover{background:#5aa0f5}
+.res{display:none;margin-top:14px;padding-top:12px;border-top:1px solid var(--border)}
+.rsect{margin-bottom:12px}.rsect:last-child{margin-bottom:0}
+.rtitle{font-size:.6rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);padding-bottom:5px;margin-bottom:2px;border-bottom:1px solid var(--line)}
+.rrow{display:flex;justify-content:space-between;align-items:baseline;padding:5px 0;border-bottom:1px solid var(--line)}.rrow:last-child{border-bottom:none}
+.rl{font-size:.75rem;color:var(--label)}
+.rv{font-family:'IBM Plex Mono',monospace;font-size:.86rem;font-weight:600;color:var(--val)}
+.rv.hi{color:var(--gold);font-size:1rem;font-weight:700}
+.rv.hi2{color:var(--blue);font-weight:700}
+.rv.warn{color:var(--red)}.rv.ok{color:var(--green)}
+.res2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.fnote{font-size:.66rem;color:var(--muted);margin-top:10px;font-style:italic;line-height:1.5}
+.calc-tabs{display:flex;gap:0;border-bottom:1px solid var(--border)}
+.calc-tab{flex:1;padding:10px 8px;background:var(--panel);color:var(--muted);border:none;border-bottom:2px solid transparent;cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:.7rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;transition:color .15s,border-color .15s;touch-action:manipulation}
+.calc-tab:hover{color:var(--label)}
+.calc-tab.active{color:var(--gold);border-bottom-color:var(--gold)}
+.tab-panel{display:none}.tab-panel.active{display:block}
+.check-row{display:flex;align-items:center;gap:8px;margin-top:10px}
+.check-row input[type=checkbox]{width:16px;height:16px;accent-color:var(--gold)}
+.check-row label{margin-bottom:0;font-size:.7rem}
+.dyn-row{display:flex;gap:8px;align-items:flex-start;padding:10px;margin-bottom:8px;background:rgba(0,0,0,.15);border:1px solid var(--border);border-radius:4px}
+.dyn-row-fields{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.dyn-row-fields .field{margin-bottom:0}
+.dyn-row-del{background:none;border:1px solid var(--border);border-radius:4px;color:var(--red);font-size:1.1rem;width:32px;height:32px;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-top:18px;flex-shrink:0;touch-action:manipulation}
+.dyn-row-del:hover{background:rgba(192,57,43,.1)}
+.dyn-actions{display:flex;gap:8px;margin-top:10px}
+.btn-sm{padding:8px 14px;background:var(--card);border:1px solid var(--border);border-radius:4px;color:var(--gold);font-family:'IBM Plex Mono',monospace;font-size:.72rem;font-weight:600;cursor:pointer;touch-action:manipulation}
+.btn-sm:hover{background:var(--panel);border-color:var(--gold)}
+.btn-sm.red{color:var(--red)}.btn-sm.red:hover{border-color:var(--red)}
+.live-label{display:flex;align-items:center;gap:6px;margin-bottom:8px}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s ease infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ══ Keypad ══ */
+.calc-shell{max-width:420px;margin:0 auto;padding:12px 12px 60px}
+.calc-display{background:#e8ecd8;border:2px solid #888;border-radius:8px;padding:12px 14px 10px;margin-bottom:10px;min-height:80px;position:relative}
+.calc-display-mode{font-family:'IBM Plex Mono',monospace;font-size:.6rem;font-weight:700;color:#556;letter-spacing:.1em;text-transform:uppercase;margin-bottom:2px}
+.calc-display-main{font-family:'IBM Plex Mono',monospace;font-size:1.8rem;font-weight:700;color:#1a1a2e;text-align:right;line-height:1.2;min-height:36px;word-break:break-all}
+.calc-display-sub{font-family:'IBM Plex Mono',monospace;font-size:.75rem;color:#556;text-align:right;margin-top:2px}
+.mem-indicator{position:absolute;top:4px;left:8px;font-size:.5rem;font-weight:700;color:#1a1a2e;opacity:0}
+.mem-indicator.active{opacity:1}
+.keypad{display:flex;flex-direction:column;gap:5px}
+.key-row{display:flex;gap:5px}
+.key{flex:1;min-height:42px;border:none;border-radius:5px;font-family:'IBM Plex Mono',monospace;font-size:.72rem;font-weight:700;cursor:pointer;transition:filter .1s,transform .05s;touch-action:manipulation;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.1;padding:4px 2px;position:relative}
+.key:active{transform:scale(.95);filter:brightness(1.1)}
+.key-label{position:absolute;top:2px;left:4px;font-size:.42rem;font-weight:600;color:inherit;opacity:.5;letter-spacing:.04em}
+.key-num{background:#d0d0d0;color:#1a1a2e}.key-num:hover{background:#ddd}
+.key-func{background:#b0b0b0;color:#1a1a2e;font-size:.62rem;letter-spacing:.02em}.key-func:hover{background:#bbb}
+.key-op{background:#2c3345;color:#f0f4ff;font-size:.9rem}.key-op:hover{background:#3a4458}
+.key-gold{background:var(--gold);color:#0f1319}.key-gold:hover{background:#f5b540}
+.key-red{background:var(--red);color:#fff}.key-red:hover{background:#e04535}
+.key-navy{background:var(--navy);color:#fff;font-size:.62rem}.key-navy:hover{background:var(--navy-lt)}
+.key-orange{background:#e07020;color:#fff}.key-orange:hover{background:#f08030}
+.key-wide{flex:2}
+
+/* ══ Guide ══ */
+.guide-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:300;opacity:0;pointer-events:none;transition:opacity .25s}
+.guide-backdrop.open{opacity:1;pointer-events:auto}
+.guide-panel{position:fixed;top:0;right:0;bottom:0;width:85%;max-width:420px;background:var(--bg);border-left:2px solid var(--gold);z-index:310;transform:translateX(100%);transition:transform .3s ease;display:flex;flex-direction:column;overflow:hidden}
+.guide-backdrop.open+.guide-panel,.guide-panel.open{transform:translateX(0)}
+.guide-hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--panel);border-bottom:1px solid var(--border);flex-shrink:0}
+.guide-hdr h2{font-family:'IBM Plex Mono',monospace;font-size:.9rem;font-weight:700;color:var(--gold)}
+.guide-close{background:none;border:1px solid var(--border);border-radius:4px;color:var(--muted);font-size:1.1rem;width:32px;height:32px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.guide-close:hover{color:var(--val);border-color:var(--gold)}
+.guide-nav{display:flex;gap:0;overflow-x:auto;border-bottom:1px solid var(--border);flex-shrink:0;-webkit-overflow-scrolling:touch}
+.guide-nav-btn{flex-shrink:0;padding:8px 12px;background:none;border:none;border-bottom:2px solid transparent;color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:.58rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;cursor:pointer;white-space:nowrap;transition:color .15s,border-color .15s}
+.guide-nav-btn:hover{color:var(--label)}
+.guide-nav-btn.active{color:var(--gold);border-bottom-color:var(--gold)}
+.guide-body{flex:1;overflow-y:auto;padding:16px;-webkit-overflow-scrolling:touch}
+.guide-section{display:none;animation:guideFadeIn .2s ease}
+.guide-section.active{display:block}
+@keyframes guideFadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.guide-title{font-family:'IBM Plex Mono',monospace;font-size:.85rem;font-weight:700;color:var(--val);margin-bottom:4px}
+.guide-desc{font-size:.75rem;color:var(--muted);line-height:1.5;margin-bottom:14px}
+.guide-block{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:12px;margin-bottom:12px}
+.guide-block-title{font-family:'IBM Plex Mono',monospace;font-size:.65rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:8px}
+.guide-block p{font-size:.73rem;color:var(--text);line-height:1.6;margin-bottom:6px}
+.guide-block p:last-child{margin-bottom:0}
+.guide-key{display:inline-block;background:var(--panel);border:1px solid var(--border);border-radius:3px;padding:1px 6px;font-family:'IBM Plex Mono',monospace;font-size:.68rem;font-weight:600;color:var(--gold)}
+.guide-example{background:rgba(0,0,0,.3);border-left:3px solid var(--gold);border-radius:0 4px 4px 0;padding:8px 10px;margin:8px 0;font-family:'IBM Plex Mono',monospace;font-size:.72rem;color:var(--val);line-height:1.6}
+.guide-example .result{color:var(--gold);font-weight:700}
+.guide-try{display:inline-flex;align-items:center;gap:6px;margin-top:8px;padding:7px 14px;background:var(--gold);color:#0f1319;border:none;border-radius:4px;font-family:'IBM Plex Mono',monospace;font-size:.7rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;cursor:pointer;touch-action:manipulation}
+.guide-try:hover{background:#f5b540}.guide-try:active{transform:scale(.97)}
+.guide-legend{display:flex;gap:12px;margin-top:6px}
+.guide-legend span{font-size:.68rem;display:flex;align-items:center;gap:4px}
+.guide-legend .dot-g{width:8px;height:8px;border-radius:50%;background:var(--green)}
+.guide-legend .dot-r{width:8px;height:8px;border-radius:50%;background:var(--red)}
+
+/* ══ Responsive ══ */
+@media(max-width:600px){.row2,.res2{grid-template-columns:1fr}.row3{grid-template-columns:1fr}.dyn-row-fields{grid-template-columns:1fr}}
+@media(max-width:380px){.key{min-height:38px;font-size:.65rem}.key-func{font-size:.56rem}.calc-display-main{font-size:1.5rem}}
+@media(min-width:500px){.key{min-height:48px;font-size:.78rem}}
+</style>
+</head>
+<body>
+
+<!-- ═══ DSLD Header ═══ -->
+<div class="dsld-header">
+  <div class="dsld-logo">DSLD <span>Homes</span></div>
+  <div class="dsld-divider"></div>
+  <div class="dsld-page" id="dsld-page-label"></div>
+  <button class="help-btn" onclick="openGuide()" title="User Guide">?</button>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- CONSTRUCTION CALCULATOR (Main Screen)                   -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<section id="view-calculator" class="view active">
+<div class="calc-shell">
+  <div class="calc-display">
+    <span class="mem-indicator" id="kp-mem">M</span>
+    <div class="calc-display-mode" id="kp-mode"></div>
+    <div class="calc-display-main" id="kp-main">0</div>
+    <div class="calc-display-sub" id="kp-sub"></div>
+  </div>
+  <div class="keypad">
+    <div class="key-row">
+      <button class="key key-navy" onclick="kpPress('Pitch')"><span class="key-label">Slope</span>Pitch</button>
+      <button class="key key-navy" onclick="kpPress('Rise')">Rise</button>
+      <button class="key key-navy" onclick="kpPress('Run')">Run</button>
+      <button class="key key-navy" onclick="kpPress('Diag')"><span class="key-label">Roof</span>Diag</button>
+      <button class="key key-navy" onclick="kpPress('Hip/V')"><span class="key-label">Ir/Pitch</span>Hip/V</button>
+    </div>
+    <div class="key-row">
+      <button class="key key-func" onclick="kpPress('Stair')"><span class="key-label">Riser Lim</span>Stair</button>
+      <button class="key key-func" onclick="kpPress('Sine')"><span class="key-label">ArcSine</span>Sine</button>
+      <button class="key key-func" onclick="kpPress('Cos')"><span class="key-label">ArcCos</span>Cos</button>
+      <button class="key key-func" onclick="kpPress('Tan')"><span class="key-label">ArcTan</span>Tan</button>
+      <button class="key key-func" onclick="kpPress('Circ')"><span class="key-label">Column/Cone</span>Circ</button>
+    </div>
+    <div class="key-row">
+      <button class="key key-func" onclick="kpPress('m')">m</button>
+      <button class="key key-func" onclick="kpPress('Yds')">Yds</button>
+      <button class="key key-gold" onclick="kpPress('Feet')">Feet</button>
+      <button class="key key-gold" onclick="kpPress('Inch')">Inch</button>
+      <button class="key key-func" onclick="kpPress('Frac')"><span class="key-label">x10&#x207F;</span>/</button>
+      <button class="key key-func" onclick="kpPress('Arc')"><span class="key-label">Radius</span>Arc</button>
+    </div>
+    <div class="key-row">
+      <button class="key key-func" onclick="kpPress('Stor')"><span class="key-label">Prefs</span>Stor</button>
+      <button class="key key-orange" onclick="kpPress('CE')">Conv</button>
+      <button class="key key-num" onclick="kpPress('7')">7</button>
+      <button class="key key-num" onclick="kpPress('8')">8</button>
+      <button class="key key-num" onclick="kpPress('9')">9</button>
+      <button class="key key-op" onclick="kpPress('%')">%</button>
+      <button class="key key-op" onclick="kpPress('&#x232B;')">&larr;</button>
+    </div>
+    <div class="key-row">
+      <button class="key key-func" onclick="kpPress('Rcl')"><span class="key-label">Rcl/STO</span>Rcl</button>
+      <button class="key key-num" onclick="kpPress('4')">4</button>
+      <button class="key key-num" onclick="kpPress('5')">5</button>
+      <button class="key key-num" onclick="kpPress('6')">6</button>
+      <button class="key key-gold" onclick="kpPress('&times;')">&times;</button>
+      <button class="key key-gold" onclick="kpPress('&divide;')">&divide;</button>
+    </div>
+    <div class="key-row">
+      <button class="key key-func" onclick="kpPress('M+')">M+</button>
+      <button class="key key-num" onclick="kpPress('1')">1</button>
+      <button class="key key-num" onclick="kpPress('2')">2</button>
+      <button class="key key-num" onclick="kpPress('3')">3</button>
+      <button class="key key-gold" onclick="kpPress('+')">+</button>
+      <button class="key key-gold" onclick="kpPress('-')">&minus;</button>
+    </div>
+    <div class="key-row">
+      <button class="key key-red" onclick="kpPress('C')">On/C</button>
+      <button class="key key-num" onclick="kpPress('0')">0</button>
+      <button class="key key-num" onclick="kpPress('00')">00</button>
+      <button class="key key-num" onclick="kpPress('.')">.</button>
+      <button class="key key-gold key-wide" onclick="kpPress('=')">=</button>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- ROOF FRAMING                                            -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<section id="view-roof" class="view">
+<div class="wrap">
+  <div class="card">
+    <div class="ch"><div class="dot"></div><h2>Common Rafter</h2></div>
+    <div class="cb">
+      <div class="logic"><span>Rise</span> = Run &times; Pitch &divide; 12 &nbsp;|&nbsp; <span>Length</span> = &radic;( Run&sup2; + Rise&sup2; )</div>
+      <div class="row2">
+        <div class="field"><label>Run (ft) &mdash; eave to ridge CL</label><input type="number" id="cr-run" step="0.01" min="0" inputmode="decimal" placeholder="12.50"></div>
+        <div class="field"><label>Pitch (rise per 12&Prime;)</label><input type="number" id="cr-pitch" step="0.5" min="0" inputmode="decimal" placeholder="8"></div>
+      </div>
+      <button class="btn" onclick="calcCommon()">&#9654; Calculate</button>
+      <div class="res" id="cr-res">
+        <div class="rrow"><span class="rl">Rise</span><span class="rv" id="cr-rise">&mdash;</span></div>
+        <div class="rrow"><span class="rl">Rafter Length</span><span class="rv hi" id="cr-len">&mdash;</span></div>
+        <div class="rrow"><span class="rl">Slope Angle</span><span class="rv" id="cr-ang">&mdash;</span></div>
+        <div class="rrow"><span class="rl">Plumb Cut</span><span class="rv" id="cr-plumb">&mdash;</span></div>
+        <div class="rrow"><span class="rl">Seat / Level Cut</span><span class="rv" id="cr-seat">&mdash;</span></div>
+        <div class="rrow"><span class="rl">Unit Length per ft Run</span><span class="rv" id="cr-unit">&mdash;</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ch"><div class="dot"></div><h2>Hip / Valley &mdash; Same Pitch</h2></div>
+    <div class="cb">
+      <div class="logic"><span>Plan length</span> = Run &times; &radic;2 &nbsp;|&nbsp; <span>Actual length</span> = &radic;( PlanLen&sup2; + Rise&sup2; )</div>
+      <div class="row2">
+        <div class="field"><label>Run (ft)</label><input type="number" id="ep-run" step="0.01" min="0" inputmode="decimal" placeholder="12.50"></div>
+        <div class="field"><label>Pitch (/12)</label><input type="number" id="ep-pitch" step="0.5" min="0" inputmode="decimal" placeholder="8"></div>
+      </div>
+      <button class="btn" onclick="calcEqualHip()">&#9654; Calculate</button>
+      <div class="res" id="ep-res">
+        <div class="rrow"><span class="rl">Rise</span><span class="rv" id="ep-rise">&mdash;</span></div>
+        <div class="rrow"><span class="rl">Plan Length</span><span class="rv" id="ep-plan">&mdash;</span></div>
+        <div class="rrow"><span class="rl">Actual Length</span><span class="rv hi" id="ep-len">&mdash;</span></div>
+        <div class="rrow"><span class="rl">Slope Angle</span><span class="rv" id="ep-slope">&mdash;</span></div>
+        <div class="rrow"><span class="rl">Plumb Cut</span><span class="rv" id="ep-plumb">&mdash;</span></div>
+        <div class="rrow"><span class="rl">Cheek / Side Cut</span><span class="rv" id="ep-cheek">&mdash;</span></div>
+        <div class="rrow"><span class="rl">Backing Bevel</span><span class="rv" id="ep-back">&mdash;</span></div>
+        <div class="rrow"><span class="rl">Unit Length</span><span class="rv" id="ep-unit">&mdash;</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ch r"><div class="dot r"></div><h2>Hip / Valley &mdash; Unequal Pitch</h2></div>
+    <div class="cb">
+      <div class="logic">Direction vector = <span>( PitchA, PitchB )</span> &nbsp;|&nbsp; <span>Backing angles</span> differ each side</div>
+      <div class="row2">
+        <div>
+          <div class="slbl">&#9656; Roof A</div>
+          <div class="field"><label>Run A (ft)</label><input type="number" id="up-runA" step="0.01" min="0" inputmode="decimal" placeholder="14.0"></div>
+          <div class="field"><label>Pitch A (/12)</label><input type="number" id="up-pA" step="0.5" min="0" inputmode="decimal" placeholder="8"></div>
+        </div>
+        <div>
+          <div class="slbl b">&#9656; Roof B</div>
+          <div class="field"><label>Run B (ft)</label><input type="number" id="up-runB" step="0.01" min="0" inputmode="decimal" placeholder="10.0"></div>
+          <div class="field"><label>Pitch B (/12)</label><input type="number" id="up-pB" step="0.5" min="0" inputmode="decimal" placeholder="6"></div>
+        </div>
+      </div>
+      <button class="btn r" onclick="calcUneq()">&#9654; Calculate</button>
+      <div class="res" id="up-res">
+        <div class="res2">
+          <div>
+            <div class="rsect"><div class="rtitle">Plan Geometry</div>
+              <div class="rrow"><span class="rl">Angle from Wall A</span><span class="rv" id="up-angA">&mdash;</span></div>
+              <div class="rrow"><span class="rl">Angle from Wall B</span><span class="rv" id="up-angB">&mdash;</span></div>
+              <div class="rrow"><span class="rl">Plan length</span><span class="rv" id="up-plan">&mdash;</span></div>
+              <div class="rrow"><span class="rl">Along Wall A</span><span class="rv" id="up-xEnd">&mdash;</span></div>
+              <div class="rrow"><span class="rl">Along Wall B</span><span class="rv" id="up-yEnd">&mdash;</span></div>
+              <div class="rrow"><span class="rl">Terminates at</span><span class="rv" id="up-term">&mdash;</span></div>
+            </div>
+            <div class="rsect"><div class="rtitle">Ridge Heights</div>
+              <div class="rrow"><span class="rl">Ridge A</span><span class="rv" id="up-ridA">&mdash;</span></div>
+              <div class="rrow"><span class="rl">Ridge B</span><span class="rv" id="up-ridB">&mdash;</span></div>
+              <div class="rrow"><span class="rl">Difference</span><span class="rv hi2" id="up-diff">&mdash;</span></div>
+            </div>
+          </div>
+          <div>
+            <div class="rsect"><div class="rtitle">Hip / Valley Rafter</div>
+              <div class="rrow"><span class="rl">Rise</span><span class="rv" id="up-rise">&mdash;</span></div>
+              <div class="rrow"><span class="rl">Actual length</span><span class="rv hi" id="up-len">&mdash;</span></div>
+              <div class="rrow"><span class="rl">Slope angle</span><span class="rv" id="up-slope">&mdash;</span></div>
+              <div class="rrow"><span class="rl">Plumb cut</span><span class="rv" id="up-plumb">&mdash;</span></div>
+            </div>
+            <div class="rsect"><div class="rtitle">Backing Angles</div>
+              <div class="rrow"><span class="rl">Roof A side</span><span class="rv" id="up-backA">&mdash;</span></div>
+              <div class="rrow"><span class="rl">Roof B side</span><span class="rv" id="up-backB">&mdash;</span></div>
+            </div>
+            <div class="rsect"><div class="rtitle">Common Rafters</div>
+              <div class="rrow"><span class="rl">Roof A</span><span class="rv" id="up-comA">&mdash;</span></div>
+              <div class="rrow"><span class="rl">Roof B</span><span class="rv" id="up-comB">&mdash;</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- ROOF AREA ON SLOPE                                      -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<section id="view-roofarea" class="view">
+<div class="wrap">
+  <div class="card">
+    <div class="ch"><div class="dot"></div><h2>Roof Area &mdash; Flat to Slope</h2></div>
+    <div class="cb">
+      <div class="logic"><span>Slope factor</span> = &radic;(1 + (Pitch/12)&sup2;) &nbsp;|&nbsp; <span>Sloped area</span> = Flat area &times; Slope factor<br><span>Squares</span> = Sloped area &divide; 100</div>
+      <div id="ra-rows"></div>
+      <div class="dyn-actions">
+        <button class="btn-sm" onclick="raAddRow()">+ Add Area</button>
+      </div>
+      <button class="btn" onclick="calcRoofArea()">&#9654; Calculate Total</button>
+      <div class="res" id="ra-results"></div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- STAIR LAYOUT                                            -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<section id="view-stair" class="view">
+<div class="wrap">
+  <div class="card">
+    <div class="ch"><div class="dot"></div><h2>Stair Layout</h2></div>
+    <div class="cb">
+      <div class="logic"><span>Risers</span> = round( TotalRise &divide; TargetRiser ) &nbsp;|&nbsp; <span>Stringer</span> = &radic;( Run&sup2; + Rise&sup2; )<br>Landings add to total run &amp; split stair into flights</div>
+      <div class="row2">
+        <div class="field"><label>Total Rise (inches)</label><input type="number" id="st-rise" step="0.125" min="0" inputmode="decimal" placeholder="108"></div>
+        <div class="field"><label>Target Riser (inches)</label><input type="number" id="st-riser" step="0.125" min="0" inputmode="decimal" placeholder="7.5" value="7.5"></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label>Tread Depth (inches)</label><input type="number" id="st-tread" step="0.125" min="0" inputmode="decimal" placeholder="10" value="10"></div>
+        <div class="field"><label>Nosing (inches)</label><input type="number" id="st-nosing" step="0.125" min="0" inputmode="decimal" placeholder="1.25" value="1.25"></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label>Headroom (inches)</label><input type="number" id="st-headroom" step="0.125" min="0" inputmode="decimal" placeholder="96"></div>
+        <div class="field"><label>Number of Landings</label><input type="number" id="st-landings" step="1" min="0" max="5" inputmode="numeric" placeholder="0" value="0" oninput="stairToggleLandings()"></div>
+      </div>
+      <div id="st-landing-fields" style="display:none">
+        <div class="field"><label>Landing Depth (inches)</label><input type="number" id="st-landingdepth" step="0.5" min="0" inputmode="decimal" placeholder="36" value="36"></div>
+      </div>
+      <button class="btn" onclick="calcStair()">&#9654; Calculate</button>
+      <div class="res" id="st-res">
+        <div class="rsect"><div class="rtitle">Layout</div>
+          <div class="rrow"><span class="rl">Number of Risers</span><span class="rv hi" id="st-numrisers">&mdash;</span></div>
+          <div class="rrow"><span class="rl">Number of Treads</span><span class="rv" id="st-numtreads">&mdash;</span></div>
+          <div class="rrow"><span class="rl">Actual Riser Height</span><span class="rv" id="st-actriser">&mdash;</span></div>
+          <div class="rrow"><span class="rl">Total Run</span><span class="rv" id="st-totalrun">&mdash;</span></div>
+        </div>
+        <div class="rsect"><div class="rtitle">Stringer</div>
+          <div class="rrow"><span class="rl">Stringer Length</span><span class="rv hi" id="st-strlen">&mdash;</span></div>
+          <div class="rrow"><span class="rl">Stringer Angle</span><span class="rv" id="st-strang">&mdash;</span></div>
+        </div>
+        <div class="rsect" id="st-landing-res" style="display:none"></div>
+        <div class="rsect"><div class="rtitle">Feet-Inches</div>
+          <div class="rrow"><span class="rl">Total Rise</span><span class="rv" id="st-riseftin">&mdash;</span></div>
+          <div class="rrow"><span class="rl">Total Run</span><span class="rv" id="st-runftin">&mdash;</span></div>
+          <div class="rrow"><span class="rl">Stringer Length</span><span class="rv" id="st-strftin">&mdash;</span></div>
+        </div>
+        <div class="rsect"><div class="rtitle">Code Compliance (IRC R311.7)</div>
+          <div class="rrow"><span class="rl">Riser Height (4&Prime;&ndash;7&frac34;&Prime;)</span><span class="rv" id="st-riserchk">&mdash;</span></div>
+          <div class="rrow"><span class="rl">Tread Depth (&ge; 10&Prime;)</span><span class="rv" id="st-treadchk">&mdash;</span></div>
+          <div class="rrow"><span class="rl">Rise + Run Sum (17&Prime;&ndash;18&Prime;)</span><span class="rv" id="st-riserun">&mdash;</span></div>
+          <div class="rrow"><span class="rl">Headroom Clearance</span><span class="rv" id="st-headclr">&mdash;</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- CONCRETE & MATERIAL                                     -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<section id="view-concrete" class="view">
+<div class="wrap">
+  <div class="card" data-tabs>
+    <div class="calc-tabs">
+      <button class="calc-tab active" data-tab="slab">Slab / Pad</button>
+      <button class="calc-tab" data-tab="footing">Footings</button>
+      <button class="calc-tab" data-tab="column">Column / Tube</button>
+    </div>
+    <div class="tab-panel active" data-panel="slab">
+      <div class="cb">
+        <div class="logic"><span>Volume</span> = L &times; W &times; (Thick &divide; 12) &nbsp;|&nbsp; <span>Yards</span> = CuFt &divide; 27</div>
+        <div class="row2">
+          <div class="field"><label>Length (ft)</label><input type="number" id="sl-len" step="0.01" min="0" inputmode="decimal" placeholder="20"></div>
+          <div class="field"><label>Width (ft)</label><input type="number" id="sl-wid" step="0.01" min="0" inputmode="decimal" placeholder="30"></div>
+        </div>
+        <div class="field"><label>Thickness (inches)</label><input type="number" id="sl-thick" step="0.25" min="0" inputmode="decimal" placeholder="4"></div>
+        <div class="check-row"><input type="checkbox" id="slab-waste" checked><label for="slab-waste">Add 10% waste</label></div>
+        <button class="btn" onclick="calcConcrete('slab')">&#9654; Calculate</button>
+        <div class="res" id="slab-res">
+          <div class="rrow"><span class="rl">Volume</span><span class="rv" id="slab-cuft">&mdash;</span></div>
+          <div class="rrow"><span class="rl">Cubic Yards</span><span class="rv hi" id="slab-cuyd">&mdash;</span></div>
+          <div class="rrow"><span class="rl">80 lb Bags</span><span class="rv" id="slab-b80">&mdash;</span></div>
+          <div class="rrow"><span class="rl">60 lb Bags</span><span class="rv" id="slab-b60">&mdash;</span></div>
+          <p class="fnote" id="slab-wastelbl"></p>
+        </div>
+      </div>
+    </div>
+    <div class="tab-panel" data-panel="footing">
+      <div class="cb">
+        <div class="logic">Add multiple footing entries with preset or custom sizes. Total calculated at bottom.</div>
+        <div id="ft-rows"></div>
+        <div class="dyn-actions">
+          <button class="btn-sm" onclick="ftAddRow()">+ Add Footing</button>
+          <button class="btn-sm red" onclick="ftClearAll()">Clear All</button>
+        </div>
+        <div class="check-row"><input type="checkbox" id="footing-waste" checked><label for="footing-waste">Add 10% waste</label></div>
+        <button class="btn" onclick="calcFootings()">&#9654; Calculate Total</button>
+        <div class="res" id="footing-res"></div>
+      </div>
+    </div>
+    <div class="tab-panel" data-panel="column">
+      <div class="cb">
+        <div class="logic"><span>Volume</span> = &pi; &times; (Dia&divide;2)&sup2; &times; Height</div>
+        <div class="row2">
+          <div class="field"><label>Diameter (inches)</label><input type="number" id="co-dia" step="0.5" min="0" inputmode="decimal" placeholder="12"></div>
+          <div class="field"><label>Height (inches)</label><input type="number" id="co-height" step="0.5" min="0" inputmode="decimal" placeholder="48"></div>
+        </div>
+        <div class="check-row"><input type="checkbox" id="column-waste" checked><label for="column-waste">Add 10% waste</label></div>
+        <button class="btn" onclick="calcConcrete('column')">&#9654; Calculate</button>
+        <div class="res" id="column-res">
+          <div class="rrow"><span class="rl">Volume</span><span class="rv" id="column-cuft">&mdash;</span></div>
+          <div class="rrow"><span class="rl">Cubic Yards</span><span class="rv hi" id="column-cuyd">&mdash;</span></div>
+          <div class="rrow"><span class="rl">80 lb Bags</span><span class="rv" id="column-b80">&mdash;</span></div>
+          <div class="rrow"><span class="rl">60 lb Bags</span><span class="rv" id="column-b60">&mdash;</span></div>
+          <p class="fnote" id="column-wastelbl"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- FEET-INCHES CONVERTER                                   -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<section id="view-converter" class="view">
+<div class="wrap">
+  <div class="card">
+    <div class="ch"><div class="dot g"></div><h2>Feet-Inches Converter</h2></div>
+    <div class="cb">
+      <div class="live-label"><div class="live-dot"></div><label style="margin-bottom:0">Live conversion</label></div>
+      <div class="slbl">&#9656; Decimal Feet</div>
+      <div class="field"><label>Decimal Feet</label><input type="number" id="cv-decimal" step="0.0001" min="0" inputmode="decimal" placeholder="12.5417"></div>
+      <div class="slbl" style="margin-top:16px">&#9656; Feet &mdash; Inches &mdash; Fraction</div>
+      <div class="row3">
+        <div class="field"><label>Feet</label><input type="number" id="cv-feet" step="1" min="0" inputmode="numeric" placeholder="12"></div>
+        <div class="field"><label>Inches</label><input type="number" id="cv-inches" step="1" min="0" max="11" inputmode="numeric" placeholder="6"></div>
+        <div class="field"><label>Fraction</label>
+          <select id="cv-frac">
+            <option value="0">0</option>
+            <option value="0.0625">1/16</option><option value="0.125">1/8</option>
+            <option value="0.1875">3/16</option><option value="0.25">1/4</option>
+            <option value="0.3125">5/16</option><option value="0.375">3/8</option>
+            <option value="0.4375">7/16</option><option value="0.5">1/2</option>
+            <option value="0.5625">9/16</option><option value="0.625">5/8</option>
+            <option value="0.6875">11/16</option><option value="0.75">3/4</option>
+            <option value="0.8125">13/16</option><option value="0.875">7/8</option>
+            <option value="0.9375">15/16</option>
+          </select>
+        </div>
+      </div>
+      <div class="rrow" style="margin-top:8px;border-bottom:none">
+        <span class="rl">Formatted</span><span class="rv hi" id="cv-display">&mdash;</span>
+      </div>
+      <div class="slbl b" style="margin-top:16px">&#9656; Metric</div>
+      <div class="row3">
+        <div class="field"><label>Meters</label><input type="number" id="cv-meters" step="0.0001" min="0" inputmode="decimal" placeholder="3.8100"></div>
+        <div class="field"><label>Centimeters</label><input type="number" id="cv-cm" step="0.01" min="0" inputmode="decimal" placeholder="381.00"></div>
+        <div class="field"><label>Millimeters</label><input type="number" id="cv-mm" step="0.1" min="0" inputmode="decimal" placeholder="3810.0"></div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ═══ Swipe Dots ═══ -->
+<div class="swipe-dots">
+  <div class="swipe-dot active" title="Calculator"></div>
+  <div class="swipe-dot" title="Roof Framing"></div>
+  <div class="swipe-dot" title="Roof Area"></div>
+  <div class="swipe-dot" title="Stair Layout"></div>
+  <div class="swipe-dot" title="Concrete"></div>
+  <div class="swipe-dot" title="Converter"></div>
+</div>
+
+<!-- ═══ Install Banner ═══ -->
+<div id="install-banner" class="install-banner hidden">
+  <span>Install to Home Screen</span>
+  <div>
+    <button onclick="installApp()">Install</button>
+    <button class="dismiss" onclick="dismissInstall()">&times;</button>
+  </div>
+</div>
+
+<!-- ═══ User Guide ═══ -->
+<div id="guide-backdrop" class="guide-backdrop" onclick="closeGuide()"></div>
+<div id="guide-panel" class="guide-panel">
+  <div class="guide-hdr">
+    <h2>User Guide</h2>
+    <button class="guide-close" onclick="closeGuide()">&times;</button>
+  </div>
+  <div class="guide-nav">
+    <button class="guide-nav-btn active" data-guide="guide-calc" onclick="showGuideSection('guide-calc')">Calculator</button>
+    <button class="guide-nav-btn" data-guide="guide-roof" onclick="showGuideSection('guide-roof')">Roof</button>
+    <button class="guide-nav-btn" data-guide="guide-roofarea" onclick="showGuideSection('guide-roofarea')">Roof Area</button>
+    <button class="guide-nav-btn" data-guide="guide-stair" onclick="showGuideSection('guide-stair')">Stairs</button>
+    <button class="guide-nav-btn" data-guide="guide-concrete" onclick="showGuideSection('guide-concrete')">Concrete</button>
+    <button class="guide-nav-btn" data-guide="guide-converter" onclick="showGuideSection('guide-converter')">Converter</button>
+  </div>
+  <div class="guide-body">
+    <!-- Calculator Guide -->
+    <div id="guide-calc" class="guide-section active">
+      <div class="guide-title">Construction Calculator</div>
+      <div class="guide-desc">A full construction math calculator with feet-inches support, just like the Construction Master Pro.</div>
+      <div class="guide-block">
+        <div class="guide-block-title">Feet-Inches Entry</div>
+        <p>Type a number, then press <span class="guide-key">Feet</span> to lock it as feet. Type the next number, press <span class="guide-key">Inch</span> for inches.</p>
+        <p>All math (+, -, &times;, &divide;) works in decimal feet internally, but the display shows feet-inches too.</p>
+        <div class="guide-example">12 <span class="guide-key">Feet</span> 6 <span class="guide-key">Inch</span> + 3 <span class="guide-key">Feet</span> 2 <span class="guide-key">Inch</span> =<br><span class="result">= 15' 8"</span></div>
+        <button class="guide-try" onclick="tryKeypadExample()">&#9654; Try It</button>
+      </div>
+      <div class="guide-block">
+        <div class="guide-block-title">Pitch / Rise / Run</div>
+        <p>Enter any two of the three values, and the calculator solves for the third.</p>
+        <p>Type a number, then press <span class="guide-key">Pitch</span>, <span class="guide-key">Rise</span>, or <span class="guide-key">Run</span>. When two are set, the third appears automatically.</p>
+        <p>Example: enter 8 <span class="guide-key">Pitch</span> then 12 <span class="guide-key">Run</span> &rarr; Rise is solved.</p>
+      </div>
+      <div class="guide-block">
+        <div class="guide-block-title">Memory</div>
+        <p><span class="guide-key">Stor</span> &mdash; saves current value to memory</p>
+        <p><span class="guide-key">Rcl</span> &mdash; recalls the stored value</p>
+        <p><span class="guide-key">M+</span> &mdash; adds current value to memory (running total)</p>
+        <p>An <strong>M</strong> indicator appears in the display when memory has a value.</p>
+      </div>
+      <div class="guide-block">
+        <div class="guide-block-title">Swipe Navigation</div>
+        <p>Swipe left or right anywhere on the screen to switch between calculators. The dots at the bottom show which calculator you're on.</p>
+      </div>
+    </div>
+    <!-- Roof Guide -->
+    <div id="guide-roof" class="guide-section">
+      <div class="guide-title">Roof Framing</div>
+      <div class="guide-desc">Calculate rafter lengths, angles, and cuts for common rafters, hip/valley at equal or unequal pitches.</div>
+      <div class="guide-block">
+        <div class="guide-block-title">Common Rafter</div>
+        <p><strong>Run</strong> &mdash; horizontal distance from eave to ridge centerline (in feet)</p>
+        <p><strong>Pitch</strong> &mdash; rise per 12 inches of run (e.g., 8 means 8/12 pitch)</p>
+        <p>Outputs: Rise, Rafter Length, Slope Angle, Plumb Cut, Seat Cut</p>
+        <div class="guide-example">Run = 12.5 ft, Pitch = 8/12<br><span class="result">Rafter Length = 15.02 ft</span></div>
+        <button class="guide-try" onclick="tryExample('roof',{'cr-run':'12.5','cr-pitch':'8'},true)">&#9654; Try It</button>
+      </div>
+      <div class="guide-block">
+        <div class="guide-block-title">Hip / Valley</div>
+        <p><strong>Same Pitch</strong> &mdash; both sides of a 90&deg; corner have the same pitch. Enter Run and Pitch.</p>
+        <p><strong>Unequal Pitch</strong> &mdash; two different pitches meeting at a corner. Enter Run and Pitch for each side (A and B).</p>
+      </div>
+    </div>
+    <!-- Roof Area Guide -->
+    <div id="guide-roofarea" class="guide-section">
+      <div class="guide-title">Roof Area on Slope</div>
+      <div class="guide-desc">Convert flat (plan view) area to actual sloped area for material ordering. Handles multiple roof sections at different pitches.</div>
+      <div class="guide-block">
+        <div class="guide-block-title">How It Works</div>
+        <p>A sloped roof has more surface area than its footprint. The <strong>slope factor</strong> = &radic;(1 + (pitch/12)&sup2;).</p>
+        <p>At 8/12 pitch, the slope factor is 1.2019 &mdash; meaning 20% more area than flat.</p>
+        <p>Results include <strong>roofing squares</strong> (1 square = 100 sq ft) with a 10% waste estimate.</p>
+      </div>
+      <div class="guide-block">
+        <div class="guide-block-title">Adding Multiple Areas</div>
+        <p>Click <strong>+ Add Area</strong> for each roof section. Enter length, width, and pitch for each. Different sections can have different pitches.</p>
+        <div class="guide-example">40' &times; 25' @ 8/12 = 1201.9 sq ft<br>30' &times; 20' @ 6/12 = 670.8 sq ft<br><span class="result">Total = 18.73 squares (21 with waste)</span></div>
+        <button class="guide-try" onclick="tryRoofAreaExample()">&#9654; Try It</button>
+      </div>
+    </div>
+    <!-- Stair Guide -->
+    <div id="guide-stair" class="guide-section">
+      <div class="guide-title">Stair Layout</div>
+      <div class="guide-desc">Calculate risers, treads, stringer length, and check IRC code compliance. Supports landings.</div>
+      <div class="guide-block">
+        <div class="guide-block-title">Inputs</div>
+        <p><strong>Total Rise</strong> &mdash; floor-to-floor height in inches</p>
+        <p><strong>Target Riser</strong> &mdash; desired riser height (default 7.5")</p>
+        <p><strong>Tread Depth</strong> &mdash; horizontal depth of each tread (default 10")</p>
+        <p><strong>Headroom</strong> &mdash; available clearance in inches</p>
+      </div>
+      <div class="guide-block">
+        <div class="guide-block-title">Landings</div>
+        <p>Set <strong>Number of Landings</strong> to split the stair into flights. Each landing adds its depth to the total run.</p>
+        <p>The results show a flight-by-flight breakdown with risers, treads, and stringer length per flight.</p>
+        <div class="guide-example">108" total rise, 7.5" riser, 1 landing<br><span class="result">2 flights: 7R/7T + 7R/6T, 13.83 ft span</span></div>
+        <button class="guide-try" onclick="tryExample('stair',{'st-rise':'108','st-riser':'7.5','st-tread':'10','st-headroom':'96','st-landings':'1','st-landingdepth':'36'},true)">&#9654; Try It</button>
+      </div>
+      <div class="guide-block">
+        <div class="guide-block-title">Code Compliance</div>
+        <p>Results are color-coded per IRC R311.7:</p>
+        <div class="guide-legend"><span><div class="dot-g"></div> Within code</span><span><div class="dot-r"></div> Out of range</span></div>
+        <p style="margin-top:6px">Riser: 4"&ndash;7&frac34;" | Tread: &ge;10" | Headroom: &ge;80"</p>
+      </div>
+    </div>
+    <!-- Concrete Guide -->
+    <div id="guide-concrete" class="guide-section">
+      <div class="guide-title">Concrete &amp; Material</div>
+      <div class="guide-desc">Calculate concrete volume in cubic yards and bags for slabs, footings, and columns.</div>
+      <div class="guide-block">
+        <div class="guide-block-title">Slab / Pad</div>
+        <p>Enter Length (ft) &times; Width (ft) &times; Thickness (inches).</p>
+        <div class="guide-example">20' &times; 30' &times; 4" thick<br><span class="result">= 8.15 cu yd (with 10% waste)</span></div>
+        <button class="guide-try" onclick="tryExample('concrete',{'sl-len':'20','sl-wid':'30','sl-thick':'4'},true)">&#9654; Try It</button>
+      </div>
+      <div class="guide-block">
+        <div class="guide-block-title">Multiple Footings</div>
+        <p>The <strong>Footings</strong> tab lets you add multiple footing entries. Choose a <strong>preset size</strong> (16"&times;8", 20"&times;10", etc.) or select <strong>Custom</strong> to enter your own width and depth.</p>
+        <p>Click <strong>+ Add Footing</strong> for each footing run. Enter the length in feet for each.</p>
+        <button class="guide-try" onclick="tryFootingExample()">&#9654; Try It</button>
+      </div>
+      <div class="guide-block">
+        <div class="guide-block-title">Column / Sono Tube</div>
+        <p>Enter Diameter (inches) and Height (inches). Uses &pi;r&sup2;h formula.</p>
+      </div>
+      <div class="guide-block">
+        <div class="guide-block-title">Waste Factor</div>
+        <p>The <strong>10% waste</strong> checkbox adds 10% to the calculated volume. This accounts for spillage, over-excavation, and uneven forms.</p>
+      </div>
+    </div>
+    <!-- Converter Guide -->
+    <div id="guide-converter" class="guide-section">
+      <div class="guide-title">Feet-Inches Converter</div>
+      <div class="guide-desc">Live bidirectional conversion between decimal feet, feet-inches-fractions, and metric.</div>
+      <div class="guide-block">
+        <div class="guide-block-title">How It Works</div>
+        <p>Edit <strong>any</strong> field and all others update instantly &mdash; no calculate button needed.</p>
+        <p>The green dot indicates live mode is active.</p>
+      </div>
+      <div class="guide-block">
+        <div class="guide-block-title">Three Formats</div>
+        <p><strong>Decimal Feet</strong> &mdash; e.g., 12.5417</p>
+        <p><strong>Feet-Inches-Fraction</strong> &mdash; separate fields for feet, whole inches, and fraction (to 1/16")</p>
+        <p><strong>Metric</strong> &mdash; meters, centimeters, and millimeters (all linked)</p>
+        <div class="guide-example">12.5417 ft = 12' 6 1/2" = 3.8227 m</div>
+        <button class="guide-try" onclick="tryExample('converter',{'cv-decimal':'12.5417'},false)">&#9654; Try It</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- ALL JAVASCRIPT                                          -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<script>
+/* ── App Shell ── */
+const $=id=>document.getElementById(id);
+const ft=(n,d=2)=>n.toFixed(d)+' ft';
+const dg=r=>(r*180/Math.PI).toFixed(2)+'°';
+const show=id=>{$(id).style.display='block'};
+
+const routeOrder=['calculator','roof','roofarea','stair','concrete','converter'];
+const routes={
+  calculator:{view:'view-calculator',title:'Calculator'},
+  roof:{view:'view-roof',title:'Roof Framing'},
+  roofarea:{view:'view-roofarea',title:'Roof Area'},
+  stair:{view:'view-stair',title:'Stair Layout'},
+  concrete:{view:'view-concrete',title:'Concrete & Material'},
+  converter:{view:'view-converter',title:'Ft-In Converter'}
+};
+let currentRoute='calculator';
+
+function navigate(hash){
+  const key=(hash||'').replace('#','')||'calculator';
+  const route=routes[key]||routes.calculator;
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  $(route.view).classList.add('active');
+  const pageLabel=$('dsld-page-label');
+  if(pageLabel)pageLabel.textContent=key==='calculator'?'':route.title;
+  updateDots(key);currentRoute=key;window.scrollTo(0,0);
+}
+function updateDots(key){
+  const dots=document.querySelectorAll('.swipe-dot');
+  const idx=routeOrder.indexOf(key);
+  dots.forEach((dot,i)=>dot.classList.toggle('active',i===idx));
+}
+function initTabs(container){
+  const tabs=container.querySelectorAll('.calc-tab');
+  const panels=container.querySelectorAll('.tab-panel');
+  tabs.forEach(tab=>{
+    tab.addEventListener('click',()=>{
+      tabs.forEach(t=>t.classList.remove('active'));
+      panels.forEach(p=>p.classList.remove('active'));
+      tab.classList.add('active');
+      container.querySelector('[data-panel="'+tab.dataset.tab+'"]').classList.add('active');
+    });
+  });
+}
+
+/* Swipe */
+let touchStartX=0,touchStartY=0,touchStartTime=0;
+function initSwipe(){
+  document.addEventListener('touchstart',e=>{touchStartX=e.touches[0].clientX;touchStartY=e.touches[0].clientY;touchStartTime=Date.now()},{passive:true});
+  document.addEventListener('touchend',e=>{
+    const dx=e.changedTouches[0].clientX-touchStartX;
+    const dy=e.changedTouches[0].clientY-touchStartY;
+    const elapsed=Date.now()-touchStartTime;
+    if(Math.abs(dx)>Math.abs(dy)*1.5&&Math.abs(dx)>50&&elapsed<500){
+      const idx=routeOrder.indexOf(currentRoute);
+      if(dx<0&&idx<routeOrder.length-1)location.hash='#'+routeOrder[idx+1];
+      else if(dx>0&&idx>0)location.hash='#'+routeOrder[idx-1];
+    }
+  },{passive:true});
+}
+
+/* Conversion utilities */
+function decToFtIn(decFt,denom=16){
+  if(isNaN(decFt)||decFt<0)return'—';
+  const ti=decFt*12,f=Math.floor(ti/12),ri=ti-f*12,wi=Math.floor(ri),fi=ri-wi;
+  let num=Math.round(fi*denom);
+  if(num===0)return f+"' "+wi+'"';
+  if(num===denom)return f+"' "+(wi+1)+'"';
+  let n=num,d=denom;while(n%2===0&&d%2===0){n/=2;d/=2}
+  return f+"' "+wi+' '+n+'/'+d+'"';
+}
+function ftToM(f){return f*0.3048}
+function mToFt(m){return m/0.3048}
+
+/* PWA Install */
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;const b=$('install-banner');if(b)b.classList.remove('hidden')});
+function installApp(){if(!deferredPrompt)return;deferredPrompt.prompt();deferredPrompt.userChoice.then(()=>{const b=$('install-banner');if(b)b.classList.add('hidden');deferredPrompt=null})}
+function dismissInstall(){const b=$('install-banner');if(b)b.classList.add('hidden')}
+
+/* Init */
+window.addEventListener('DOMContentLoaded',()=>{
+  navigate(location.hash);initSwipe();
+  document.querySelectorAll('[data-tabs]').forEach(initTabs);
+});
+window.addEventListener('hashchange',()=>navigate(location.hash));
+
+/* ── Keypad Calculator ── */
+(function(){
+  let display='0',entry=0,accumulator=0,pendingOp=null,mode='std';
+  let feetPart=0,inchPart=0,fracNum=0,fracDen=0,memory=0,justCalculated=false,newEntry=false;
+  let pitchVal=null,riseVal=null,runVal=null;
+  const dispMain=()=>document.getElementById('kp-main');
+  const dispSub=()=>document.getElementById('kp-sub');
+  const dispMode=()=>document.getElementById('kp-mode');
+  const memInd=()=>document.getElementById('kp-mem');
+
+  function isFtInMode(){return feetPart>0||inchPart>0||fracNum>0}
+  function updateDisplay(){
+    const el=dispMain(),sub=dispSub(),modeEl=dispMode();if(!el)return;
+    if(isFtInMode()||mode==='inch'||mode==='frac'){
+      let s='';if(feetPart>0)s+=feetPart+"'";
+      if(inchPart>0||mode==='inch'||mode==='frac'){s+=' '+inchPart;if(fracNum>0&&fracDen>0)s+=' '+fracNum+'/'+fracDen;s+='"'}
+      if(mode==='std'&&display!=='0')s+=' '+display+'_';
+      el.textContent=s||'0';const dec=getCurrentValue();sub.textContent=dec.toFixed(4)+' ft';modeEl.textContent='FEET-INCH';
+    }else{el.textContent=display;sub.textContent=display!=='0'?decToFtIn(parseFloat(display)||0):'';modeEl.textContent=''}
+    const mi=memInd();if(mi)mi.className='mem-indicator'+(memory!==0?' active':'');
+  }
+  function getCurrentValue(){if(mode==='std')return parseFloat(display)||0;return feetPart+(inchPart+(fracDen?fracNum/fracDen:0))/12}
+  function setDisplayValue(val){mode='std';display=formatNum(val);entry=val;feetPart=0;inchPart=0;fracNum=0;fracDen=0;updateDisplay()}
+  function formatNum(n){if(Math.abs(n)>=1e10)return n.toExponential(4);return parseFloat(n.toFixed(8)).toString()}
+  function resetEntry(){display='0';mode='std';feetPart=0;inchPart=0;fracNum=0;fracDen=0}
+
+  window.kpPress=function(key){
+    if(/^[0-9]$/.test(key)||key==='00'||key==='.'){
+      if(justCalculated&&!pendingOp){accumulator=0;resetEntry();justCalculated=false;newEntry=false}
+      if(justCalculated&&pendingOp){resetEntry();justCalculated=false;newEntry=false}
+      if(newEntry){resetEntry();newEntry=false}
+      if(mode==='frac'){handleFracDigit(key)}
+      else if(mode==='inch'){if(key==='.')return;inchPart=inchPart*10+parseInt(key);if(inchPart>99)inchPart=parseInt(key)}
+      else if(mode==='feet'){if(key==='.')return;feetPart=feetPart*10+parseInt(key)}
+      else{if(display==='0'&&key!=='.'&&key!=='00')display=key;else if(key==='.'&&display.includes('.'))return;else display+=key}
+      updateDisplay();return;
+    }
+    if(key==='Feet'){if(newEntry){resetEntry();newEntry=false}if(mode==='std'&&display!=='0')feetPart=parseInt(display)||0;display='0';mode='std';justCalculated=false;updateDisplay();return}
+    if(key==='Inch'){if(newEntry){resetEntry();newEntry=false}if(mode==='std'&&display!=='0')inchPart=parseInt(display)||0;display='0';mode='inch';justCalculated=false;updateDisplay();return}
+    if(key==='Frac'){mode='frac';fracNum=0;fracDen=0;justCalculated=false;updateDisplay();return}
+    if(['+','-','\u00d7','\u00f7'].includes(key)){
+      const val=getCurrentValue();
+      if(pendingOp&&!justCalculated)accumulator=doOp(accumulator,val,pendingOp);else accumulator=val;
+      pendingOp=key;resetEntry();justCalculated=false;newEntry=true;setDisplayValue(accumulator);return;
+    }
+    if(key==='='){const val=getCurrentValue();if(pendingOp){const r=doOp(accumulator,val,pendingOp);setDisplayValue(r);accumulator=r;pendingOp=null}justCalculated=true;return}
+    if(key==='C'){resetEntry();accumulator=0;pendingOp=null;justCalculated=false;pitchVal=null;riseVal=null;runVal=null;updateDisplay();return}
+    if(key==='CE'){resetEntry();justCalculated=false;updateDisplay();return}
+    if(key==='\u232b'){if(mode==='std'&&display.length>1)display=display.slice(0,-1);else if(mode==='std')display='0';updateDisplay();return}
+    if(key==='%'){setDisplayValue(getCurrentValue()/100);return}
+    if(key==='M+'){memory+=getCurrentValue();updateDisplay();return}
+    if(key==='Rcl'){setDisplayValue(memory);return}
+    if(key==='Stor'){memory=getCurrentValue();updateDisplay();return}
+    if(key==='Pitch'){pitchVal=getCurrentValue();dispMode().textContent='PITCH = '+pitchVal;solvePRR();return}
+    if(key==='Rise'){riseVal=getCurrentValue();dispMode().textContent='RISE = '+formatNum(riseVal);solvePRR();return}
+    if(key==='Run'){runVal=getCurrentValue();dispMode().textContent='RUN = '+formatNum(runVal);solvePRR();return}
+    if(key==='Diag'){if(riseVal!==null&&runVal!==null){setDisplayValue(Math.sqrt(riseVal**2+runVal**2));dispMode().textContent='DIAG'}return}
+    if(key==='Hip/V'){if(runVal!==null&&pitchVal!==null){const r=runVal*pitchVal/12,p=runVal*Math.SQRT2;setDisplayValue(Math.sqrt(p**2+r**2));dispMode().textContent='HIP/VAL'}return}
+    if(key==='Sine'){setDisplayValue(Math.sin(getCurrentValue()*Math.PI/180));dispMode().textContent='SIN';return}
+    if(key==='Cos'){setDisplayValue(Math.cos(getCurrentValue()*Math.PI/180));dispMode().textContent='COS';return}
+    if(key==='Tan'){setDisplayValue(Math.tan(getCurrentValue()*Math.PI/180));dispMode().textContent='TAN';return}
+    if(key==='m'){setDisplayValue(getCurrentValue()*0.3048);dispMode().textContent='METERS';return}
+    if(key==='Yds'){setDisplayValue(getCurrentValue()/3);dispMode().textContent='YARDS';return}
+    if(key==='Circ'){setDisplayValue(2*Math.PI*getCurrentValue());dispMode().textContent='CIRCUMF';return}
+    if(key==='Arc'){setDisplayValue(getCurrentValue()*Math.PI/180);dispMode().textContent='RADIANS';return}
+    if(key==='Stair'){location.hash='#stair';return}
+  };
+  function handleFracDigit(key){if(key==='.'||key==='00')return;const d=parseInt(key);if(fracDen===0){if(fracNum===0)fracNum=d;else fracDen=d}else if(fracDen<100)fracDen=fracDen*10+d}
+  function doOp(a,b,op){switch(op){case'+':return a+b;case'-':return a-b;case'\u00d7':return a*b;case'\u00f7':return b!==0?a/b:0;default:return b}}
+  function solvePRR(){
+    const known=(pitchVal!==null?1:0)+(riseVal!==null?1:0)+(runVal!==null?1:0);if(known<2)return;
+    if(pitchVal!==null&&runVal!==null&&riseVal===null){riseVal=runVal*pitchVal/12;setDisplayValue(riseVal);dispMode().textContent='RISE (solved)'}
+    else if(pitchVal!==null&&riseVal!==null&&runVal===null){runVal=riseVal/(pitchVal/12);setDisplayValue(runVal);dispMode().textContent='RUN (solved)'}
+    else if(riseVal!==null&&runVal!==null&&pitchVal===null){pitchVal=(riseVal/runVal)*12;setDisplayValue(pitchVal);dispMode().textContent='PITCH (solved)'}
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',updateDisplay);else updateDisplay();
+})();
+
+/* ── Roof Framing ── */
+function calcCommon(){
+  const run=+$('cr-run').value,pitch=+$('cr-pitch').value;
+  if(!run||!pitch||run<=0||pitch<=0)return alert('Enter Run and Pitch.');
+  const rise=run*pitch/12,len=Math.sqrt(run**2+rise**2),slope=Math.atan(pitch/12);
+  $('cr-rise').textContent=ft(rise);$('cr-len').textContent=ft(len);$('cr-ang').textContent=dg(slope);
+  $('cr-plumb').textContent=dg(slope);$('cr-seat').textContent=(90-slope*180/Math.PI).toFixed(2)+'°';
+  $('cr-unit').textContent=(len/run).toFixed(4)+' ft';show('cr-res');
+}
+function calcEqualHip(){
+  const run=+$('ep-run').value,pitch=+$('ep-pitch').value;
+  if(!run||!pitch||run<=0||pitch<=0)return alert('Enter Run and Pitch.');
+  const rise=run*pitch/12,planLen=run*Math.SQRT2,actLen=Math.sqrt(planLen**2+rise**2),slope=Math.atan(rise/planLen);
+  const backing=Math.atan(Math.sin(Math.PI/4)*(pitch/12));
+  $('ep-rise').textContent=ft(rise);$('ep-plan').textContent=ft(planLen);$('ep-len').textContent=ft(actLen);
+  $('ep-slope').textContent=dg(slope);$('ep-plumb').textContent=dg(slope);
+  $('ep-cheek').textContent='35.26° (constant for equal pitch)';$('ep-back').textContent=dg(backing);
+  $('ep-unit').textContent=(actLen/run).toFixed(4)+' ft / ft run';show('ep-res');
+}
+function calcUneq(){
+  const runA=+$('up-runA').value,pA=+$('up-pA').value,runB=+$('up-runB').value,pB=+$('up-pB').value;
+  if([runA,pA,runB,pB].some(v=>!v||v<=0))return alert('Enter all four values.');
+  const tA=runA/pB,tB=runB/pA,t=Math.min(tA,tB);
+  const xEnd=t*pA,yEnd=t*pB,planLen=t*Math.sqrt(pA**2+pB**2),rise=t*pA*pB/12,actLen=Math.sqrt(planLen**2+rise**2),slope=Math.atan2(rise,planLen);
+  const angA=Math.atan2(pB,pA),angB=Math.atan2(pA,pB);
+  const backA=Math.atan(Math.sin(angA)*Math.tan(Math.atan(pA/12))),backB=Math.atan(Math.sin(angB)*Math.tan(Math.atan(pB/12)));
+  const ridA=runA*pA/12,ridB=runB*pB/12,diff=Math.abs(ridA-ridB);
+  const who=ridA>ridB?' (A higher)':ridB>ridA?' (B higher)':' (equal)';
+  const EPS=0.001,term=Math.abs(tA-tB)<EPS?'Both ridges (equal height)':tB<tA?'Ridge B':'Ridge A';
+  const comA=Math.sqrt(runA**2+(runA*pA/12)**2),comB=Math.sqrt(runB**2+(runB*pB/12)**2);
+  $('up-angA').textContent=dg(angA);$('up-angB').textContent=dg(angB);$('up-plan').textContent=ft(planLen);
+  $('up-xEnd').textContent=ft(xEnd);$('up-yEnd').textContent=ft(yEnd);$('up-term').textContent=term;
+  $('up-rise').textContent=ft(rise);$('up-len').textContent=ft(actLen);$('up-slope').textContent=dg(slope);
+  $('up-plumb').textContent=dg(slope);$('up-backA').textContent=dg(backA);$('up-backB').textContent=dg(backB);
+  $('up-ridA').textContent=ft(ridA);$('up-ridB').textContent=ft(ridB);$('up-diff').textContent=ft(diff)+who;
+  $('up-comA').textContent=ft(comA);$('up-comB').textContent=ft(comB);show('up-res');
+}
+
+/* ── Roof Area ── */
+let raRowId=0;
+function raAddRow(){
+  raRowId++;const c=document.getElementById('ra-rows'),row=document.createElement('div');
+  row.className='dyn-row';row.id='ra-row-'+raRowId;
+  row.innerHTML='<div class="dyn-row-fields"><div class="field"><label>Length (ft)</label><input type="number" class="ra-len" step="0.01" min="0" inputmode="decimal" placeholder="40"></div><div class="field"><label>Width (ft)</label><input type="number" class="ra-wid" step="0.01" min="0" inputmode="decimal" placeholder="25"></div><div class="field"><label>Pitch (/12)</label><input type="number" class="ra-pitch" step="0.5" min="0" inputmode="decimal" placeholder="8"></div></div><button class="dyn-row-del" onclick="raDelRow(\''+row.id+'\')" title="Remove">&times;</button>';
+  c.appendChild(row);
+}
+function raDelRow(id){const r=document.getElementById(id);if(r)r.remove()}
+function calcRoofArea(){
+  const rows=document.querySelectorAll('#ra-rows .dyn-row');if(rows.length===0)return alert('Add at least one area.');
+  let totalFlat=0,totalSloped=0;const results=[];
+  rows.forEach(row=>{
+    const len=parseFloat(row.querySelector('.ra-len').value)||0,wid=parseFloat(row.querySelector('.ra-wid').value)||0,pitch=parseFloat(row.querySelector('.ra-pitch').value)||0;
+    if(len<=0||wid<=0)return;
+    const flatArea=len*wid,slopeFactor=Math.sqrt(1+(pitch/12)**2),slopedArea=flatArea*slopeFactor;
+    totalFlat+=flatArea;totalSloped+=slopedArea;results.push({len,wid,pitch,flatArea,slopeFactor,slopedArea});
+  });
+  if(results.length===0)return alert('Enter valid dimensions.');
+  let html='<div class="rsect"><div class="rtitle">Area Breakdown</div>';
+  results.forEach(r=>{html+='<div class="rrow"><span class="rl">'+r.len+'\' × '+r.wid+'\' @ '+r.pitch+'/12</span><span class="rv">'+r.slopedArea.toFixed(1)+' sq ft</span></div>'});
+  html+='</div><div class="rsect"><div class="rtitle">Totals</div>';
+  html+='<div class="rrow"><span class="rl">Total Flat Area</span><span class="rv">'+totalFlat.toFixed(1)+' sq ft</span></div>';
+  html+='<div class="rrow"><span class="rl">Total Sloped Area</span><span class="rv hi">'+totalSloped.toFixed(1)+' sq ft</span></div>';
+  html+='<div class="rrow"><span class="rl">Roofing Squares</span><span class="rv hi">'+(totalSloped/100).toFixed(2)+' squares</span></div>';
+  const uniqueFactors=[...new Set(results.map(r=>r.pitch))];
+  uniqueFactors.forEach(p=>{html+='<div class="rrow"><span class="rl">Slope factor @ '+p+'/12</span><span class="rv">'+Math.sqrt(1+(p/12)**2).toFixed(4)+'</span></div>'});
+  html+='</div><div class="rsect"><div class="rtitle">Material Estimate (with 10% waste)</div>';
+  const w=totalSloped*1.10;
+  html+='<div class="rrow"><span class="rl">Sloped Area + 10%</span><span class="rv">'+w.toFixed(1)+' sq ft</span></div>';
+  html+='<div class="rrow"><span class="rl">Squares to Order</span><span class="rv hi">'+Math.ceil(w/100)+' squares</span></div></div>';
+  document.getElementById('ra-results').innerHTML=html;show('ra-results');
+}
+
+/* ── Stair Layout ── */
+function stairToggleLandings(){
+  const n=parseInt($('st-landings').value)||0;
+  const lf=document.getElementById('st-landing-fields');if(lf)lf.style.display=n>0?'block':'none';
+}
+function calcStair(){
+  const totalRise=+$('st-rise').value,targetRiser=+$('st-riser').value,treadDepth=+$('st-tread').value;
+  const nosing=+$('st-nosing').value||0,headroom=+$('st-headroom').value;
+  const numLandings=parseInt($('st-landings').value)||0,landingDepth=+$('st-landingdepth').value||36;
+  if(!totalRise||totalRise<=0)return alert('Enter Total Rise.');
+  if(!targetRiser||targetRiser<=0)return alert('Enter Target Riser Height.');
+  if(!treadDepth||treadDepth<=0)return alert('Enter Tread Depth.');
+  const numRisers=Math.round(totalRise/targetRiser);if(numRisers<=0)return alert('Invalid riser count.');
+  const actualRiser=totalRise/numRisers,numTreads=numRisers-1;
+  const numFlights=numLandings+1,stairRun=numTreads*treadDepth,landingRun=numLandings*landingDepth,totalRun=stairRun+landingRun;
+  const risersPerFlight=Math.floor(numRisers/numFlights),extraRisers=numRisers%numFlights,flights=[];
+  for(let i=0;i<numFlights;i++){
+    const flightRisers=risersPerFlight+(i<extraRisers?1:0);
+    const actualTreads=i===numFlights-1?flightRisers-1:flightRisers;
+    const flightRise=flightRisers*actualRiser,flightRun=actualTreads*treadDepth;
+    flights.push({risers:flightRisers,treads:actualTreads,rise:flightRise,run:flightRun,stringerLen:Math.sqrt(flightRun**2+flightRise**2),angle:Math.atan2(flightRise,flightRun)});
+  }
+  const stringerLen=Math.sqrt(stairRun**2+totalRise**2),stringerAngle=Math.atan2(totalRise,stairRun);
+  const riserOK=actualRiser>=4.0&&actualRiser<=7.75,treadOK=treadDepth>=10.0,riseRunSum=actualRiser+treadDepth,sumOK=riseRunSum>=17&&riseRunSum<=18;
+  let headroomNote='—';if(headroom>0){headroomNote=headroom.toFixed(1)+'" '+(headroom>=80?'(OK — meets 80" min)':'(BELOW 80" minimum)')}
+  const totalRiseFt=totalRise/12,totalRunFt=totalRun/12,stringerLenFt=stringerLen/12;
+  $('st-numrisers').textContent=numRisers;$('st-numtreads').textContent=numTreads;
+  $('st-actriser').textContent=actualRiser.toFixed(3)+'"';$('st-actriser').className='rv'+(riserOK?' ok':' warn');
+  $('st-totalrun').textContent=totalRun.toFixed(2)+'" ('+ft(totalRunFt)+')';
+  $('st-strlen').textContent=stringerLen.toFixed(2)+'" ('+ft(stringerLenFt)+')';$('st-strang').textContent=dg(stringerAngle);
+  $('st-riserchk').textContent=actualRiser.toFixed(3)+'"';$('st-riserchk').className='rv'+(riserOK?' ok':' warn');
+  $('st-treadchk').textContent=treadDepth.toFixed(1)+'"';$('st-treadchk').className='rv'+(treadOK?' ok':' warn');
+  $('st-riserun').textContent=riseRunSum.toFixed(2)+'"';$('st-riserun').className='rv'+(sumOK?' ok':(riseRunSum>18?' warn':''));
+  $('st-headclr').textContent=headroomNote;
+  $('st-riseftin').textContent=decToFtIn(totalRiseFt);$('st-runftin').textContent=decToFtIn(totalRunFt);$('st-strftin').textContent=decToFtIn(stringerLenFt);
+  const ls=document.getElementById('st-landing-res');
+  if(numLandings>0&&ls){
+    let html='<div class="rtitle">Flight Breakdown ('+numFlights+' flights, '+numLandings+' landing'+(numLandings>1?'s':'')+')</div>';
+    flights.forEach((f,i)=>{html+='<div class="rrow"><span class="rl">Flight '+(i+1)+'</span><span class="rv">'+f.risers+'R / '+f.treads+'T — '+f.stringerLen.toFixed(1)+'" stringer</span></div>'});
+    html+='<div class="rrow"><span class="rl">Landing depth × '+numLandings+'</span><span class="rv">'+landingDepth.toFixed(0)+'" each ('+ft(landingRun/12)+' total)</span></div>';
+    html+='<div class="rrow"><span class="rl">Total horizontal span</span><span class="rv hi">'+ft(totalRunFt)+'</span></div>';
+    ls.innerHTML=html;ls.style.display='block';
+  }else if(ls)ls.style.display='none';
+  show('st-res');
+}
+
+/* ── Concrete ── */
+function calcConcrete(mode){
+  let cubicFt=0;
+  if(mode==='slab'){const l=+$('sl-len').value,w=+$('sl-wid').value,t=+$('sl-thick').value;if(!l||!w||!t||l<=0||w<=0||t<=0)return alert('Enter Length, Width, and Thickness.');cubicFt=l*w*(t/12)}
+  else if(mode==='column'){const d=+$('co-dia').value,h=+$('co-height').value;if(!d||!h||d<=0||h<=0)return alert('Enter Diameter and Height.');cubicFt=Math.PI*((d/2)/12)**2*(h/12)}
+  const waste=document.querySelector('#'+mode+'-waste')?.checked?1.10:1.0;
+  const adj=cubicFt*waste,cy=adj/27,b80=Math.ceil(cy*45),b60=Math.ceil(cy*60);
+  $(mode+'-cuft').textContent=adj.toFixed(2)+' cu ft';$(mode+'-cuyd').textContent=cy.toFixed(2)+' cu yd';
+  $(mode+'-b80').textContent=b80+' bags';$(mode+'-b60').textContent=b60+' bags';
+  $(mode+'-wastelbl').textContent=waste>1?'(includes 10% waste)':'';show(mode+'-res');
+}
+
+/* Multi-Footing */
+const FOOTING_PRESETS=[{label:'Custom',w:0,d:0},{label:'12" × 12"',w:12,d:12},{label:'16" × 8"',w:16,d:8},{label:'18" × 12"',w:18,d:12},{label:'20" × 10"',w:20,d:10},{label:'24" × 12"',w:24,d:12}];
+let ftRowId=0;
+function ftAddRow(presetIdx){
+  ftRowId++;const c=document.getElementById('ft-rows'),row=document.createElement('div');
+  row.className='dyn-row';row.id='ft-row-'+ftRowId;
+  let opts=FOOTING_PRESETS.map((p,i)=>'<option value="'+i+'"'+(i===(presetIdx||0)?' selected':'')+'>'+p.label+'</option>').join('');
+  const preset=presetIdx?FOOTING_PRESETS[presetIdx]:FOOTING_PRESETS[0];
+  const wVal=preset.w||'',dVal=preset.d||'',customHidden=preset.w>0?' hidden':'';
+  row.innerHTML='<div class="dyn-row-fields"><div class="field"><label>Size Preset</label><select class="ft-preset" onchange="ftPresetChange(this)">'+opts+'</select></div><div class="field"><label>Length (ft)</label><input type="number" class="ft-len" step="0.01" min="0" inputmode="decimal" placeholder="40"></div><div class="field ft-custom'+customHidden+'"><label>Width (in)</label><input type="number" class="ft-wid" step="0.5" min="0" inputmode="decimal" value="'+wVal+'" placeholder="16"></div><div class="field ft-custom'+customHidden+'"><label>Depth (in)</label><input type="number" class="ft-dep" step="0.5" min="0" inputmode="decimal" value="'+dVal+'" placeholder="8"></div></div><button class="dyn-row-del" onclick="ftDelRow(\''+row.id+'\')" title="Remove">&times;</button>';
+  c.appendChild(row);
+}
+function ftPresetChange(sel){
+  const row=sel.closest('.dyn-row'),idx=parseInt(sel.value),preset=FOOTING_PRESETS[idx],customs=row.querySelectorAll('.ft-custom');
+  if(preset.w>0){row.querySelector('.ft-wid').value=preset.w;row.querySelector('.ft-dep').value=preset.d;customs.forEach(el=>el.classList.add('hidden'))}
+  else{row.querySelector('.ft-wid').value='';row.querySelector('.ft-dep').value='';customs.forEach(el=>el.classList.remove('hidden'))}
+}
+function ftDelRow(id){const r=document.getElementById(id);if(r)r.remove()}
+function ftClearAll(){document.getElementById('ft-rows').innerHTML='';document.getElementById('footing-res').style.display='none'}
+function calcFootings(){
+  const rows=document.querySelectorAll('#ft-rows .dyn-row');if(rows.length===0)return alert('Add at least one footing.');
+  const waste=document.getElementById('footing-waste')?.checked?1.10:1.0;let totalCuFt=0;const details=[];
+  rows.forEach(row=>{
+    const presetIdx=parseInt(row.querySelector('.ft-preset').value),preset=FOOTING_PRESETS[presetIdx];
+    const len=parseFloat(row.querySelector('.ft-len').value)||0;let wid,dep;
+    if(preset.w>0){wid=preset.w;dep=preset.d}else{wid=parseFloat(row.querySelector('.ft-wid').value)||0;dep=parseFloat(row.querySelector('.ft-dep').value)||0}
+    if(len<=0||wid<=0||dep<=0)return;
+    const cuFt=len*(wid/12)*(dep/12);totalCuFt+=cuFt;details.push({len,wid,dep,cuFt,label:preset.w>0?preset.label:wid+'"×'+dep+'"'});
+  });
+  if(details.length===0)return alert('Enter valid dimensions for at least one footing.');
+  const adj=totalCuFt*waste,cy=adj/27,b80=Math.ceil(cy*45),b60=Math.ceil(cy*60);
+  let html='<div class="rsect"><div class="rtitle">Footing Breakdown</div>';
+  details.forEach(d=>{html+='<div class="rrow"><span class="rl">'+d.label+' × '+d.len+' ft</span><span class="rv">'+d.cuFt.toFixed(2)+' cu ft</span></div>'});
+  html+='</div><div class="rsect"><div class="rtitle">Totals</div>';
+  html+='<div class="rrow"><span class="rl">Total Volume</span><span class="rv">'+adj.toFixed(2)+' cu ft</span></div>';
+  html+='<div class="rrow"><span class="rl">Cubic Yards</span><span class="rv hi">'+cy.toFixed(2)+' cu yd</span></div>';
+  html+='<div class="rrow"><span class="rl">80 lb Bags</span><span class="rv">'+b80+' bags</span></div>';
+  html+='<div class="rrow"><span class="rl">60 lb Bags</span><span class="rv">'+b60+' bags</span></div>';
+  if(waste>1)html+='<p class="fnote">(includes 10% waste)</p>';
+  html+='</div>';document.getElementById('footing-res').innerHTML=html;show('footing-res');
+}
+
+/* ── Converter ── */
+(function(){
+  let updating=false;
+  function init(){
+    const decInput=$('cv-decimal'),feetInput=$('cv-feet'),inchInput=$('cv-inches'),fracSelect=$('cv-frac');
+    const mInput=$('cv-meters'),cmInput=$('cv-cm'),mmInput=$('cv-mm');
+    if(!decInput)return;
+    decInput.addEventListener('input',()=>{if(updating)return;updating=true;const dec=parseFloat(decInput.value);if(!isNaN(dec)&&dec>=0){updateFtIn(dec);updateMetric(dec)}updating=false});
+    [feetInput,inchInput,fracSelect].forEach(el=>{
+      el.addEventListener('input',()=>{if(updating)return;updating=true;const dec=(parseInt(feetInput.value)||0)+((parseInt(inchInput.value)||0)+(parseFloat(fracSelect.value)||0))/12;decInput.value=dec.toFixed(4);updateMetric(dec);updating=false});
+      el.addEventListener('change',()=>el.dispatchEvent(new Event('input')));
+    });
+    mInput.addEventListener('input',()=>{if(updating)return;updating=true;const m=parseFloat(mInput.value);if(!isNaN(m)&&m>=0){const dec=mToFt(m);decInput.value=dec.toFixed(4);cmInput.value=(m*100).toFixed(2);mmInput.value=(m*1000).toFixed(1);updateFtIn(dec)}updating=false});
+    cmInput.addEventListener('input',()=>{if(updating)return;updating=true;const cm=parseFloat(cmInput.value);if(!isNaN(cm)&&cm>=0){const m=cm/100,dec=mToFt(m);decInput.value=dec.toFixed(4);mInput.value=m.toFixed(4);mmInput.value=(m*1000).toFixed(1);updateFtIn(dec)}updating=false});
+    mmInput.addEventListener('input',()=>{if(updating)return;updating=true;const mm=parseFloat(mmInput.value);if(!isNaN(mm)&&mm>=0){const m=mm/1000,dec=mToFt(m);decInput.value=dec.toFixed(4);mInput.value=m.toFixed(4);cmInput.value=(m*100).toFixed(2);updateFtIn(dec)}updating=false});
+  }
+  function updateFtIn(dec){
+    const ti=dec*12,f=Math.floor(ti/12),ri=ti-f*12,wi=Math.floor(ri),fi=ri-wi;
+    $('cv-feet').value=f;$('cv-inches').value=wi;
+    const n16=Math.round(fi*16),fv=n16/16;const sel=$('cv-frac');let best=0;
+    for(let i=0;i<sel.options.length;i++){if(Math.abs(parseFloat(sel.options[i].value)-fv)<0.001){best=i;break}}
+    sel.selectedIndex=best;$('cv-display').textContent=decToFtIn(dec);
+  }
+  function updateMetric(dec){const m=ftToM(dec);$('cv-meters').value=m.toFixed(4);$('cv-cm').value=(m*100).toFixed(2);$('cv-mm').value=(m*1000).toFixed(1)}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+})();
+
+/* ── User Guide ── */
+(function(){
+  const sectionMap={calculator:'guide-calc',roof:'guide-roof',roofarea:'guide-roofarea',stair:'guide-stair',concrete:'guide-concrete',converter:'guide-converter'};
+  window.openGuide=function(){$('guide-backdrop').classList.add('open');$('guide-panel').classList.add('open');showGuideSection(sectionMap[currentRoute]||'guide-calc')};
+  window.closeGuide=function(){$('guide-backdrop').classList.remove('open');$('guide-panel').classList.remove('open')};
+  window.showGuideSection=function(id){
+    document.querySelectorAll('.guide-section').forEach(s=>s.classList.remove('active'));
+    document.querySelectorAll('.guide-nav-btn').forEach(b=>b.classList.remove('active'));
+    const sec=document.getElementById(id);if(sec)sec.classList.add('active');
+    const btn=document.querySelector('[data-guide="'+id+'"]');if(btn)btn.classList.add('active');
+  };
+  window.tryExample=function(route,fills,autoCalc){
+    closeGuide();location.hash='#'+route;
+    setTimeout(function(){Object.keys(fills).forEach(function(id){var el=document.getElementById(id);if(el){el.value=fills[id];el.dispatchEvent(new Event('input',{bubbles:true}))}});if(autoCalc){var btn=document.querySelector('#view-'+route+' .btn');if(btn)btn.click()}},200);
+  };
+  window.tryKeypadExample=function(){closeGuide();location.hash='#calculator';setTimeout(function(){kpPress('C');kpPress('1');kpPress('2');kpPress('Feet');kpPress('6');kpPress('Inch');kpPress('+');kpPress('3');kpPress('Feet');kpPress('2');kpPress('Inch');kpPress('=')},200)};
+  window.tryRoofAreaExample=function(){closeGuide();location.hash='#roofarea';setTimeout(function(){document.getElementById('ra-rows').innerHTML='';raAddRow();raAddRow();var rows=document.querySelectorAll('#ra-rows .dyn-row');if(rows[0]){rows[0].querySelector('.ra-len').value='40';rows[0].querySelector('.ra-wid').value='25';rows[0].querySelector('.ra-pitch').value='8'}if(rows[1]){rows[1].querySelector('.ra-len').value='30';rows[1].querySelector('.ra-wid').value='20';rows[1].querySelector('.ra-pitch').value='6'}calcRoofArea()},200)};
+  window.tryFootingExample=function(){closeGuide();location.hash='#concrete';setTimeout(function(){var tab=document.querySelector('[data-tab="footing"]');if(tab)tab.click();setTimeout(function(){document.getElementById('ft-rows').innerHTML='';ftAddRow(2);ftAddRow(4);var rows=document.querySelectorAll('#ft-rows .dyn-row');if(rows[0])rows[0].querySelector('.ft-len').value='80';if(rows[1])rows[1].querySelector('.ft-len').value='50';calcFootings()},100)},200)};
+  var guideStartX=0;
+  document.addEventListener('DOMContentLoaded',function(){var panel=document.getElementById('guide-panel');if(!panel)return;panel.addEventListener('touchstart',function(e){guideStartX=e.touches[0].clientX},{passive:true});panel.addEventListener('touchend',function(e){if(e.changedTouches[0].clientX-guideStartX>80)closeGuide()},{passive:true})});
+})();
+</script>
+</body>
+</html>
