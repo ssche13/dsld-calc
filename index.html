@@ -111,7 +111,7 @@ input:focus,select:focus{border-color:var(--gold)}
 .calc-shell{max-width:420px;margin:0 auto;padding:12px 12px 80px}
 .calc-display{background:#e8ecd8;border:2px solid #888;border-radius:8px;padding:12px 14px 10px;margin-bottom:10px;min-height:80px;position:relative}
 .calc-display-mode{font-family:'IBM Plex Mono',monospace;font-size:.6rem;font-weight:700;color:#556;letter-spacing:.1em;text-transform:uppercase;margin-bottom:2px}
-.calc-display-expr{font-family:'IBM Plex Mono',monospace;font-size:.7rem;color:#778;text-align:right;min-height:16px;line-height:1.3;word-break:break-all;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;direction:rtl}
+.calc-display-expr{font-family:'IBM Plex Mono',monospace;font-size:.7rem;color:#778;text-align:right;min-height:16px;line-height:1.3;word-break:break-all;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .calc-display-main{font-family:'IBM Plex Mono',monospace;font-size:1.8rem;font-weight:700;color:#1a1a2e;text-align:right;line-height:1.2;min-height:36px;word-break:break-all}
 .calc-display-sub{font-family:'IBM Plex Mono',monospace;font-size:.75rem;color:#556;text-align:right;margin-top:2px}
 .mem-indicator{position:absolute;top:4px;left:8px;font-size:.5rem;font-weight:700;color:#1a1a2e;opacity:0}
@@ -215,6 +215,13 @@ input:focus,select:focus{border-color:var(--gold)}
       <button class="key key-gold" onclick="kpPress('Inch')">Inch</button>
       <button class="key key-func" onclick="kpPress('Frac')"><span class="key-label">x10&#x207F;</span>/</button>
       <button class="key key-func" onclick="kpPress('Arc')"><span class="key-label">Radius</span>Arc</button>
+    </div>
+    <div class="key-row">
+      <button class="key key-navy" onclick="kpPress('SF')"><span class="key-label">ft²</span>SF</button>
+      <button class="key key-navy" onclick="kpPress('SY')"><span class="key-label">yd²</span>SY</button>
+      <button class="key key-navy" onclick="kpPress('CY')"><span class="key-label">yd³</span>CY</button>
+      <button class="key key-navy" onclick="kpPress('Acres')"><span class="key-label">43560sf</span>Acres</button>
+      <button class="key key-navy" onclick="kpPress('CF')"><span class="key-label">ft³</span>CF</button>
     </div>
     <div class="key-row">
       <button class="key key-func" onclick="kpPress('Stor')"><span class="key-label">Prefs</span>Stor</button>
@@ -906,6 +913,11 @@ window.addEventListener('hashchange',()=>navigate(location.hash));
     if(key==='m'){setDisplayValue(getCurrentValue()*0.3048);dispMode().textContent='METERS';return}
     if(key==='Yds'){setDisplayValue(getCurrentValue()/3);dispMode().textContent='YARDS';return}
     if(key==='Circ'){setDisplayValue(2*Math.PI*getCurrentValue());dispMode().textContent='CIRCUMF';return}
+    if(key==='SF'){const v=getCurrentValue();dispMode().textContent=formatNum(v)+' SQ FT';dispSub().textContent=formatNum(v/9)+' SY | '+formatNum(v/43560)+' acres';return}
+    if(key==='SY'){const v=getCurrentValue();const sf=v*9;setDisplayValue(sf);dispMode().textContent=formatNum(v)+' SQ YD → '+formatNum(sf)+' SF';return}
+    if(key==='CY'){const v=getCurrentValue();const cf=v*27;setDisplayValue(v);dispMode().textContent=formatNum(v)+' CU YD ('+formatNum(cf)+' CF)';dispSub().textContent=formatNum(cf)+' cu ft | '+Math.ceil(v*45)+' 80lb bags';return}
+    if(key==='CF'){const v=getCurrentValue();const cy=v/27;setDisplayValue(v);dispMode().textContent=formatNum(v)+' CU FT → '+formatNum(cy)+' CY';dispSub().textContent=formatNum(cy)+' cu yd | '+Math.ceil(cy*45)+' 80lb bags';return}
+    if(key==='Acres'){const v=getCurrentValue();const sf=v*43560;setDisplayValue(sf);dispMode().textContent=formatNum(v)+' ACRES → '+formatNum(sf)+' SF';return}
     if(key==='Arc'){setDisplayValue(getCurrentValue()*Math.PI/180);dispMode().textContent='RADIANS';return}
     if(key==='x\u00b2'){const vs=formatValueForExpr();const v=getCurrentValue();expression+=vs+'\u00b2';exprHasValue=true;setDisplayValue(v*v);dispMode().textContent='x\u00b2';justCalculated=true;return}
     if(key==='x\u00b3'){const vs=formatValueForExpr();const v=getCurrentValue();expression+=vs+'\u00b3';exprHasValue=true;setDisplayValue(v*v*v);dispMode().textContent='x\u00b3';justCalculated=true;return}
