@@ -989,7 +989,7 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
     else if(st===READY_OP){resetEntry();ctx.state=ENTERING_STD}
     else if(st===OP_PENDING||st===PAREN_OPEN){resetEntry();ctx.state=ENTERING_STD}
     else if(st===FEET1){ctx.inches=0;ctx.fNum=0;ctx.fDen=0;ctx.mainOvr=null;ctx.modeText='';ctx.subText='';ctx.dig='0';ctx.state=ENTERING_INCH}
-    else if(st===FEET2||st===FEET3||st===FEET4){resetEntry();ctx.tokens=[];ctx.acc=0;ctx.op=null;ctx.state=ENTERING_STD}
+    else if(st===FEET2||st===FEET3||st===FEET4||st===INCH1||st===INCH2||st===INCH3){resetEntry();ctx.tokens=[];ctx.acc=0;ctx.op=null;ctx.state=ENTERING_STD}
 
     if(ctx.state===ENTERING_FRAC){handleFrac(key)}
     else if(ctx.state===ENTERING_INCH){if(key==='.')return;ctx.inches=ctx.inches*10+parseInt(key);if(ctx.inches>99)ctx.inches=parseInt(key)}
@@ -1008,7 +1008,7 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
     if(st===ENTERING_STD){
       if(ctx.dig!=='0'){ctx.feet=parseInt(ctx.dig)||0}
       ctx.dig='0';syncCanon();ctx.fBase=ctx.canonInches;
-      ctx.state=FEET1;ctx.lastFt=true;ctx.dims=0;
+      ctx.state=FEET1;ctx.lastFt=true;
       ctx.subText=fmt(ctx.canonInches/12)+' ft';ctx.modeText='FEET-INCH';
       render();return;
     }
@@ -1016,7 +1016,7 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
     if(st===ENTERING_INCH){
       syncCanon();ctx.fBase=ctx.canonInches;
       showFtIn(ctx.canonInches);
-      ctx.state=FEET1;ctx.lastFt=true;ctx.dims=0;render();return;
+      ctx.state=FEET1;ctx.lastFt=true;render();return;
     }
     // From fraction or feet entry → lock in as feet
     if(st===ENTERING_FRAC||st===ENTERING_FEET){
@@ -1029,7 +1029,11 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
     if(st===READY||st===READY_OP){
       var decFt=parseFloat(ctx.dig)||0;ctx.fBase=decFt*12;
       showFtIn(decFt*12);
-      ctx.state=FEET1;ctx.lastFt=true;ctx.dims=0;render();return;
+      ctx.state=FEET1;ctx.lastFt=true;render();return;
+    }
+    // From inch cycle → show as ft-in and enter feet cycle
+    if(st===INCH1||st===INCH2||st===INCH3){
+      showFtIn(ctx.fBase);ctx.state=FEET1;ctx.lastFt=true;render();return;
     }
     // === FEET CYCLE: display-only, tokens NOT modified ===
     var baseIn=ctx.fBase; // canonical inches
@@ -1066,17 +1070,17 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
     // From ft-in display or FEET1 cycle → show as total inches
     if(st===ENTERING_FEET||st===FEET1){
       syncCanon();var ti=ctx.canonInches;ctx.fBase=ti;
-      showInches(ti);render();return;
+      showInches(ti);ctx.state=INCH1;render();return;
     }
     // From FEET2/3/4 cycle → convert base value to inches
     if(st===FEET2||st===FEET3||st===FEET4){
-      var ti2=ctx.fBase; // already in inches
-      showInches(ti2);render();return;
+      var ti2=ctx.fBase;
+      showInches(ti2);ctx.state=INCH1;render();return;
     }
     // From result → convert decimal feet to inches
     if(st===READY||st===READY_OP){
       var ft=parseFloat(ctx.dig)||0;ctx.fBase=ft*12;
-      showInches(ft*12);render();return;
+      showInches(ft*12);ctx.state=INCH1;render();return;
     }
     // From digit entry → mark as inches
     if(st===ENTERING_STD){
@@ -1084,10 +1088,28 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
       ctx.dig='0';syncCanon();ctx.fBase=ctx.canonInches;
       ctx.state=ENTERING_INCH;render();return;
     }
-    // From inch entry → if we have feet parts, convert to total inches; otherwise no-op
+    // From inch entry → if we have feet parts, convert to total inches
     if(st===ENTERING_INCH){
-      if(ctx.feet>0){syncCanon();ctx.fBase=ctx.canonInches;showInches(ctx.canonInches);render();}
-      return;
+      if(ctx.feet>0){syncCanon();ctx.fBase=ctx.canonInches;showInches(ctx.canonInches);ctx.state=INCH1;}
+      render();return;
+    }
+    // === INCH CYCLE: Inch → ft-in → decimal → Inch ===
+    if(st===INCH1){
+      // Show as ft-in
+      showFtIn(ctx.fBase);ctx.state=INCH2;
+      render();return;
+    }
+    if(st===INCH2){
+      // Show as decimal feet
+      var saveBase=ctx.fBase;
+      setDec(saveBase/12);ctx.fBase=saveBase;
+      ctx.modeText='DECIMAL';ctx.subText=Math.round(saveBase)+'"';
+      ctx.state=INCH3;render();return;
+    }
+    if(st===INCH3){
+      // Back to inches
+      showInches(ctx.fBase);ctx.state=INCH1;
+      render();return;
     }
     // After operator or paren → start fresh inch entry
     if(st===OP_PENDING||st===PAREN_OPEN){
@@ -1097,37 +1119,56 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
 
   function fracHandler(){ctx.fNum=0;ctx.fDen=0;ctx.state=ENTERING_FRAC;render()}
 
+  /* === Inch cycle states === */
+  const INCH1='INCH1',INCH2='INCH2',INCH3='INCH3';
+
   function operatorHandler(key){
     var st=ctx.state;
-    // If in feet display cycle, use the base value (linear feet), not the ²/³ display
+    // Use the value matching the current cycle position
     var val,vs,ft;
-    if(st===FEET1||st===FEET2||st===FEET3||st===FEET4){
-      val=ctx.fBase/12; // canonical inches → decimal feet
-      // Restore ft-in parts so fmtExpr works
+    if(st===FEET2){
+      // x² — use squared value
+      var baseFt=ctx.fBase/12;val=baseFt*baseFt;vs=fmt(baseFt)+'\u2032\u00b2';ft=false;ctx.dims=2;
+    }else if(st===FEET3){
+      // x³ — use cubed value
+      var baseFt3=ctx.fBase/12;val=baseFt3*baseFt3*baseFt3;vs=fmt(baseFt3)+'\u2032\u00b3';ft=false;ctx.dims=3;
+    }else if(st===FEET1||st===FEET4){
+      val=ctx.fBase/12; // linear feet
+      showFtIn(ctx.fBase);ctx.mainOvr=null;
+      vs=fmtExpr();ft=true;
+    }else if(st===INCH1||st===INCH2||st===INCH3){
+      val=ctx.fBase/12; // linear feet from inch base
       showFtIn(ctx.fBase);ctx.mainOvr=null;
       vs=fmtExpr();ft=true;
     }else{
       val=getVal();vs=fmtExpr();ft=inFtIn();
     }
-    if(ctx.lastFt&&key==='\u00d7')ctx.dims++;
-    if(key==='+'||key==='-')ctx.dims=0;
+    if(st!==FEET2&&st!==FEET3){
+      if(ctx.lastFt&&key==='\u00d7')ctx.dims++;
+      if(key==='+'||key==='-')ctx.dims=0;
+    }
     if(ctx.op&&st!==READY&&st!==READY_OP)ctx.acc=doOp(ctx.acc,val,ctx.op);else ctx.acc=val;
     if(st===READY||st===READY_OP){ctx.tokens=[];pushNum(ctx.acc,fmt(ctx.acc),false)}
     else if(!hasTrailingNum()){pushNum(val,vs,ft)}
     pushOp(key);
-    ctx.op=key;ctx.lastFt=false;resetEntry();setDec(ctx.acc);ctx.state=OP_PENDING;render();
+    ctx.op=key;ctx.lastFt=ft;resetEntry();setDec(ctx.acc);ctx.state=OP_PENDING;render();
   }
 
   function equalsHandler(){
     while(ctx.parenStack.length>0)closeParenHandler();
     var st=ctx.state;
     var val,vs,ft;
-    if(st===FEET1||st===FEET2||st===FEET3||st===FEET4){
+    if(st===FEET2){
+      var baseFt2=ctx.fBase/12;val=baseFt2*baseFt2;vs=fmt(baseFt2)+'\u2032\u00b2';ft=false;ctx.dims=2;
+    }else if(st===FEET3){
+      var baseFt3=ctx.fBase/12;val=baseFt3*baseFt3*baseFt3;vs=fmt(baseFt3)+'\u2032\u00b3';ft=false;ctx.dims=3;
+    }else if(st===FEET1||st===FEET4){
+      val=ctx.fBase/12;showFtIn(ctx.fBase);ctx.mainOvr=null;vs=fmtExpr();ft=true;
+    }else if(st===INCH1||st===INCH2||st===INCH3){
       val=ctx.fBase/12;showFtIn(ctx.fBase);ctx.mainOvr=null;vs=fmtExpr();ft=true;
     }else{val=getVal();vs=fmtExpr();ft=inFtIn()}
     var r;
     if(ctx.op){
-      if(ctx.lastFt&&ctx.op==='\u00d7')ctx.dims++;
       if(!hasTrailingNum())pushNum(val,vs,ft);
       r=doOp(ctx.acc,val,ctx.op);
     }else{
@@ -1137,9 +1178,14 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
     ctx.acc=r;ctx.op=null;
     var ftUsed=usedFtIn();
     if(ftUsed&&ctx.dims===0){showFtIn(r*12);ctx.fBase=r*12}else{setDec(r)}
-    if(ctx.dims>=2){ctx.modeText='CF';ctx.subText=fmt(r/27)+' CY | '+Math.ceil(r/27*45)+' 80lb bags'}
-    else if(ctx.dims===1){ctx.modeText='SF';ctx.subText=fmt(r/9)+' SY'}
-    else if(!ftUsed){ctx.modeText='';ctx.subText=''}
+    // Add dimension superscript to result display
+    if(ctx.dims>=2){
+      ctx.mainOvr=fmt(r)+' CF';ctx.modeText='CF';
+      ctx.subText=fmt(r/27)+' CY | '+Math.ceil(r/27*45)+' 80lb bags';
+    }else if(ctx.dims===1){
+      ctx.mainOvr=fmt(r)+' SF';ctx.modeText='SF';
+      ctx.subText=fmt(r/9)+' SY';
+    }else if(!ftUsed){ctx.modeText='';ctx.subText=''}
     ctx.lastFt=false;ctx.state=READY;render();
   }
 
