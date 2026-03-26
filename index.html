@@ -865,7 +865,7 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
   let display='0',entry=0,accumulator=0,pendingOp=null,mode='std';
   let feetPart=0,inchPart=0,fracNum=0,fracDen=0,memory=0,justCalculated=false,newEntry=false;
   let pitchVal=null,riseVal=null,runVal=null;
-  let expression='',exprHasValue=false,unitDims=0,lastUsedFeet=false;
+  let expression='',exprHasValue=false,unitDims=0,lastUsedFeet=false,feetPressCount=0,feetBaseVal=0;
   const dispMain=()=>document.getElementById('kp-main');
   const dispSub=()=>document.getElementById('kp-sub');
   const dispMode=()=>document.getElementById('kp-mode');
@@ -899,6 +899,7 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
 
   window.kpPress=function(key){
     if(/^[0-9]$/.test(key)||key==='00'||key==='.'){
+      feetPressCount=0;
       if(justCalculated&&!pendingOp){accumulator=0;resetEntry();justCalculated=false;newEntry=false;expression=''}
       if(justCalculated&&pendingOp){resetEntry();justCalculated=false;newEntry=false}
       if(newEntry){resetEntry();newEntry=false}
@@ -908,8 +909,27 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
       else{if(display==='0'&&key!=='.'&&key!=='00')display=key;else if(key==='.'&&display.includes('.'))return;else display+=key}
       updateDisplay();return;
     }
-    if(key==='Feet'){if(newEntry){resetEntry();newEntry=false}if(mode==='std'&&display!=='0')feetPart=parseInt(display)||0;display='0';mode='std';justCalculated=false;lastUsedFeet=true;updateDisplay();return}
-    if(key==='Inch'){if(newEntry){resetEntry();newEntry=false}if(mode==='std'&&display!=='0')inchPart=parseInt(display)||0;display='0';mode='inch';justCalculated=false;updateDisplay();return}
+    if(key==='Feet'){
+      if(newEntry){resetEntry();newEntry=false}
+      // Consecutive Feet presses: 2nd=squared(SF), 3rd=cubed(CF)
+      if(feetPressCount>=1){
+        feetPressCount++;
+        if(feetPressCount===2){const sf=feetBaseVal*feetBaseVal;setDisplayValue(sf);dispMode().textContent=formatNum(sf)+' SF';dispSub().textContent=formatNum(sf/9)+' SY | '+formatNum(sf/43560)+' acres';justCalculated=true;return}
+        if(feetPressCount>=3){const cf=feetBaseVal*feetBaseVal*feetBaseVal;setDisplayValue(cf);dispMode().textContent=formatNum(cf)+' CF ('+formatNum(cf/27)+' CY)';dispSub().textContent=formatNum(cf/27)+' CY | '+Math.ceil(cf/27*45)+' 80lb bags';justCalculated=true;return}
+      }
+      // Convert inches to feet
+      if(inchPart>0&&feetPart===0&&display==='0'){const inc=inchPart;const v=inc/12;resetEntry();setDisplayValue(v);dispMode().textContent=formatNum(inc)+'" → '+formatNum(v)+' ft';feetPressCount=0;return}
+      // Normal: lock current number as feet
+      if(mode==='std'&&display!=='0'){feetPart=parseInt(display)||0;feetBaseVal=feetPart;feetPressCount=1}
+      display='0';mode='std';justCalculated=false;lastUsedFeet=true;unitDims=0;updateDisplay();return}
+    if(key==='Inch'){
+      if(newEntry){resetEntry();newEntry=false}
+      feetPressCount=0;
+      // Convert feet to inches if feet entered and no new digits typed
+      if(feetPart>0&&display==='0'&&inchPart===0){
+        const ft=feetPart;const inches=ft*12;resetEntry();setDisplayValue(inches);dispMode().textContent=formatNum(ft)+'\' → '+formatNum(inches)+'"';return}
+      if(mode==='std'&&display!=='0')inchPart=parseInt(display)||0;
+      display='0';mode='inch';justCalculated=false;updateDisplay();return}
     if(key==='Frac'){mode='frac';fracNum=0;fracDen=0;justCalculated=false;updateDisplay();return}
     if(['+','-','\u00d7','\u00f7'].includes(key)){
       const valStr=formatValueForExpr();
@@ -922,17 +942,17 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
       else expression+=key+' ';
       lastUsedFeet=false;pendingOp=key;resetEntry();justCalculated=false;newEntry=true;setDisplayValue(accumulator);return;
     }
-    if(key==='='){const valStr=formatValueForExpr();const val=getCurrentValue();if(pendingOp){if(lastUsedFeet&&pendingOp==='\u00d7')unitDims++;if(!exprHasValue)expression+=valStr;expression+=' =';const r=doOp(accumulator,val,pendingOp);setDisplayValue(r);accumulator=r;const unitLabel=unitDims>=2?' CF ('+formatNum(r/27)+' CY)':unitDims===1?' SF':' ft';dispMode().textContent=formatNum(r)+unitLabel;if(unitDims===1)dispSub().textContent=formatNum(r/9)+' SY | '+formatNum(r/43560)+' acres';if(unitDims>=2)dispSub().textContent=formatNum(r/27)+' CY | '+Math.ceil(r/27*45)+' 80lb bags';pendingOp=null}exprHasValue=false;lastUsedFeet=false;justCalculated=true;return}
-    if(key==='C'){resetEntry();accumulator=0;pendingOp=null;justCalculated=false;expression='';exprHasValue=false;unitDims=0;lastUsedFeet=false;pitchVal=null;riseVal=null;runVal=null;updateDisplay();return}
+    if(key==='='){const valStr=formatValueForExpr();const val=getCurrentValue();if(pendingOp){if(lastUsedFeet&&pendingOp==='\u00d7')unitDims++;if(!exprHasValue)expression+=valStr;expression+=' =';const r=doOp(accumulator,val,pendingOp);setDisplayValue(r);accumulator=r;if(unitDims>=2){dispMode().textContent=formatNum(r)+' CF ('+formatNum(r/27)+' CY)';dispSub().textContent=formatNum(r/27)+' CY | '+Math.ceil(r/27*45)+' 80lb bags'}else if(unitDims===1){dispMode().textContent=formatNum(r)+' SF';dispSub().textContent=formatNum(r/9)+' SY | '+formatNum(r/43560)+' acres'}pendingOp=null}exprHasValue=false;lastUsedFeet=false;justCalculated=true;return}
+    if(key==='C'){resetEntry();accumulator=0;pendingOp=null;justCalculated=false;expression='';exprHasValue=false;unitDims=0;lastUsedFeet=false;feetPressCount=0;feetBaseVal=0;pitchVal=null;riseVal=null;runVal=null;updateDisplay();return}
     if(key==='CE'){resetEntry();justCalculated=false;updateDisplay();return}
     if(key==='\u232b'){if(mode==='std'&&display.length>1)display=display.slice(0,-1);else if(mode==='std')display='0';updateDisplay();return}
     if(key==='%'){setDisplayValue(getCurrentValue()/100);return}
     if(key==='M+'){memory+=getCurrentValue();updateDisplay();return}
     if(key==='Rcl'){setDisplayValue(memory);return}
     if(key==='Stor'){memory=getCurrentValue();updateDisplay();return}
-    if(key==='Pitch'){pitchVal=getCurrentValue();dispMode().textContent='PITCH = '+pitchVal;solvePRR();return}
-    if(key==='Rise'){riseVal=getCurrentValue();dispMode().textContent='RISE = '+formatNum(riseVal);solvePRR();return}
-    if(key==='Run'){runVal=getCurrentValue();dispMode().textContent='RUN = '+formatNum(runVal);solvePRR();return}
+    if(key==='Pitch'){pitchVal=getCurrentValue();resetEntry();newEntry=true;dispMode().textContent='PITCH = '+pitchVal;solvePRR();return}
+    if(key==='Rise'){riseVal=getCurrentValue();resetEntry();newEntry=true;dispMode().textContent='RISE = '+formatNum(riseVal);solvePRR();return}
+    if(key==='Run'){runVal=getCurrentValue();resetEntry();newEntry=true;dispMode().textContent='RUN = '+formatNum(runVal);solvePRR();return}
     if(key==='Diag'){if(riseVal!==null&&runVal!==null){setDisplayValue(Math.sqrt(riseVal**2+runVal**2));dispMode().textContent='DIAG'}return}
     if(key==='Hip/V'){if(runVal!==null&&pitchVal!==null){const r=runVal*pitchVal/12,p=runVal*Math.SQRT2;setDisplayValue(Math.sqrt(p**2+r**2));dispMode().textContent='HIP/VAL'}return}
     if(key==='Sine'){setDisplayValue(Math.sin(getCurrentValue()*Math.PI/180));dispMode().textContent='SIN';return}
