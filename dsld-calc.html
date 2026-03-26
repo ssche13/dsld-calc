@@ -867,7 +867,7 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
   let display='0',entry=0,accumulator=0,pendingOp=null,mode='std';
   let feetPart=0,inchPart=0,fracNum=0,fracDen=0,memory=0,justCalculated=false,newEntry=false;
   let pitchVal=null,riseVal=null,runVal=null;
-  let expression='',exprHasValue=false,unitDims=0,lastUsedFeet=false,feetPressCount=0,feetBaseVal=0;
+  let expression='',exprHasValue=false,unitDims=0,lastUsedFeet=false,feetPressCount=0,feetBaseVal=0,exprUsedFtIn=false;
   const dispMain=()=>document.getElementById('kp-main');
   const dispSub=()=>document.getElementById('kp-sub');
   const dispMode=()=>document.getElementById('kp-mode');
@@ -877,8 +877,10 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
   const opSymbols={'+':' + ','-':' \u2212 ','\u00d7':' \u00d7 ','\u00f7':' \u00f7 '};
 
   function isFtInMode(){return feetPart>0||inchPart>0||fracNum>0}
+  function fmtFtInExpr(decFt){const ti=Math.abs(decFt)*12,f=Math.floor(ti/12),ri=ti-f*12,wi=Math.floor(ri),fi=ri-wi;let num=Math.round(fi*16);if(num===16){num=0;wi++}let s=(decFt<0?'\u2212':'');if(f>0)s+=f+'\u2032';if(wi>0||num>0||f===0){if(f>0)s+='-';s+=wi;if(num>0){let n=num,d=16;while(n%2===0&&d%2===0){n/=2;d/=2}s+=' '+n+'/'+d}s+='\u2033'}return s}
   function formatValueForExpr(){
     if(isFtInMode()||mode==='inch'||mode==='frac'){
+      exprUsedFtIn=true;
       let s='';if(feetPart>0)s+=feetPart+'\u2032';
       if(inchPart>0||fracNum>0){if(feetPart>0)s+='-';s+=inchPart;if(fracNum>0&&fracDen>0)s+=' '+fracNum+'/'+fracDen;s+='\u2033'}
       return s||display;
@@ -912,7 +914,7 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
   window.kpPress=function(key){
     if(/^[0-9]$/.test(key)||key==='00'||key==='.'){
       feetPressCount=0;
-      if(justCalculated&&!pendingOp){accumulator=0;resetEntry();justCalculated=false;newEntry=false;expression=''}
+      if(justCalculated&&!pendingOp){accumulator=0;resetEntry();justCalculated=false;newEntry=false;expression='';exprUsedFtIn=false}
       if(justCalculated&&pendingOp){resetEntry();justCalculated=false;newEntry=false}
       if(newEntry){resetEntry();newEntry=false}
       if(mode==='frac'){handleFracDigit(key)}
@@ -926,8 +928,15 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
       // Consecutive Feet presses: 2nd=squared(SF), 3rd=cubed(CF)
       if(feetPressCount>=1){
         feetPressCount++;
-        if(feetPressCount===2){const sf=feetBaseVal*feetBaseVal;expression='('+feetBaseVal+')\u00b2 = '+formatNum(sf)+' SF';exprHasValue=true;setDisplayValue(sf);dispMode().textContent=formatNum(sf)+' SF';dispSub().textContent=formatNum(sf/9)+' SY | '+formatNum(sf/43560)+' acres';justCalculated=true;renderExpr();return}
-        if(feetPressCount>=3){const cf=feetBaseVal*feetBaseVal*feetBaseVal;expression='('+feetBaseVal+')\u00b3 = '+formatNum(cf)+' CF';exprHasValue=true;setDisplayValue(cf);dispMode().textContent=formatNum(cf)+' CF ('+formatNum(cf/27)+' CY)';dispSub().textContent=formatNum(cf/27)+' CY | '+Math.ceil(cf/27*45)+' 80lb bags';justCalculated=true;renderExpr();return}
+        if(feetPressCount===2){const sf=feetBaseVal*feetBaseVal;
+          if(pendingOp){expression+='('+feetBaseVal+')\u00b2';exprHasValue=true;setDisplayValue(sf)}
+          else{expression='('+feetBaseVal+')\u00b2 = '+formatNum(sf)+' SF';exprHasValue=true;setDisplayValue(sf);justCalculated=true}
+          dispMode().textContent=formatNum(sf)+' SF';dispSub().textContent=formatNum(sf/9)+' SY | '+formatNum(sf/43560)+' acres';renderExpr();return}
+        if(feetPressCount>=3){const cf=feetBaseVal*feetBaseVal*feetBaseVal;
+          const sqTag='('+feetBaseVal+')\u00b2';
+          if(pendingOp){if(expression.endsWith(sqTag))expression=expression.slice(0,-sqTag.length);expression+='('+feetBaseVal+')\u00b3';exprHasValue=true;setDisplayValue(cf)}
+          else{expression='('+feetBaseVal+')\u00b3 = '+formatNum(cf)+' CF';exprHasValue=true;setDisplayValue(cf);justCalculated=true}
+          dispMode().textContent=formatNum(cf)+' CF ('+formatNum(cf/27)+' CY)';dispSub().textContent=formatNum(cf/27)+' CY | '+Math.ceil(cf/27*45)+' 80lb bags';renderExpr();return}
       }
       // Convert inches to feet
       if(inchPart>0&&feetPart===0&&display==='0'){const inc=inchPart;const v=inc/12;resetEntry();setDisplayValue(v);dispMode().textContent=formatNum(inc)+'" → '+formatNum(v)+' ft';feetPressCount=0;return}
@@ -967,7 +976,7 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
         if(lastUsedFeet&&pendingOp==='\u00d7')unitDims++;
         if(!exprHasValue)expression+=valStr;
         const r=doOp(accumulator,val,pendingOp);
-        expression+=' = '+formatNum(r);
+        expression+=' = '+(exprUsedFtIn&&unitDims===0?fmtFtInExpr(r):formatNum(r));
         setDisplayValue(r);accumulator=r;
         if(unitDims>=2){dispMode().textContent=formatNum(r)+' CF ('+formatNum(r/27)+' CY)';dispSub().textContent=formatNum(r/27)+' CY | '+Math.ceil(r/27*45)+' 80lb bags'}
         else if(unitDims===1){dispMode().textContent=formatNum(r)+' SF';dispSub().textContent=formatNum(r/9)+' SY | '+formatNum(r/43560)+' acres'}
@@ -975,7 +984,7 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
       }
       exprHasValue=false;lastUsedFeet=false;justCalculated=true;renderExpr();return;
     }
-    if(key==='C'){resetEntry();accumulator=0;pendingOp=null;justCalculated=false;expression='';exprHasValue=false;unitDims=0;lastUsedFeet=false;feetPressCount=0;feetBaseVal=0;pitchVal=null;riseVal=null;runVal=null;updateDisplay();return}
+    if(key==='C'){resetEntry();accumulator=0;pendingOp=null;justCalculated=false;expression='';exprHasValue=false;exprUsedFtIn=false;unitDims=0;lastUsedFeet=false;feetPressCount=0;feetBaseVal=0;pitchVal=null;riseVal=null;runVal=null;updateDisplay();return}
     if(key==='CE'){resetEntry();justCalculated=false;updateDisplay();return}
     if(key==='\u232b'){if(mode==='std'&&display.length>1)display=display.slice(0,-1);else if(mode==='std')display='0';updateDisplay();return}
     if(key==='%'){const vs=formatValueForExpr();const v=getCurrentValue();expression+=vs+'%';exprHasValue=true;setDisplayValue(v/100);renderExpr();return}
