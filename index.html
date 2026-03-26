@@ -129,6 +129,12 @@ input:focus,select:focus{border-color:var(--gold)}
 .key-navy{background:var(--navy);color:#fff;font-size:.62rem}.key-navy:hover{background:var(--navy-lt)}
 .key-orange{background:#e07020;color:#fff}.key-orange:hover{background:#f08030}
 .key-wide{flex:2}
+/* Conv panel */
+.conv-panel{display:none;background:var(--panel);border:1px solid var(--gold);border-radius:6px;padding:10px;margin-bottom:8px}
+.conv-panel.open{display:block}
+.conv-title{font-family:'IBM Plex Mono',monospace;font-size:.6rem;font-weight:700;color:var(--gold);letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px;text-align:center}
+.conv-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:5px}
+.conv-grid .key{min-height:36px;font-size:.65rem}
 
 /* ══ Guide ══ */
 .guide-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:300;opacity:0;pointer-events:none;transition:opacity .25s}
@@ -191,47 +197,62 @@ input:focus,select:focus{border-color:var(--gold)}
     <div class="calc-display-main" id="kp-main">0</div>
     <div class="calc-display-sub" id="kp-sub"></div>
   </div>
+  <!-- Conv panel (hidden, slides open) -->
+  <div class="conv-panel" id="conv-panel">
+    <div class="conv-title">Unit Conversions</div>
+    <div class="conv-grid">
+      <button class="key key-navy" onclick="kpPress('SF')">SF<span class="key-label">ft²</span></button>
+      <button class="key key-navy" onclick="kpPress('SY')">SY<span class="key-label">yd²</span></button>
+      <button class="key key-navy" onclick="kpPress('CY')">CY<span class="key-label">yd³</span></button>
+      <button class="key key-navy" onclick="kpPress('CF')">CF<span class="key-label">ft³</span></button>
+      <button class="key key-navy" onclick="kpPress('Acres')">Acres</button>
+      <button class="key key-func" onclick="kpPress('x²')">x²</button>
+      <button class="key key-func" onclick="kpPress('x³')">x³</button>
+      <button class="key key-func" onclick="kpPress('Circ')">Circ</button>
+      <button class="key key-func" onclick="kpPress('Arc')">Arc</button>
+      <button class="key key-func" onclick="kpPress('m')">m</button>
+    </div>
+  </div>
   <div class="keypad">
+    <!-- Row 1: Construction -->
     <div class="key-row">
       <button class="key key-navy" onclick="kpPress('Pitch')"><span class="key-label">Slope</span>Pitch</button>
       <button class="key key-navy" onclick="kpPress('Rise')">Rise</button>
       <button class="key key-navy" onclick="kpPress('Run')">Run</button>
       <button class="key key-navy" onclick="kpPress('Diag')"><span class="key-label">Roof</span>Diag</button>
       <button class="key key-navy" onclick="kpPress('Hip/V')"><span class="key-label">Ir/Pitch</span>Hip/V</button>
+      <button class="key key-navy" onclick="kpPress('Jack')"><span class="key-label">Ir/Jack</span>Jack</button>
     </div>
+    <!-- Row 2: Extended -->
     <div class="key-row">
       <button class="key key-func" onclick="kpPress('Stair')"><span class="key-label">Riser Lim</span>Stair</button>
+      <button class="key key-func" onclick="kpPress('Length')"><span class="key-label">Blocks</span>Length</button>
+      <button class="key key-func" onclick="kpPress('Width')"><span class="key-label">Footing</span>Width</button>
+      <button class="key key-func" onclick="kpPress('Height')"><span class="key-label">Drywall</span>Height</button>
       <button class="key key-func" onclick="kpPress('Sine')"><span class="key-label">ArcSine</span>Sine</button>
       <button class="key key-func" onclick="kpPress('Cos')"><span class="key-label">ArcCos</span>Cos</button>
       <button class="key key-func" onclick="kpPress('Tan')"><span class="key-label">ArcTan</span>Tan</button>
-      <button class="key key-func" onclick="kpPress('x²')">x²</button>
-      <button class="key key-func" onclick="kpPress('x³')">x³</button>
-      <button class="key key-func" onclick="kpPress('Circ')"><span class="key-label">Column/Cone</span>Circ</button>
     </div>
+    <!-- Row 3: Units -->
     <div class="key-row">
-      <button class="key key-func" onclick="kpPress('m')">m</button>
       <button class="key key-func" onclick="kpPress('Yds')">Yds</button>
       <button class="key key-gold" onclick="kpPress('Feet')">Feet</button>
       <button class="key key-gold" onclick="kpPress('Inch')">Inch</button>
       <button class="key key-func" onclick="kpPress('Frac')"><span class="key-label">x10&#x207F;</span>/</button>
-      <button class="key key-func" onclick="kpPress('Arc')"><span class="key-label">Radius</span>Arc</button>
+      <button class="key key-func" onclick="kpPress('x²')"><span class="key-label">Area</span>x²</button>
+      <button class="key key-func" onclick="kpPress('x³')"><span class="key-label">Volume</span>x³</button>
     </div>
-    <div class="key-row">
-      <button class="key key-navy" onclick="kpPress('SF')"><span class="key-label">ft²</span>SF</button>
-      <button class="key key-navy" onclick="kpPress('SY')"><span class="key-label">yd²</span>SY</button>
-      <button class="key key-navy" onclick="kpPress('CY')"><span class="key-label">yd³</span>CY</button>
-      <button class="key key-navy" onclick="kpPress('Acres')"><span class="key-label">43560sf</span>Acres</button>
-      <button class="key key-navy" onclick="kpPress('CF')"><span class="key-label">ft³</span>CF</button>
-    </div>
+    <!-- Row 4: Stor/Conv + 7 8 9 -->
     <div class="key-row">
       <button class="key key-func" onclick="kpPress('Stor')"><span class="key-label">Prefs</span>Stor</button>
-      <button class="key key-orange" onclick="kpPress('CE')">Conv</button>
+      <button class="key key-orange" onclick="toggleConv()" id="conv-btn">Conv</button>
       <button class="key key-num" onclick="kpPress('7')">7</button>
       <button class="key key-num" onclick="kpPress('8')">8</button>
       <button class="key key-num" onclick="kpPress('9')">9</button>
       <button class="key key-op" onclick="kpPress('%')">%</button>
       <button class="key key-op" onclick="kpPress('&#x232B;')">&larr;</button>
     </div>
+    <!-- Row 5: Rcl + 4 5 6 -->
     <div class="key-row">
       <button class="key key-func" onclick="kpPress('Rcl')"><span class="key-label">Rcl/STO</span>Rcl</button>
       <button class="key key-num" onclick="kpPress('4')">4</button>
@@ -240,6 +261,7 @@ input:focus,select:focus{border-color:var(--gold)}
       <button class="key key-gold" onclick="kpPress('&times;')">&times;</button>
       <button class="key key-gold" onclick="kpPress('&divide;')">&divide;</button>
     </div>
+    <!-- Row 6: M+ 1 2 3 -->
     <div class="key-row">
       <button class="key key-func" onclick="kpPress('M+')">M+</button>
       <button class="key key-num" onclick="kpPress('1')">1</button>
@@ -248,6 +270,7 @@ input:focus,select:focus{border-color:var(--gold)}
       <button class="key key-gold" onclick="kpPress('+')">+</button>
       <button class="key key-gold" onclick="kpPress('-')">&minus;</button>
     </div>
+    <!-- Row 7: On/C 0 00 . = -->
     <div class="key-row">
       <button class="key key-red" onclick="kpPress('C')">On/C</button>
       <button class="key key-num" onclick="kpPress('0')">0</button>
@@ -833,6 +856,8 @@ window.addEventListener('DOMContentLoaded',()=>{
   document.querySelectorAll('[data-tabs]').forEach(initTabs);
 });
 window.addEventListener('hashchange',()=>navigate(location.hash));
+function toggleConv(){const p=document.getElementById('conv-panel');p.classList.toggle('open');const b=document.getElementById('conv-btn');b.style.background=p.classList.contains('open')?'var(--gold)':''}
+
 
 /* ── Keypad Calculator ── */
 (function(){
@@ -922,6 +947,10 @@ window.addEventListener('hashchange',()=>navigate(location.hash));
     if(key==='x\u00b2'){const vs=formatValueForExpr();const v=getCurrentValue();expression+=vs+'\u00b2';exprHasValue=true;setDisplayValue(v*v);dispMode().textContent='x\u00b2';justCalculated=true;return}
     if(key==='x\u00b3'){const vs=formatValueForExpr();const v=getCurrentValue();expression+=vs+'\u00b3';exprHasValue=true;setDisplayValue(v*v*v);dispMode().textContent='x\u00b3';justCalculated=true;return}
     if(key==='Stair'){location.hash='#stair';return}
+    if(key==='Length'){dispMode().textContent='LENGTH = '+formatNum(getCurrentValue())+' ft';return}
+    if(key==='Width'){dispMode().textContent='WIDTH = '+formatNum(getCurrentValue())+' ft';return}
+    if(key==='Height'){dispMode().textContent='HEIGHT = '+formatNum(getCurrentValue())+' ft';return}
+    if(key==='Jack'){if(runVal!==null&&pitchVal!==null){const oc=getCurrentValue();const rise=oc*pitchVal/12;const jack=Math.sqrt(oc**2+rise**2);setDisplayValue(jack);dispMode().textContent='JACK @ '+oc+'" OC'}return}
   };
   function handleFracDigit(key){if(key==='.'||key==='00')return;const d=parseInt(key);if(fracDen===0){if(fracNum===0)fracNum=d;else fracDen=d}else if(fracDen<100)fracDen=fracDen*10+d}
   function doOp(a,b,op){switch(op){case'+':return a+b;case'-':return a-b;case'\u00d7':return a*b;case'\u00f7':return b!==0?a/b:0;default:return b}}
