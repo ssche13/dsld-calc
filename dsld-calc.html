@@ -1305,12 +1305,32 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
       case'Cos':r=Math.cos(v*Math.PI/180);d='cos('+vs+'\u00b0)';md='cos('+vs+'\u00b0) = '+fmt(r);break;
       case'Tan':r=Math.tan(v*Math.PI/180);d='tan('+vs+'\u00b0)';md='tan('+vs+'\u00b0) = '+fmt(r);break;
       case'm':
-        if(lastConv==='m'){r=v/0.3048;d=vs+'m\u2192ft';md=fmt(v)+' m = '+fmt(r)+' ft';lastConv=null}
-        else{r=v*0.3048;d=vs+'ft\u2192m';md=fmt(v)+' ft = '+fmt(r)+' m';lastConv='m'}
+        if(lastConv==='m'){
+          // Toggle back: m→ft (dimension-aware)
+          if(ctx.dims>=3){r=v/Math.pow(0.3048,3);md=fmt(v)+' m³ = '+fmt(r)+' CF';ctx.mainOvr=fmt(r)+' CF'}
+          else if(ctx.dims>=2){r=v/Math.pow(0.3048,2);md=fmt(v)+' m² = '+fmt(r)+' SF';ctx.mainOvr=fmt(r)+' SF'}
+          else{r=v/0.3048;md=fmt(v)+' m = '+fmt(r)+' ft'}
+          d=vs+'m\u2192ft';lastConv=null;
+        }else{
+          if(ctx.dims>=3){r=v*Math.pow(0.3048,3);md=fmt(v)+' CF = '+fmt(r)+' m³';d=vs+'CF\u2192m³';ctx.mainOvr=fmt(r)+' m³'}
+          else if(ctx.dims>=2){r=v*Math.pow(0.3048,2);md=fmt(v)+' SF = '+fmt(r)+' m²';d=vs+'SF\u2192m²';ctx.mainOvr=fmt(r)+' m²'}
+          else{r=v*0.3048;md=fmt(v)+' ft = '+fmt(r)+' m';d=vs+'ft\u2192m'}
+          lastConv='m';
+        }
         break;
       case'Yds':
-        if(lastConv==='Yds'){r=v*3;d=vs+'yd\u2192ft';md=fmt(v)+' yd = '+fmt(r)+' ft';lastConv=null}
-        else{r=v/3;d=vs+'ft\u2192yd';md=fmt(v)+' ft = '+fmt(r)+' yd';lastConv='Yds'}
+        if(lastConv==='Yds'){
+          // Toggle back: yd→ft (dimension-aware)
+          if(ctx.dims>=3){r=v*27;md=fmt(v)+' CY = '+fmt(r)+' CF';ctx.mainOvr=fmt(r)+' CF'}
+          else if(ctx.dims>=2){r=v*9;md=fmt(v)+' SY = '+fmt(r)+' SF';ctx.mainOvr=fmt(r)+' SF'}
+          else{r=v*3;md=fmt(v)+' yd = '+fmt(r)+' ft'}
+          d=vs+'yd\u2192ft';lastConv=null;
+        }else{
+          if(ctx.dims>=3){r=v/27;md=fmt(v)+' CF = '+fmt(r)+' CY';d=vs+'CF\u2192CY';ctx.mainOvr=fmt(r)+' CY'}
+          else if(ctx.dims>=2){r=v/9;md=fmt(v)+' SF = '+fmt(r)+' SY';d=vs+'SF\u2192SY';ctx.mainOvr=fmt(r)+' SY'}
+          else{r=v/3;md=fmt(v)+' ft = '+fmt(r)+' yd'}
+          lastConv='Yds';
+        }
         break;
       case'Circ':r=Math.PI*v;d='\u03c0\u00d7'+vs;md='CIRCUMF(\u00d8'+vs+') = '+fmt(r);break;
       case'Arc':r=v*Math.PI/180;d=vs+'\u00b0\u2192rad';md=vs+'\u00b0 = '+fmt(r)+' rad';break;
