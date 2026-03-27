@@ -52,8 +52,8 @@ body{font-family:'IBM Plex Sans',-apple-system,BlinkMacSystemFont,sans-serif;bac
 .install-banner{position:fixed;bottom:0;left:0;right:0;background:var(--gold);color:#0f1319;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:.82rem;font-weight:700;z-index:200}
 .install-banner button{background:rgba(0,0,0,.15);border:none;color:#0f1319;padding:6px 14px;border-radius:4px;font-family:inherit;font-weight:700;font-size:.78rem;cursor:pointer}
 .install-banner .dismiss{background:none;font-size:1.2rem;padding:4px 8px}
-.install-btn-wrap{text-align:center;padding:10px 20px 16px}
-.install-btn-wrap button{background:var(--gold);color:#0f1319;border:none;padding:10px 20px;border-radius:8px;font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:.85rem;cursor:pointer;display:inline-flex;align-items:center;gap:8px;width:100%;justify-content:center}
+.install-btn-wrap{text-align:center;padding:4px 20px 6px}
+.install-btn-wrap button{background:var(--gold);color:#0f1319;border:none;padding:5px 14px;border-radius:6px;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:.68rem;cursor:pointer;display:inline-flex;align-items:center;gap:5px;width:auto;justify-content:center;opacity:.85}
 .install-btn-wrap button:active{opacity:.8}
 .install-btn-wrap.hidden{display:none}
 
@@ -628,8 +628,8 @@ input:focus,select:focus{border-color:var(--gold)}
 <!-- ═══ Persistent Install Button ═══ -->
 <div id="install-btn-wrap" class="install-btn-wrap">
   <button id="install-btn" onclick="handleInstallBtn()">
-    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
-    Add to Home Screen
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+    Install App
   </button>
 </div>
 
@@ -1474,7 +1474,7 @@ let raRowId=0;
 function raAddRow(){
   raRowId++;const c=document.getElementById('ra-rows'),row=document.createElement('div');
   row.className='dyn-row';row.id='ra-row-'+raRowId;
-  row.innerHTML='<div class="dyn-row-fields"><div class="field"><label>Length (ft)</label><input type="number" class="ra-len" step="0.01" min="0" inputmode="decimal" placeholder="40"></div><div class="field"><label>Width (ft)</label><input type="number" class="ra-wid" step="0.01" min="0" inputmode="decimal" placeholder="25"></div><div class="field"><label>Pitch (/12)</label><input type="number" class="ra-pitch" step="0.5" min="0" inputmode="decimal" placeholder="8"></div></div><button class="dyn-row-del" onclick="raDelRow(\''+row.id+'\')" title="Remove">&times;</button>';
+  row.innerHTML='<div class="dyn-row-fields"><div class="field"><label>Flat Area (SF)</label><input type="number" class="ra-area" step="0.01" min="0" inputmode="decimal" placeholder="1000"></div><div class="field"><label>Pitch (/12)</label><input type="number" class="ra-pitch" step="0.5" min="0" inputmode="decimal" placeholder="8"></div></div><button class="dyn-row-del" onclick="raDelRow(\''+row.id+'\')" title="Remove">&times;</button>';
   c.appendChild(row);
 }
 function raDelRow(id){const r=document.getElementById(id);if(r)r.remove()}
@@ -1482,14 +1482,14 @@ function calcRoofArea(){
   const rows=document.querySelectorAll('#ra-rows .dyn-row');if(rows.length===0)return alert('Add at least one area.');
   let totalFlat=0,totalSloped=0;const results=[];
   rows.forEach(row=>{
-    const len=parseFloat(row.querySelector('.ra-len').value)||0,wid=parseFloat(row.querySelector('.ra-wid').value)||0,pitch=parseFloat(row.querySelector('.ra-pitch').value)||0;
-    if(len<=0||wid<=0)return;
-    const flatArea=len*wid,slopeFactor=Math.sqrt(1+(pitch/12)**2),slopedArea=flatArea*slopeFactor;
-    totalFlat+=flatArea;totalSloped+=slopedArea;results.push({len,wid,pitch,flatArea,slopeFactor,slopedArea});
+    const flatArea=parseFloat(row.querySelector('.ra-area').value)||0,pitch=parseFloat(row.querySelector('.ra-pitch').value)||0;
+    if(flatArea<=0)return;
+    const slopeFactor=Math.sqrt(1+(pitch/12)**2),slopedArea=flatArea*slopeFactor;
+    totalFlat+=flatArea;totalSloped+=slopedArea;results.push({flatArea,pitch,slopeFactor,slopedArea});
   });
-  if(results.length===0)return alert('Enter valid dimensions.');
+  if(results.length===0)return alert('Enter a flat area.');
   let html='<div class="rsect"><div class="rtitle">Area Breakdown</div>';
-  results.forEach(r=>{html+='<div class="rrow"><span class="rl">'+r.len+'\' × '+r.wid+'\' @ '+r.pitch+'/12</span><span class="rv">'+r.slopedArea.toFixed(1)+' sq ft</span></div>'});
+  results.forEach(r=>{html+='<div class="rrow"><span class="rl">'+r.flatArea.toFixed(1)+' SF @ '+r.pitch+'/12</span><span class="rv">'+r.slopedArea.toFixed(1)+' sq ft</span></div>'});
   html+='</div><div class="rsect"><div class="rtitle">Totals</div>';
   html+='<div class="rrow"><span class="rl">Total Flat Area</span><span class="rv">'+totalFlat.toFixed(1)+' sq ft</span></div>';
   html+='<div class="rrow"><span class="rl">Total Sloped Area</span><span class="rv hi">'+totalSloped.toFixed(1)+' sq ft</span></div>';
