@@ -1324,10 +1324,13 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
   /* Conversion toggle state */
   var lastConv=null; // tracks last conversion for toggle: 'm','Yds'
   var preConvValue=null; // original value before conversion, restored on toggle-back
+  var preConvMainOvr=null; // original mainOvr label before conversion
+  var preConvSubText=null; // original subText before conversion
 
   /* Unary functions */
   function unaryFn(key){
     var eff=getEff(),v=eff.val,vs=eff.vs||fmtExpr(),r,d,md;
+    var restoreOvr=null,restoreSub=null; // deferred label restore for toggle-back
     if(eff.dims>ctx.dims)ctx.dims=eff.dims; // inherit dims from cycle state
     switch(key){
       case'Sqrt':r=Math.sqrt(Math.abs(v));d='\u221a('+vs+')';md='\u221a'+vs+' = '+fmt(r);break;
@@ -1336,32 +1339,34 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
       case'Tan':r=Math.tan(v*Math.PI/180);d='tan('+vs+'\u00b0)';md='tan('+vs+'\u00b0) = '+fmt(r);break;
       case'm':
         if(lastConv==='m'){
-          // Toggle back: restore original value exactly (no floating point drift)
+          // Toggle back: restore original value and labels exactly (no drift)
           r=preConvValue;
-          if(ctx.dims>=3){md=fmt(v)+' m³ = '+fmt(r)+' CF';ctx.mainOvr=fmt(r)+' CF'}
-          else if(ctx.dims>=2){md=fmt(v)+' m² = '+fmt(r)+' SF';ctx.mainOvr=fmt(r)+' SF'}
+          if(ctx.dims>=3){md=fmt(v)+' m\u00b3 = '+fmt(r)+' CF'}
+          else if(ctx.dims>=2){md=fmt(v)+' m\u00b2 = '+fmt(r)+' SF'}
           else{md=fmt(v)+' m = '+fmt(r)+' ft'}
           d=vs+'m\u2192ft';lastConv=null;preConvValue=null;
+          restoreOvr=preConvMainOvr;restoreSub=preConvSubText;preConvMainOvr=null;preConvSubText=null;
         }else{
-          preConvValue=v;
-          if(ctx.dims>=3){r=v*Math.pow(0.3048,3);md=fmt(v)+' CF = '+fmt(r)+' m³';d=vs+'CF\u2192m³';ctx.mainOvr=fmt(r)+' m³'}
-          else if(ctx.dims>=2){r=v*Math.pow(0.3048,2);md=fmt(v)+' SF = '+fmt(r)+' m²';d=vs+'SF\u2192m²';ctx.mainOvr=fmt(r)+' m²'}
+          preConvValue=v;preConvMainOvr=ctx.mainOvr;preConvSubText=ctx.subText;
+          if(ctx.dims>=3){r=v*Math.pow(0.3048,3);md=fmt(v)+' CF = '+fmt(r)+' m\u00b3';d=vs+'CF\u2192m\u00b3';restoreOvr=fmt(r)+' m\u00b3';restoreSub=''}
+          else if(ctx.dims>=2){r=v*Math.pow(0.3048,2);md=fmt(v)+' SF = '+fmt(r)+' m\u00b2';d=vs+'SF\u2192m\u00b2';restoreOvr=fmt(r)+' m\u00b2';restoreSub=''}
           else{r=v*0.3048;md=fmt(v)+' ft = '+fmt(r)+' m';d=vs+'ft\u2192m'}
           lastConv='m';
         }
         break;
       case'Yds':
         if(lastConv==='Yds'){
-          // Toggle back: restore original value exactly (no floating point drift)
+          // Toggle back: restore original value and labels exactly (no drift)
           r=preConvValue;
-          if(ctx.dims>=3){md=fmt(v)+' CY = '+fmt(r)+' CF';ctx.mainOvr=fmt(r)+' CF'}
-          else if(ctx.dims>=2){md=fmt(v)+' SY = '+fmt(r)+' SF';ctx.mainOvr=fmt(r)+' SF'}
+          if(ctx.dims>=3){md=fmt(v)+' CY = '+fmt(r)+' CF'}
+          else if(ctx.dims>=2){md=fmt(v)+' SY = '+fmt(r)+' SF'}
           else{md=fmt(v)+' yd = '+fmt(r)+' ft'}
           d=vs+'yd\u2192ft';lastConv=null;preConvValue=null;
+          restoreOvr=preConvMainOvr;restoreSub=preConvSubText;preConvMainOvr=null;preConvSubText=null;
         }else{
-          preConvValue=v;
-          if(ctx.dims>=3){r=v/27;md=fmt(v)+' CF = '+fmt(r)+' CY';d=vs+'CF\u2192CY';ctx.mainOvr=fmt(r)+' CY'}
-          else if(ctx.dims>=2){r=v/9;md=fmt(v)+' SF = '+fmt(r)+' SY';d=vs+'SF\u2192SY';ctx.mainOvr=fmt(r)+' SY'}
+          preConvValue=v;preConvMainOvr=ctx.mainOvr;preConvSubText=ctx.subText;
+          if(ctx.dims>=3){r=v/27;md=fmt(v)+' CF = '+fmt(r)+' CY';d=vs+'CF\u2192CY';restoreOvr=fmt(r)+' CY';restoreSub=''}
+          else if(ctx.dims>=2){r=v/9;md=fmt(v)+' SF = '+fmt(r)+' SY';d=vs+'SF\u2192SY';restoreOvr=fmt(r)+' SY';restoreSub=''}
           else{r=v/3;md=fmt(v)+' ft = '+fmt(r)+' yd'}
           lastConv='Yds';
         }
@@ -1372,9 +1377,12 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
       case'x\u00b3':r=v*v*v;d='('+vs+')\u00b3';md='x\u00b3 = '+fmt(r);break;
       default:return;
     }
-    if(key!=='m'&&key!=='Yds'){lastConv=null;preConvValue=null;}
+    if(key!=='m'&&key!=='Yds'){lastConv=null;preConvValue=null;preConvMainOvr=null;preConvSubText=null;}
     if(hasTrailingNum())ctx.tokens.pop();
-    pushNum(r,d,false);setDec(r);ctx.modeText=md;ctx.state=READY;render();
+    pushNum(r,d,false);setDec(r);ctx.modeText=md;
+    // Restore labels after setDec() clears mainOvr — toggle-back needs original labels
+    if(restoreOvr!==null){ctx.mainOvr=restoreOvr;ctx.subText=restoreSub}
+    ctx.state=READY;render();
   }
 
   /* Display-only conversions */
