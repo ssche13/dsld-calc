@@ -921,7 +921,7 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
   const elMem=()=>document.getElementById('kp-mem');
 
   /* === Helpers === */
-  function fmt(n){if(Math.abs(n)>=1e10)return n.toExponential(4);return parseFloat(n.toFixed(8)).toString()}
+  function fmt(n){if(n===undefined||n===null||isNaN(n))return'0';if(Math.abs(n)>=1e10)return n.toExponential(4);return parseFloat(n.toFixed(8)).toString()}
   function doOp(a,b,op){switch(op){case'+':return a+b;case'-':return a-b;case'\u00d7':return a*b;case'\u00f7':return b!==0?a/b:NaN;default:return b}}
   function inFtIn(){return ctx.feet!==0||ctx.inches>0||ctx.fNum>0}
   /* Sync canonical inches from current ft-in parts */
@@ -1219,6 +1219,11 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
     if(st!==FEET2&&st!==FEET3&&ft&&key==='\u00d7')ctx.dims++;
     if(key==='+'||key==='-')ctx.dims=0;
     if(ctx.op&&st!==READY&&st!==READY_OP)ctx.acc=doOp(ctx.acc,val,ctx.op);else ctx.acc=val;
+    // Guard against NaN from chained division by zero
+    if(isNaN(ctx.acc)||!isFinite(ctx.acc)){
+      resetEntry();ctx.mainOvr='ERROR';ctx.modeText='÷ by 0';ctx.subText='Press C to clear';
+      ctx.state=READY;render();return;
+    }
     if(st===READY||st===READY_OP){ctx.tokens=[];pushNum(ctx.acc,fmt(ctx.acc),false)}
     else if(!hasTrailingNum()){pushNum(val,vs,ft)}
     pushOp(key);
