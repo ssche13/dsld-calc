@@ -906,6 +906,16 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
     if(inFtIn()){syncCanon();return ctx.canonInches/12} // return decimal feet for arithmetic compat
     return parseFloat(ctx.dig)||0;
   }
+  /* Get effective value + dims accounting for FEET2/FEET3 cycle states.
+     Every handler that reads the "current value" should use this instead of raw getVal(). */
+  function getEff(){
+    var st=ctx.state,bf;
+    if(st===FEET2){bf=ctx.fBase/12;return{val:bf*bf,dims:2,ft:true,vs:fmt(bf)+'\u2032\u00b2'}}
+    if(st===FEET3){bf=ctx.fBase/12;return{val:bf*bf*bf,dims:3,ft:true,vs:fmt(bf)+'\u2032\u00b3'}}
+    if(st===FEET1||st===FEET4){return{val:ctx.fBase/12,dims:ctx.dims,ft:true,vs:null}}
+    if(st===INCH1||st===INCH2||st===INCH3){return{val:ctx.fBase/12,dims:ctx.dims,ft:true,vs:null}}
+    var v=getVal(),f=inFtIn();return{val:v,dims:ctx.dims,ft:f,vs:fmtExpr()}
+  }
   function resetEntry(){ctx.dig='0';ctx.feet=0;ctx.inches=0;ctx.fNum=0;ctx.fDen=0;ctx.canonInches=0;ctx.inchLocked=false;ctx.mainOvr=null;ctx.modeText='';ctx.subText=''}
   function setDec(v){ctx.dig=fmt(v);ctx.feet=0;ctx.inches=0;ctx.fNum=0;ctx.fDen=0;ctx.canonInches=0;ctx.mainOvr=null}
   /* Convert decimal inches → ft-in parts (canonical inches is source of truth) */
@@ -985,9 +995,9 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
   /* === Handlers === */
 
   function digitHandler(key){
-    ctx.showEq=false;lastConv=null;
+    ctx.showEq=false;lastConv=null;preConvValue=null;
     var st=ctx.state;
-    if(st===READY){ctx.acc=0;ctx.op=null;ctx.tokens=[];resetEntry();ctx.state=ENTERING_STD}
+    if(st===READY){ctx.acc=0;ctx.op=null;ctx.tokens=[];resetEntry();ctx.dims=0;ctx.lastFt=false;ctx.state=ENTERING_STD}
     else if(st===READY_OP){resetEntry();ctx.state=ENTERING_STD}
     else if(st===OP_PENDING||st===PAREN_OPEN){resetEntry();ctx.state=ENTERING_STD}
     else if(st===FEET1){
@@ -999,7 +1009,7 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
         ctx.inches=0;ctx.fNum=0;ctx.fDen=0;ctx.state=ENTERING_INCH;
       }
     }
-    else if(st===FEET2||st===FEET3||st===FEET4||st===INCH1||st===INCH2||st===INCH3){resetEntry();ctx.tokens=[];ctx.acc=0;ctx.op=null;ctx.state=ENTERING_STD}
+    else if(st===FEET2||st===FEET3||st===FEET4||st===INCH1||st===INCH2||st===INCH3){resetEntry();ctx.tokens=[];ctx.acc=0;ctx.op=null;ctx.dims=0;ctx.lastFt=false;ctx.state=ENTERING_STD}
 
     if(ctx.state===ENTERING_FRAC){handleFrac(key)}
     else if(ctx.state===ENTERING_INCH){if(key==='.')return;ctx.inches=ctx.inches*10+parseInt(key);if(ctx.inches>99)ctx.inches=parseInt(key)}
@@ -1088,8 +1098,24 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
       syncCanon();var ti=ctx.canonInches;ctx.fBase=ti;
       showInches(ti);ctx.state=INCH1;render();return;
     }
-    // From FEET2/3/4 cycle → convert base value to inches
-    if(st===FEET2||st===FEET3||st===FEET4){
+    // From FEET2 → show sq inches; FEET3 → show cu inches; FEET4 → linear inches
+    if(st===FEET2){
+      var bf2=ctx.fBase/12,sqFt=bf2*bf2,sqIn=sqFt*144,saveFb=ctx.fBase;
+      setDec(sqFt);ctx.fBase=saveFb;ctx.dims=2;
+      ctx.mainOvr=fmt(sqIn)+' sq in';
+      ctx.modeText=fmt(sqFt)+' SF = '+fmt(sqIn)+' sq in';
+      ctx.subText=fmt(sqFt/9)+' SY';
+      ctx.state=READY;render();return;
+    }
+    if(st===FEET3){
+      var bf3=ctx.fBase/12,cuFt=bf3*bf3*bf3,cuIn=cuFt*1728,saveFb3=ctx.fBase;
+      setDec(cuFt);ctx.fBase=saveFb3;ctx.dims=3;
+      ctx.mainOvr=fmt(cuIn)+' cu in';
+      ctx.modeText=fmt(cuFt)+' CF = '+fmt(cuIn)+' cu in';
+      ctx.subText=fmt(cuFt/27)+' CY';
+      ctx.state=READY;render();return;
+    }
+    if(st===FEET4){
       var ti2=ctx.fBase;
       showInches(ti2);ctx.state=INCH1;render();return;
     }
@@ -1149,7 +1175,7 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
   const INCH1='INCH1',INCH2='INCH2',INCH3='INCH3';
 
   function operatorHandler(key){
-    ctx.showEq=false;lastConv=null;
+    ctx.showEq=false;lastConv=null;preConvValue=null;
     var st=ctx.state;
     // If already pending an operator, just replace it (don't evaluate with 0)
     if(st===OP_PENDING){
@@ -1159,25 +1185,11 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
       pushOp(key);
       render();return;
     }
-    // Use the value matching the current cycle position
-    var val,vs,ft;
-    if(st===FEET2){
-      // x² — use squared value
-      var baseFt=ctx.fBase/12;val=baseFt*baseFt;vs=fmt(baseFt)+'\u2032\u00b2';ft=true;ctx.dims=2;
-    }else if(st===FEET3){
-      // x³ — use cubed value
-      var baseFt3=ctx.fBase/12;val=baseFt3*baseFt3*baseFt3;vs=fmt(baseFt3)+'\u2032\u00b3';ft=true;ctx.dims=3;
-    }else if(st===FEET1||st===FEET4){
-      val=ctx.fBase/12; // linear feet
-      showFtIn(ctx.fBase);ctx.mainOvr=null;
-      vs=fmtExpr();ft=true;
-    }else if(st===INCH1||st===INCH2||st===INCH3){
-      val=ctx.fBase/12; // linear feet from inch base
-      showFtIn(ctx.fBase);ctx.mainOvr=null;
-      vs=fmtExpr();ft=true;
-    }else{
-      val=getVal();vs=fmtExpr();ft=inFtIn();
-    }
+    // Use getEff() for unified value resolution across all states
+    var eff=getEff(),val=eff.val,ft=eff.ft,vs=eff.vs;
+    if(eff.dims>ctx.dims)ctx.dims=eff.dims;
+    // For FEET1/FEET4/INCH states, restore ft-in display to get expression string
+    if(!vs){showFtIn(ctx.fBase);ctx.mainOvr=null;vs=fmtExpr()}
     // Track dims: count feet-based operands in × chains
     // FEET2 sets dims=1 (area=2 operands), FEET3 sets dims=2 (vol=3 operands)
     if(st!==FEET2&&st!==FEET3&&ft&&key==='\u00d7')ctx.dims++;
@@ -1192,16 +1204,9 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
   function equalsHandler(){
     while(ctx.parenStack.length>0)closeParenHandler();
     var st=ctx.state;
-    var val,vs,ft;
-    if(st===FEET2){
-      var baseFt2=ctx.fBase/12;val=baseFt2*baseFt2;vs=fmt(baseFt2)+'\u2032\u00b2';ft=true;ctx.dims=2;
-    }else if(st===FEET3){
-      var baseFt3=ctx.fBase/12;val=baseFt3*baseFt3*baseFt3;vs=fmt(baseFt3)+'\u2032\u00b3';ft=true;ctx.dims=3;
-    }else if(st===FEET1||st===FEET4){
-      val=ctx.fBase/12;showFtIn(ctx.fBase);ctx.mainOvr=null;vs=fmtExpr();ft=true;
-    }else if(st===INCH1||st===INCH2||st===INCH3){
-      val=ctx.fBase/12;showFtIn(ctx.fBase);ctx.mainOvr=null;vs=fmtExpr();ft=true;
-    }else{val=getVal();vs=fmtExpr();ft=inFtIn()}
+    var eff=getEff(),val=eff.val,ft=eff.ft,vs=eff.vs;
+    if(eff.dims>ctx.dims)ctx.dims=eff.dims;
+    if(!vs){showFtIn(ctx.fBase);ctx.mainOvr=null;vs=fmtExpr()}
     var r;
     if(ctx.op){
       // Count final operand's dimension contribution for × (both sides must be ft-based)
@@ -1241,16 +1246,9 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
 
   function closeParenHandler(){
     if(ctx.parenStack.length===0)return;
-    var st=ctx.state,val,vs,ft;
-    if(st===FEET2){
-      var bf=ctx.fBase/12;val=bf*bf;vs=fmt(bf)+'\u2032\u00b2';ft=false;
-    }else if(st===FEET3){
-      var bf3=ctx.fBase/12;val=bf3*bf3*bf3;vs=fmt(bf3)+'\u2032\u00b3';ft=false;
-    }else if(st===FEET1||st===FEET4){
-      val=ctx.fBase/12;showFtIn(ctx.fBase);ctx.mainOvr=null;vs=fmtExpr();ft=true;
-    }else if(st===INCH1||st===INCH2||st===INCH3){
-      val=ctx.fBase/12;showFtIn(ctx.fBase);ctx.mainOvr=null;vs=fmtExpr();ft=true;
-    }else{val=getVal();vs=fmtExpr();ft=inFtIn()}
+    var eff=getEff(),val=eff.val,ft=eff.ft,vs=eff.vs;
+    if(eff.dims>ctx.dims)ctx.dims=eff.dims;
+    if(!vs){showFtIn(ctx.fBase);ctx.mainOvr=null;vs=fmtExpr()}
     var r;
     if(ctx.op){if(!hasTrailingNum())pushNum(val,vs,ft);r=doOp(ctx.acc,val,ctx.op)}
     else{if(!hasTrailingNum())pushNum(val,vs,ft);r=val}
@@ -1266,8 +1264,9 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
     ctx.pitchVal=null;ctx.riseVal=null;ctx.runVal=null;
     ctx.state=READY;render();
   }
-  function clearEntry(){resetEntry();
-    if(ctx.op)ctx.state=OP_PENDING;else ctx.state=ENTERING_STD;
+  function clearEntry(){resetEntry();ctx.dims=0;ctx.lastFt=false;
+    if(ctx.op){ctx.state=OP_PENDING}
+    else{ctx.acc=0;ctx.tokens=[];ctx.state=ENTERING_STD}
     render();
   }
   function backspace(){
@@ -1279,7 +1278,7 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
     render();
   }
   function percentHandler(){
-    var v=getVal(),vs=fmtExpr(),pv;
+    var eff=getEff(),v=eff.val,vs=eff.vs||fmtExpr(),pv;
     // Contextual %: for +/- use acc×(v/100), for ×/÷ use v/100
     if(ctx.op==='+'||ctx.op==='-'){pv=ctx.acc*(v/100)}
     else{pv=v/100}
@@ -1289,16 +1288,18 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
   }
 
   /* Memory */
-  function memAdd(){ctx.mem+=getVal();render()}
+  function memAdd(){ctx.mem+=getEff().val;render()}
   function memRcl(){setDec(ctx.mem);ctx.state=ENTERING_STD;render()}
-  function memStor(){ctx.mem=getVal();render()}
+  function memStor(){ctx.mem=getEff().val;render()}
 
   /* Conversion toggle state */
   var lastConv=null; // tracks last conversion for toggle: 'm','Yds'
+  var preConvValue=null; // original value before conversion, restored on toggle-back
 
   /* Unary functions */
   function unaryFn(key){
-    var v=getVal(),vs=fmtExpr(),r,d,md;
+    var eff=getEff(),v=eff.val,vs=eff.vs||fmtExpr(),r,d,md;
+    if(eff.dims>ctx.dims)ctx.dims=eff.dims; // inherit dims from cycle state
     switch(key){
       case'Sqrt':r=Math.sqrt(Math.abs(v));d='\u221a('+vs+')';md='\u221a'+vs+' = '+fmt(r);break;
       case'Sine':r=Math.sin(v*Math.PI/180);d='sin('+vs+'\u00b0)';md='sin('+vs+'\u00b0) = '+fmt(r);break;
@@ -1306,12 +1307,14 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
       case'Tan':r=Math.tan(v*Math.PI/180);d='tan('+vs+'\u00b0)';md='tan('+vs+'\u00b0) = '+fmt(r);break;
       case'm':
         if(lastConv==='m'){
-          // Toggle back: m→ft (dimension-aware)
-          if(ctx.dims>=3){r=v/Math.pow(0.3048,3);md=fmt(v)+' m³ = '+fmt(r)+' CF';ctx.mainOvr=fmt(r)+' CF'}
-          else if(ctx.dims>=2){r=v/Math.pow(0.3048,2);md=fmt(v)+' m² = '+fmt(r)+' SF';ctx.mainOvr=fmt(r)+' SF'}
-          else{r=v/0.3048;md=fmt(v)+' m = '+fmt(r)+' ft'}
-          d=vs+'m\u2192ft';lastConv=null;
+          // Toggle back: restore original value exactly (no floating point drift)
+          r=preConvValue;
+          if(ctx.dims>=3){md=fmt(v)+' m³ = '+fmt(r)+' CF';ctx.mainOvr=fmt(r)+' CF'}
+          else if(ctx.dims>=2){md=fmt(v)+' m² = '+fmt(r)+' SF';ctx.mainOvr=fmt(r)+' SF'}
+          else{md=fmt(v)+' m = '+fmt(r)+' ft'}
+          d=vs+'m\u2192ft';lastConv=null;preConvValue=null;
         }else{
+          preConvValue=v;
           if(ctx.dims>=3){r=v*Math.pow(0.3048,3);md=fmt(v)+' CF = '+fmt(r)+' m³';d=vs+'CF\u2192m³';ctx.mainOvr=fmt(r)+' m³'}
           else if(ctx.dims>=2){r=v*Math.pow(0.3048,2);md=fmt(v)+' SF = '+fmt(r)+' m²';d=vs+'SF\u2192m²';ctx.mainOvr=fmt(r)+' m²'}
           else{r=v*0.3048;md=fmt(v)+' ft = '+fmt(r)+' m';d=vs+'ft\u2192m'}
@@ -1320,12 +1323,14 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
         break;
       case'Yds':
         if(lastConv==='Yds'){
-          // Toggle back: yd→ft (dimension-aware)
-          if(ctx.dims>=3){r=v*27;md=fmt(v)+' CY = '+fmt(r)+' CF';ctx.mainOvr=fmt(r)+' CF'}
-          else if(ctx.dims>=2){r=v*9;md=fmt(v)+' SY = '+fmt(r)+' SF';ctx.mainOvr=fmt(r)+' SF'}
-          else{r=v*3;md=fmt(v)+' yd = '+fmt(r)+' ft'}
-          d=vs+'yd\u2192ft';lastConv=null;
+          // Toggle back: restore original value exactly (no floating point drift)
+          r=preConvValue;
+          if(ctx.dims>=3){md=fmt(v)+' CY = '+fmt(r)+' CF';ctx.mainOvr=fmt(r)+' CF'}
+          else if(ctx.dims>=2){md=fmt(v)+' SY = '+fmt(r)+' SF';ctx.mainOvr=fmt(r)+' SF'}
+          else{md=fmt(v)+' yd = '+fmt(r)+' ft'}
+          d=vs+'yd\u2192ft';lastConv=null;preConvValue=null;
         }else{
+          preConvValue=v;
           if(ctx.dims>=3){r=v/27;md=fmt(v)+' CF = '+fmt(r)+' CY';d=vs+'CF\u2192CY';ctx.mainOvr=fmt(r)+' CY'}
           else if(ctx.dims>=2){r=v/9;md=fmt(v)+' SF = '+fmt(r)+' SY';d=vs+'SF\u2192SY';ctx.mainOvr=fmt(r)+' SY'}
           else{r=v/3;md=fmt(v)+' ft = '+fmt(r)+' yd'}
@@ -1338,25 +1343,25 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
       case'x\u00b3':r=v*v*v;d='('+vs+')\u00b3';md='x\u00b3 = '+fmt(r);break;
       default:return;
     }
-    if(key!=='m'&&key!=='Yds')lastConv=null;
+    if(key!=='m'&&key!=='Yds'){lastConv=null;preConvValue=null;}
     if(hasTrailingNum())ctx.tokens.pop();
     pushNum(r,d,false);setDec(r);ctx.modeText=md;ctx.state=READY;render();
   }
 
   /* Display-only conversions */
-  function sfHandler(){var v=getVal();ctx.modeText=fmt(v)+' SQ FT';ctx.subText=fmt(v/9)+' SY';render()}
-  function syHandler(){var v=getVal(),sf=v*9;setDec(sf);ctx.modeText=fmt(v)+' SQ YD \u2192 '+fmt(sf)+' SF';ctx.state=READY;render()}
-  function cyHandler(){var v=getVal();setDec(v);ctx.modeText=fmt(v)+' CU YD ('+fmt(v*27)+' CF)';ctx.subText=fmt(v*27)+' cu ft | '+Math.ceil(v*45)+' 80lb bags';ctx.state=READY;render()}
-  function cfHandler(){var v=getVal(),cy=v/27;setDec(v);ctx.modeText=fmt(v)+' CU FT \u2192 '+fmt(cy)+' CY';ctx.subText=fmt(cy)+' cu yd | '+Math.ceil(cy*45)+' 80lb bags';ctx.state=READY;render()}
-  function acresHandler(){var v=getVal(),sf=v*43560;setDec(sf);ctx.modeText=fmt(v)+' ACRES \u2192 '+fmt(sf)+' SF';ctx.state=READY;render()}
+  function sfHandler(){var v=getEff().val;ctx.modeText=fmt(v)+' SQ FT';ctx.subText=fmt(v/9)+' SY';render()}
+  function syHandler(){var v=getEff().val,sf=v*9;setDec(sf);ctx.modeText=fmt(v)+' SQ YD \u2192 '+fmt(sf)+' SF';ctx.state=READY;render()}
+  function cyHandler(){var v=getEff().val;setDec(v);ctx.modeText=fmt(v)+' CU YD ('+fmt(v*27)+' CF)';ctx.subText=fmt(v*27)+' cu ft | '+Math.ceil(v*45)+' 80lb bags';ctx.state=READY;render()}
+  function cfHandler(){var v=getEff().val,cy=v/27;setDec(v);ctx.modeText=fmt(v)+' CU FT \u2192 '+fmt(cy)+' CY';ctx.subText=fmt(cy)+' cu yd | '+Math.ceil(cy*45)+' 80lb bags';ctx.state=READY;render()}
+  function acresHandler(){var v=getEff().val,sf=v*43560;setDec(sf);ctx.modeText=fmt(v)+' ACRES \u2192 '+fmt(sf)+' SF';ctx.state=READY;render()}
 
   /* PRR handlers */
-  function pitchH(){ctx.pitchVal=getVal();resetEntry();ctx.modeText='PITCH = '+ctx.pitchVal;ctx.state=OP_PENDING;solvePRR();render()}
-  function riseH(){ctx.riseVal=getVal();resetEntry();ctx.modeText='RISE = '+fmt(ctx.riseVal);ctx.state=OP_PENDING;solvePRR();render()}
-  function runH(){ctx.runVal=getVal();resetEntry();ctx.modeText='RUN = '+fmt(ctx.runVal);ctx.state=OP_PENDING;solvePRR();render()}
+  function pitchH(){ctx.pitchVal=getEff().val;resetEntry();ctx.modeText='PITCH = '+ctx.pitchVal;ctx.state=OP_PENDING;solvePRR();render()}
+  function riseH(){ctx.riseVal=getEff().val;resetEntry();ctx.modeText='RISE = '+fmt(ctx.riseVal);ctx.state=OP_PENDING;solvePRR();render()}
+  function runH(){ctx.runVal=getEff().val;resetEntry();ctx.modeText='RUN = '+fmt(ctx.runVal);ctx.state=OP_PENDING;solvePRR();render()}
   function diagH(){if(ctx.riseVal!==null&&ctx.runVal!==null){var r=Math.sqrt(ctx.riseVal**2+ctx.runVal**2);setDec(r);ctx.modeText='DIAG';ctx.state=READY;render()}}
   function hipH(){if(ctx.runVal!==null&&ctx.pitchVal!==null){var r=ctx.runVal*ctx.pitchVal/12,p=ctx.runVal*Math.SQRT2;var hv=Math.sqrt(p**2+r**2);setDec(hv);ctx.modeText='HIP/VAL';ctx.state=READY;render()}}
-  function jackH(){if(ctx.runVal!==null&&ctx.pitchVal!==null){var oc=getVal(),rise=oc*ctx.pitchVal/12,jack=Math.sqrt(oc**2+rise**2);setDec(jack);ctx.modeText='JACK @ '+oc+'" OC';ctx.state=READY;render()}}
+  function jackH(){if(ctx.runVal!==null&&ctx.pitchVal!==null){var oc=getEff().val,rise=oc*ctx.pitchVal/12,jack=Math.sqrt(oc**2+rise**2);setDec(jack);ctx.modeText='JACK @ '+oc+'" OC';ctx.state=READY;render()}}
 
   /* === Dispatch === */
   var handlers={
@@ -1372,9 +1377,9 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
     'm':function(){unaryFn('m')},'Yds':function(){unaryFn('Yds')},'Circ':function(){unaryFn('Circ')},'Arc':function(){unaryFn('Arc')},
     'x\u00b2':function(){unaryFn('x\u00b2')},'x\u00b3':function(){unaryFn('x\u00b3')},
     'SF':sfHandler,'SY':syHandler,'CY':cyHandler,'CF':cfHandler,'Acres':acresHandler,
-    'Stair':function(){location.hash='#stair'},'Length':function(){ctx.modeText='LENGTH = '+fmt(getVal())+' ft';render()},
-    'Width':function(){ctx.modeText='WIDTH = '+fmt(getVal())+' ft';render()},
-    'Height':function(){ctx.modeText='HEIGHT = '+fmt(getVal())+' ft';render()}
+    'Stair':function(){location.hash='#stair'},'Length':function(){ctx.modeText='LENGTH = '+fmt(getEff().val)+' ft';render()},
+    'Width':function(){ctx.modeText='WIDTH = '+fmt(getEff().val)+' ft';render()},
+    'Height':function(){ctx.modeText='HEIGHT = '+fmt(getEff().val)+' ft';render()}
   };
   window.kpPress=function(key){var fn=handlers[key];if(fn)fn(key)};
   /* Keyboard support */
