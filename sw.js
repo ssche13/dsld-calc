@@ -1,4 +1,4 @@
-const CACHE_NAME = 'dsld-calc-v6';
+const CACHE_NAME = 'dsld-calc-v7';
 const ASSETS = [
   './',
   './index.html',
@@ -25,18 +25,16 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   e.respondWith(
-    caches.match(e.request).then(cached => {
-      if (cached) return cached;
-      return fetch(e.request).then(response => {
-        if (e.request.url.includes('fonts.googleapis.com') || e.request.url.includes('fonts.gstatic.com')) {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
-        }
-        return response;
-      }).catch(() => {
-        if (e.request.mode === 'navigate') {
-          return caches.match('./index.html');
-        }
+    fetch(e.request).then(response => {
+      // Network success — update cache and return fresh content
+      const clone = response.clone();
+      caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
+      return response;
+    }).catch(() => {
+      // Offline — fall back to cache
+      return caches.match(e.request).then(cached => {
+        if (cached) return cached;
+        if (e.request.mode === 'navigate') return caches.match('./index.html');
       });
     })
   );
