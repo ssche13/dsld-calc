@@ -50,6 +50,10 @@ body{font-family:'IBM Plex Sans',-apple-system,BlinkMacSystemFont,sans-serif;bac
 .install-banner{position:fixed;bottom:0;left:0;right:0;background:var(--gold);color:#0f1319;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:.82rem;font-weight:700;z-index:200}
 .install-banner button{background:rgba(0,0,0,.15);border:none;color:#0f1319;padding:6px 14px;border-radius:4px;font-family:inherit;font-weight:700;font-size:.78rem;cursor:pointer}
 .install-banner .dismiss{background:none;font-size:1.2rem;padding:4px 8px}
+.install-btn-wrap{text-align:center;padding:10px 20px 16px}
+.install-btn-wrap button{background:var(--gold);color:#0f1319;border:none;padding:10px 20px;border-radius:8px;font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:.85rem;cursor:pointer;display:inline-flex;align-items:center;gap:8px;width:100%;justify-content:center}
+.install-btn-wrap button:active{opacity:.8}
+.install-btn-wrap.hidden{display:none}
 
 /* ══ Cards ══ */
 .card{background:var(--card);border:1px solid var(--border);border-radius:6px;overflow:hidden}
@@ -619,6 +623,13 @@ input:focus,select:focus{border-color:var(--gold)}
     <button class="dismiss" onclick="dismissInstall()">&times;</button>
   </div>
 </div>
+<!-- ═══ Persistent Install Button ═══ -->
+<div id="install-btn-wrap" class="install-btn-wrap">
+  <button id="install-btn" onclick="handleInstallBtn()">
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+    Add to Home Screen
+  </button>
+</div>
 
 <!-- ═══ User Guide ═══ -->
 <div id="guide-backdrop" class="guide-backdrop" onclick="closeGuide()"></div>
@@ -856,8 +867,19 @@ function mToFt(m){return m/0.3048}
 /* PWA Install */
 let deferredPrompt;
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;const b=$('install-banner');if(b)b.classList.remove('hidden')});
-function installApp(){if(!deferredPrompt)return;deferredPrompt.prompt();deferredPrompt.userChoice.then(()=>{const b=$('install-banner');if(b)b.classList.add('hidden');deferredPrompt=null})}
+function installApp(){if(!deferredPrompt)return;deferredPrompt.prompt();deferredPrompt.userChoice.then(()=>{const b=$('install-banner');if(b)b.classList.add('hidden');deferredPrompt=null;hideInstallBtn()})}
 function dismissInstall(){const b=$('install-banner');if(b)b.classList.add('hidden')}
+function hideInstallBtn(){const w=$('install-btn-wrap');if(w)w.classList.add('hidden')}
+function handleInstallBtn(){
+  if(deferredPrompt){installApp();return}
+  var iOS=/iPad|iPhone|iPod/.test(navigator.userAgent);
+  if(iOS){alert('Tap the Share button (box with arrow) at the bottom of Safari, then tap "Add to Home Screen"')}
+  else{alert('Tap your browser menu (\u22ee) and select "Add to Home Screen" or "Install App"')}
+}
+/* Hide install button if already running as installed PWA */
+if(window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone){
+  document.addEventListener('DOMContentLoaded',hideInstallBtn);
+}
 
 /* Init */
 window.addEventListener('DOMContentLoaded',()=>{
