@@ -1392,8 +1392,18 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
   function cfHandler(){var v=getEff().val,cy=v/27;setDec(v);ctx.modeText=fmt(v)+' CU FT \u2192 '+fmt(cy)+' CY';ctx.subText=fmt(cy)+' cu yd | '+Math.ceil(cy*45)+' 80lb bags';ctx.state=READY;render()}
   function acresHandler(){var v=getEff().val,sf=v*43560;setDec(sf);ctx.modeText=fmt(v)+' ACRES \u2192 '+fmt(sf)+' SF';ctx.state=READY;render()}
 
-  /* PRR handlers */
-  function pitchH(){ctx.pitchVal=getEff().val;resetEntry();ctx.modeText='PITCH = '+ctx.pitchVal;ctx.state=OP_PENDING;solvePRR();render()}
+  /* PRR handlers — Pitch is always a unitless ratio (e.g. 8 means 8/12).
+     Rise/Run use getEff() so ft-in entry works, but Pitch grabs raw display number. */
+  function getRawDisplay(){
+    var st=ctx.state;
+    if(st===ENTERING_INCH||st===INCH1||st===INCH2||st===INCH3)return ctx.inches||(parseFloat(ctx.dig)||0);
+    if(st===ENTERING_FEET||st===FEET1)return ctx.feet||(parseFloat(ctx.dig)||0);
+    if(st===FEET2){return ctx.fBase/12}
+    if(st===FEET3){return ctx.fBase/12}
+    if(st===FEET4)return parseFloat(ctx.dig)||0;
+    return parseFloat(ctx.dig)||0;
+  }
+  function pitchH(){ctx.pitchVal=getRawDisplay();resetEntry();ctx.modeText='PITCH = '+ctx.pitchVal;ctx.state=OP_PENDING;solvePRR();render()}
   function riseH(){ctx.riseVal=getEff().val;resetEntry();ctx.modeText='RISE = '+fmt(ctx.riseVal);ctx.state=OP_PENDING;solvePRR();render()}
   function runH(){ctx.runVal=getEff().val;resetEntry();ctx.modeText='RUN = '+fmt(ctx.runVal);ctx.state=OP_PENDING;solvePRR();render()}
   function diagH(){if(ctx.riseVal!==null&&ctx.runVal!==null){var r=Math.sqrt(ctx.riseVal**2+ctx.runVal**2);setDec(r);ctx.modeText='DIAG';ctx.state=READY;render()}}
