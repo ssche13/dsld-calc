@@ -1015,7 +1015,8 @@ input:focus,select:focus{border-color:var(--gold)}
     <button class="guide-nav-btn" data-guide="guide-stair" onclick="showGuideSection('guide-stair')">Stairs</button>
     <button class="guide-nav-btn" data-guide="guide-concrete" onclick="showGuideSection('guide-concrete')">Concrete</button>
     <button class="guide-nav-btn" data-guide="guide-converter" onclick="showGuideSection('guide-converter')">Converter</button>
-    <button class="guide-nav-btn" data-guide="guide-money" onclick="showGuideSection('guide-money')">Money</button>
+    <button class="guide-nav-btn" data-guide="guide-money" onclick="showGuideSection('guide-money')">Mortgage</button>
+    <button class="guide-nav-btn" data-guide="guide-business" onclick="showGuideSection('guide-business')">Business</button>
     <button class="guide-nav-btn" data-guide="guide-notes" onclick="showGuideSection('guide-notes')">Notes</button>
     <button class="guide-nav-btn" data-guide="guide-install" onclick="showGuideSection('guide-install')">Install</button>
   </div>
@@ -1154,36 +1155,77 @@ input:focus,select:focus{border-color:var(--gold)}
         <button class="guide-try" onclick="tryExample('converter',{'cv-decimal':'12.5417'},false)">&#9654; Try It</button>
       </div>
     </div>
-    <!-- Money Guide -->
+    <!-- Money Guide (Mortgage card) -->
     <div id="guide-money" class="guide-section">
-      <div class="guide-title">Mortgage &amp; Business</div>
-      <div class="guide-desc">Buyer payment math and contractor money math, sharing one loan setup you fill in once.</div>
+      <div class="guide-title">Mortgage</div>
+      <div class="guide-desc">Buyer payment math, built around one setup you fill in once a day.</div>
       <div class="guide-block">
         <div class="guide-block-title">Set It Up Once</div>
-        <p>Fill in <strong>Loan Setup</strong> each morning &mdash; rate, term, program, down payment, taxes, insurance, HOA. It saves on your phone and collapses to a one-line summary. Every tab then needs only a price or a budget.</p>
-        <p>Insurance is deliberately left blank. Gulf-region wind premiums run far above the usual defaults, and a guessed number understates the payment by hundreds a month.</p>
+        <p>Open <strong>Loan Setup</strong> and fill in rate, term, program, down payment, tax basis, insurance and HOA. It saves on the phone and collapses to a one-line chip; <span class="guide-key">Edit</span> reopens it. Every tab then needs only a price or a budget.</p>
+        <p>Insurance has no default on purpose. Gulf wind premiums run far above what a national calculator assumes, and a guess understates the payment by hundreds a month.</p>
+        <p><strong>LA Millage</strong> mode subtracts the $7,500 homestead exemption from the assessed value (10% of price). That is right for an owner-occupied primary residence &mdash; not for a rental or a second home.</p>
       </div>
       <div class="guide-block">
-        <div class="guide-block-title">Payment</div>
-        <p>Enter a sale price, get the full <strong>PITI</strong> &mdash; principal, interest, taxes, insurance, mortgage insurance and dues &mdash; plus when the MI falls off.</p>
-        <div class="guide-example">$285,000 &middot; 5% down &middot; 6.5% &middot; 30 yr &middot; 105 mills &middot; $2,400 ins &middot; $25 HOA<br><span class="result">= $2,212.58/mo &nbsp; MI ends month 135</span></div>
+        <div class="guide-block-title">Payment &mdash; The Whole Check</div>
+        <p>A buyer sees <strong>P&amp;I</strong> in an ad &mdash; principal and interest, roughly three quarters of what he actually pays. This tab returns <strong>PITI</strong>: principal, interest, taxes, insurance, mortgage insurance and dues. Quote the gold line.</p>
+        <p><strong>MI Ends</strong> is when mortgage insurance stops. On conventional the app amortizes the loan and finds the month the balance reaches 78% of the price. FHA above 90% LTV reads <strong>Life of loan</strong>. It is the only part of the payment that shrinks on its own, with no refinance &mdash; worth pointing out.</p>
+        <p><strong>Base Loan</strong> and <strong>Total Financed</strong> differ on FHA and VA, because the upfront MIP or funding fee is rolled in &mdash; the buyer borrows more than the house costs.</p>
+        <div class="guide-example">$285,000 &middot; Conventional &middot; 5% down &middot; 6.5% &middot; 30 yr<br>105 mills &middot; $2,400 ins &middot; $25 HOA<br><span class="result">= $2,212.58/mo &nbsp; MI ends month 135</span></div>
         <button class="guide-try" onclick="tryMoneyExample()">&#9654; Try It</button>
       </div>
       <div class="guide-block">
         <div class="guide-block-title">Max Price &mdash; Budget vs Underwriter</div>
-        <p>Enter what the buyer says they can pay. Add income and debts and it also computes what the <strong>debt-to-income</strong> limit allows, then tells you which one is the real ceiling.</p>
-        <div class="guide-example">Budget $1,900 &middot; income $5,000/mo &middot; debts $450<br><span class="result">DTI caps them at $1,800 → $227,500</span></div>
+        <p>Runs the payment math backward. Use it when a buyer leads with a payment instead of a price. <strong>Target Payment</strong> is all-in PITI, not just P&amp;I.</p>
+        <p>Add income and debts and it also works out what <strong>debt-to-income</strong> allows. Then <strong>The Real Ceiling</strong> names which one actually held the answer down &mdash; and those are two different conversations. If his budget binds, he qualifies for more than he wants to spend, so show him a bigger plan and let him decline. If DTI binds, he wants more than the lender will allow, and walking the floor will not change that.</p>
+        <div class="guide-example">Budget $1,900 &middot; income $5,000/mo &middot; debts $450 &middot; DTI 45%<br><span class="result">DTI binds at $1,800 → max price $227,500</span></div>
       </div>
       <div class="guide-block">
-        <div class="guide-block-title">Buydown &mdash; Same Dollars, Three Ways</div>
-        <p>Enter the incentive once and see it priced as a <strong>closing credit</strong>, a <strong>permanent rate buydown</strong>, or a <strong>price cut</strong> &mdash; compared on five-year cost, with the winner highlighted.</p>
-        <div class="guide-example">$8,000 on a $285,000 house<br><span class="result">Buydown wins: 2.95 pts → 5.761%, $2,083/mo</span></div>
+        <div class="guide-block-title">Buydown &mdash; One Pot, Three Ways</div>
+        <p>You have a number you will give up on a house. This tells you how to give it up. The same dollars come back as a <strong>closing credit</strong>, a <strong>permanent rate buydown</strong>, and a <strong>price cut</strong>.</p>
+        <p>Payment and cash to close pull in opposite directions, so neither settles it. <strong>5-Year Cost</strong> does: cash to close + 60 payments &minus; principal paid down. Subtracting principal matters, because a dollar that went to equity is not a dollar he spent. The winner gets a gold border.</p>
+        <p>Roughly: the credit wins when he is short on cash, the buydown wins when he is short on payment and plans to stay, and the price cut usually buys the least relief per dollar &mdash; only part of the cut reaches the loan.</p>
+        <div class="guide-example">$8,000 incentive on a $285,000 house<br><span class="result">Buydown wins: 2.95 pts → 5.761%, $2,083.23/mo</span><br>Credit $2,212.58 &middot; Price cut $2,154.95</div>
       </div>
       <div class="guide-block">
-        <div class="guide-block-title">Business Side</div>
-        <p><strong>Markup</strong> builds a cost from hours, burden and material, then prices it to a target margin &mdash; always showing markup and margin together, because 25% markup is 20% margin.</p>
-        <p><strong>Loan</strong> solves any one of amount, rate, term or payment &mdash; leave that field blank. Good for "they quoted $899 for 60 months on $45,000 &mdash; what rate is that?"</p>
-        <p><strong>Draw</strong> runs AIA G702 order: complete, stored, retainage held, less previous payments.</p>
+        <div class="guide-block-title">Payoff &mdash; What Extra Principal Buys</div>
+        <p>For when a buyer asks what an extra $200 a month really does. Enter the <strong>loan balance</strong> (not the sale price) and the extra; rate and term come from Loan Setup. The app walks the loan month by month until the balance hits zero.</p>
+        <p>This is <strong>principal and interest only</strong>. Taxes and insurance are escrow, not loan balance, so extra principal does not shorten them. The payment here is smaller than the PITI on the Payment tab, and that is correct.</p>
+        <div class="guide-example">$270,750 balance &middot; 6.5% &middot; 30 yr &middot; $200 extra<br><span class="result">Paid off in 22 yr 6 mo &mdash; saves $100,210</span></div>
+      </div>
+      <div class="guide-block">
+        <div class="guide-block-title">Good to Know</div>
+        <p><strong>Millage</strong> is the whole number (105), not a percent. Down payment is entered as a <strong>percent</strong> only &mdash; convert a flat dollar amount yourself.</p>
+        <p>The <strong>PMI override</strong> applies to conventional only; FHA and VA use their own published factors and ignore it. Left blank, PMI is estimated from a 740+ credit grid.</p>
+        <p>The app does not enforce program minimums &mdash; it will run FHA at 1% down without complaint, so enter a real down payment.</p>
+        <p>Results show the down payment but <strong>not</strong> full cash to close: no closing costs, prepaids or escrow funding. The Buydown tab is where cash to close appears.</p>
+        <p>Loan Setup lives on this one phone. The collapsed chip is the only sign of what is loaded &mdash; read it before quoting, or yesterday's VA buyer will price today's conventional deal.</p>
+      </div>
+    </div>
+    <!-- Business Guide -->
+    <div id="guide-business" class="guide-section">
+      <div class="guide-title">Business &amp; Financing</div>
+      <div class="guide-desc">The second card on the Money screen: job pricing, equipment loans, and draw requests.</div>
+      <div class="guide-block">
+        <div class="guide-block-title">Markup Is Not Margin</div>
+        <p><strong>Markup</strong> is profit as a percent of <em>cost</em>. <strong>Margin</strong> is the same dollars as a percent of <em>price</em>. Different denominators, so they are never the same number &mdash; 25% markup is 20% margin. Both rows print on every result so you cannot quote one thinking it is the other.</p>
+        <p>That is not academic. On $1,754.80 of cost, multiplying by 1.25 gives $2,193.50 &mdash; a 20% margin. If 25% <em>margin</em> is what the job needed, the price is $2,339.73. Repeat that across every option in a spec house and it is real money.</p>
+        <p><strong>Burden</strong> is everything riding on the wage &mdash; payroll tax, comp, liability, truck &mdash; so 35 means the hour costs 1.35 times the rate. To price forward, use <strong>Target Margin</strong>. To check a price already on paper, use <strong>Or Quoted Price</strong>; profit turns red if it is under cost.</p>
+        <div class="guide-example">16 hr &middot; $28/hr &middot; 35% burden &middot; $1,150 material &middot; 20% margin<br>Cost $1,754.80<br><span class="result">Price $2,193.50 &mdash; 25.00% markup / 20.00% margin</span></div>
+      </div>
+      <div class="guide-block">
+        <div class="guide-block-title">Loan &mdash; Leave One Blank</div>
+        <p>Truck, skid steer, trailer, any flat installment loan. Fill in three of <strong>Amount</strong>, <strong>Rate</strong>, <strong>Term</strong> and <strong>Payment</strong>, leave the fourth empty, and it fills the hole. The solved row comes back highlighted.</p>
+        <p>The rate case earns its keep. A dealer quotes a payment, not a rate &mdash; "$899 a month, 60 months, $45,000." Type those three, blank the rate, and you get the rate buried in that payment to hold against what your bank would write.</p>
+        <p><strong>Interest as % of Amount</strong> is over the whole life of the loan, not a yearly rate &mdash; do not line it up against the APR.</p>
+        <div class="guide-example">$45,000 &middot; 60 months &middot; $899/mo &middot; rate blank<br><span class="result">= 7.373% APR &mdash; $8,940.00 total interest</span></div>
+      </div>
+      <div class="guide-block">
+        <div class="guide-block-title">Draw &mdash; AIA G702 Order</div>
+        <p>Bill the owner or the bank for work in place, in the order a lender's inspector expects: completed to date, plus stored materials, minus retainage held, minus what you have already been paid.</p>
+        <p>Enter <strong>Work Complete</strong> as the percentage of the whole contract finished to date &mdash; not what you added since the last draw.</p>
+        <p>Here is the part that costs money. <strong>Previously Paid</strong> must be cash actually received, <strong>net</strong> of retainage &mdash; not the gross you billed. Enter gross and you subtract the old retainage twice and under-request by exactly what is already being held. A negative <strong>Payment Due</strong> turns red, and that is almost always this mistake.</p>
+        <p>On the last application tick <span class="guide-key">Final draw</span> to release everything withheld over the life of the job.</p>
+        <div class="guide-example">$185,000 contract &middot; 65% complete &middot; $4,500 stored<br>10% retainage &middot; $99,000 previously paid (net)<br><span class="result">= $13,275.00 due this draw</span><br>Enter $110,000 gross instead and it reads $2,275 &mdash; $11,000 short.</div>
       </div>
     </div>
     <!-- Notes Guide -->
