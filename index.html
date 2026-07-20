@@ -466,23 +466,23 @@ input:focus,select:focus{border-color:var(--gold)}
   <div class="keypad">
     <!-- Row 1: Construction -->
     <div class="key-row">
-      <button class="key key-navy" onclick="kpPress('Pitch')"><span class="key-label">Slope</span>Pitch</button>
+      <button class="key key-navy" onclick="kpPress('Pitch')">Pitch</button>
       <button class="key key-navy" onclick="kpPress('Rise')">Rise</button>
       <button class="key key-navy" onclick="kpPress('Run')">Run</button>
-      <button class="key key-navy" onclick="kpPress('Diag')"><span class="key-label">Roof</span>Diag</button>
-      <button class="key key-navy" onclick="kpPress('Hip/V')"><span class="key-label">Ir/Pitch</span>Hip/V</button>
-      <button class="key key-navy" onclick="kpPress('Jack')"><span class="key-label">Ir/Jack</span>Jack</button>
+      <button class="key key-navy" onclick="kpPress('Diag')">Diag</button>
+      <button class="key key-navy" onclick="kpPress('Hip/V')">Hip/V</button>
+      <button class="key key-navy" onclick="kpPress('Jack')">Jack</button>
       <button class="key key-func" onclick="kpPress('Sqrt')">&radic;</button>
     </div>
     <!-- Row 2: Extended -->
     <div class="key-row">
-      <button class="key key-func" onclick="kpPress('Stair')"><span class="key-label">Riser Lim</span>Stair</button>
-      <button class="key key-func" onclick="kpPress('Length')"><span class="key-label">Blocks</span>Length</button>
-      <button class="key key-func" onclick="kpPress('Width')"><span class="key-label">Footing</span>Width</button>
-      <button class="key key-func" onclick="kpPress('Height')"><span class="key-label">Drywall</span>Height</button>
-      <button class="key key-func" onclick="kpPress('Sine')"><span class="key-label">ArcSine</span>Sine</button>
-      <button class="key key-func" onclick="kpPress('Cos')"><span class="key-label">ArcCos</span>Cos</button>
-      <button class="key key-func" onclick="kpPress('Tan')"><span class="key-label">ArcTan</span>Tan</button>
+      <button class="key key-func" onclick="kpPress('Stair')">Stair</button>
+      <button class="key key-func" onclick="kpPress('Length')">Length</button>
+      <button class="key key-func" onclick="kpPress('Width')">Width</button>
+      <button class="key key-func" onclick="kpPress('Height')">Height</button>
+      <button class="key key-func" onclick="kpPress('Sine')">Sine</button>
+      <button class="key key-func" onclick="kpPress('Cos')">Cos</button>
+      <button class="key key-func" onclick="kpPress('Tan')">Tan</button>
     </div>
     <!-- Row 3: Units (matches CMP) -->
     <div class="key-row">
@@ -490,13 +490,13 @@ input:focus,select:focus{border-color:var(--gold)}
       <button class="key key-func" onclick="kpPress('Yds')">Yds</button>
       <button class="key key-gold" onclick="kpPress('Feet')">Feet</button>
       <button class="key key-gold" onclick="kpPress('Inch')">Inch</button>
-      <button class="key key-func" onclick="kpPress('Frac')"><span class="key-label">x10&#x207F;</span>/</button>
-      <button class="key key-func" onclick="kpPress('Arc')"><span class="key-label">Radius</span>Arc</button>
-      <button class="key key-func" onclick="kpPress('Circ')"><span class="key-label">Column</span>Circ</button>
+      <button class="key key-func" onclick="kpPress('Frac')">/</button>
+      <button class="key key-func" onclick="kpPress('Arc')">Arc</button>
+      <button class="key key-func" onclick="kpPress('Circ')">Circ</button>
     </div>
     <!-- Row 4: Stor/Conv + 7 8 9 -->
     <div class="key-row num-block">
-      <button class="key key-func" onclick="kpPress('Stor')"><span class="key-label">Prefs</span>Stor</button>
+      <button class="key key-func" onclick="kpPress('Stor')">Stor</button>
       <button class="key key-orange" onclick="toggleConv()" id="conv-btn">Conv</button>
       <button class="key key-num" onclick="kpPress('7')">7</button>
       <button class="key key-num" onclick="kpPress('8')">8</button>
@@ -507,7 +507,7 @@ input:focus,select:focus{border-color:var(--gold)}
     <!-- Row 5: ( Rcl + 4 5 6 -->
     <div class="key-row">
       <button class="key key-op" onclick="kpPress('(')">(</button>
-      <button class="key key-func" onclick="kpPress('Rcl')"><span class="key-label">Rcl/STO</span>Rcl</button>
+      <button class="key key-func" onclick="kpPress('Rcl')">Rcl</button>
       <button class="key key-num" onclick="kpPress('4')">4</button>
       <button class="key key-num" onclick="kpPress('5')">5</button>
       <button class="key key-num" onclick="kpPress('6')">6</button>
@@ -1057,6 +1057,21 @@ input:focus,select:focus{border-color:var(--gold)}
         <p>Enter any two of the three values, and the calculator solves for the third.</p>
         <p>Type a number, then press <span class="guide-key">Pitch</span>, <span class="guide-key">Rise</span>, or <span class="guide-key">Run</span>. When two are set, the third appears automatically.</p>
         <p>Example: enter 8 <span class="guide-key">Pitch</span> then 12 <span class="guide-key">Run</span> &rarr; Rise is solved.</p>
+      </div>
+      <div class="guide-block">
+        <div class="guide-block-title">Volume &mdash; Length &times; Width &times; Height</div>
+        <p>Enter a dimension and press <span class="guide-key">Length</span>, then the next and press <span class="guide-key">Width</span>, then <span class="guide-key">Height</span>. Two dimensions give the area; the third gives the volume in cubic feet, cubic yards, and 80&nbsp;lb bags. Dimensions take feet-inches too.</p>
+        <p>Change one dimension and press its key again to re-figure without starting over.</p>
+        <div class="guide-example">10' 6" <span class="guide-key">Length</span> 12' <span class="guide-key">Width</span> 8' <span class="guide-key">Height</span><br><span class="result">= 1008 CF &nbsp; 37.33 CY</span></div>
+      </div>
+      <div class="guide-block">
+        <div class="guide-block-title">Material Conversions</div>
+        <p>Tap <span class="guide-key">Conv</span> to slide open the conversion pad, then convert the number on the display:</p>
+        <p><span class="guide-key">Bd Ft</span> &mdash; a cubic-foot volume to board feet (&times;12)</p>
+        <p><span class="guide-key">LF</span> &mdash; linear feet to how many 8', 12' and 16' sticks to order</p>
+        <p><span class="guide-key">Blocks</span> &mdash; wall area in SF to 8&times;16 CMU count (1.125 per SF)</p>
+        <p>Alongside <span class="guide-key">SF</span>, <span class="guide-key">SY</span>, <span class="guide-key">CY</span>, <span class="guide-key">CF</span>, <span class="guide-key">Acres</span> and the square/cube keys.</p>
+        <div class="guide-example">200 <span class="guide-key">Conv</span> <span class="guide-key">Blocks</span><br><span class="result">= 225 blocks</span></div>
       </div>
       <div class="guide-block">
         <div class="guide-block-title">Memory</div>
@@ -2003,6 +2018,7 @@ document.addEventListener('DOMContentLoaded',()=>{const tc=document.querySelecto
     resetEntry();ctx.acc=0;ctx.op=null;ctx.tokens=[];ctx.parenStack=[];
     ctx.dims=0;ctx.lastFt=false;ctx.fBase=0;ctx.canonInches=0;
     ctx.pitchVal=null;ctx.riseVal=null;ctx.runVal=null;ctx.prrSolved=null;ctx.prrOrder=[];
+    ctx.lwh=null;
     resetConvToggle();ctx.state=READY;render();
   }
   function clearEntry(){resetEntry();resetConvToggle();
@@ -2110,6 +2126,30 @@ document.addEventListener('DOMContentLoaded',()=>{const tc=document.querySelecto
   function cyHandler(){var v=getEff().val,cf=v*27;resetConvToggle();setDec(cf);ctx.dims=3;ctx.modeText=fmt(v)+' CU YD = '+fmt(cf)+' CF';ctx.subText=Math.ceil(v*45)+' 80lb bags | '+Math.ceil(v*60)+' 60lb bags';ctx.state=READY;render()}
   function cfHandler(){var v=getEff().val,cy=v/27;resetConvToggle();setDec(v);ctx.dims=3;ctx.modeText=fmt(v)+' CU FT \u2192 '+fmt(cy)+' CY';ctx.subText=fmt(cy)+' cu yd | '+Math.ceil(cy*45)+' 80lb bags';ctx.state=READY;render()}
   function acresHandler(){var v=getEff().val,sf=v*43560;resetConvToggle();setDec(sf);ctx.dims=2;ctx.modeText=fmt(v)+' ACRES \u2192 '+fmt(sf)+' SF';ctx.state=READY;render()}
+  /* Board feet: 1 bd ft = 1"\u00d712"\u00d712" = 1/12 cu ft, so bd ft = cubic feet \u00d7 12 */
+  function boardHandler(){var v=getEff().val,bf=v*12;resetConvToggle();setDec(bf);ctx.dims=0;ctx.modeText=fmt(v)+' CU FT \u2192 '+fmt(bf)+' BD FT';ctx.subText='1 bd ft = 1\u2033\u00d712\u2033\u00d712\u2033';ctx.state=READY;render()}
+  /* Linear feet \u2192 how many sticks of common stock lengths to order */
+  function lfHandler(){var v=getEff().val;resetConvToggle();setDec(v);ctx.dims=0;ctx.modeText=fmt(v)+' LINEAR FT';ctx.subText='pcs \u2014 8\u2032:'+Math.ceil(v/8)+' 12\u2032:'+Math.ceil(v/12)+' 16\u2032:'+Math.ceil(v/16);ctx.state=READY;render()}
+  /* Wall area \u2192 8\u00d716 CMU count at the standard 1.125 blocks per square foot */
+  function blocksHandler(){var v=getEff().val,n=Math.ceil(v*1.125);resetConvToggle();setDec(n);ctx.dims=0;ctx.modeText=fmt(v)+' SF WALL \u2192 '+n+' BLOCKS';ctx.subText='8\u00d716 CMU @ 1.125/SF';ctx.state=READY;render()}
+  /* L \u00d7 W \u00d7 H dimension accumulator. One dim = echo; two = area; three = volume.
+     Each key overwrites its own slot, so changing one dimension re-computes. */
+  function lwhSet(which){
+    var v=getEff().val;if(!ctx.lwh)ctx.lwh={};ctx.lwh[which]=v;resetConvToggle();
+    var L=ctx.lwh.L,W=ctx.lwh.W,H=ctx.lwh.H;
+    if(L!==undefined&&W!==undefined&&H!==undefined){
+      var cf=L*W*H,cy=cf/27;setDec(cf);ctx.dims=3;
+      ctx.mainOvr=fmt(cf)+' CF';ctx.modeText=fmt(L)+'\u00d7'+fmt(W)+'\u00d7'+fmt(H)+' FT VOLUME';
+      ctx.subText=fmt(cy)+' CY | '+Math.ceil(cy*45)+' 80lb bags';
+    }else if(L!==undefined&&W!==undefined){
+      var sf=L*W;setDec(sf);ctx.dims=2;
+      ctx.mainOvr=fmt(sf)+' SF';ctx.modeText=fmt(L)+'\u00d7'+fmt(W)+' FT \u2014 add Height';
+      ctx.subText=fmt(sf/9)+' SY';
+    }else{
+      setDec(v);ctx.dims=0;ctx.modeText=which+' = '+fmt(v)+' ft \u2014 enter next dim';ctx.subText='';
+    }
+    ctx.state=READY;render();
+  }
 
   /* PRR handlers — Pitch is always a unitless ratio (e.g. 8 means 8/12).
      Rise/Run use getEff() so ft-in entry works, but Pitch grabs raw display number. */
@@ -2146,9 +2186,9 @@ document.addEventListener('DOMContentLoaded',()=>{const tc=document.querySelecto
     'm':function(){unaryFn('m')},'Yds':function(){unaryFn('Yds')},'Circ':function(){unaryFn('Circ')},'Arc':function(){unaryFn('Arc')},
     'x\u00b2':function(){unaryFn('x\u00b2')},'x\u00b3':function(){unaryFn('x\u00b3')},
     'SF':sfHandler,'SY':syHandler,'CY':cyHandler,'CF':cfHandler,'Acres':acresHandler,
-    'Stair':function(){location.hash='#stair'},'Length':function(){ctx.modeText='LENGTH = '+fmt(getEff().val)+' ft';render()},
-    'Width':function(){ctx.modeText='WIDTH = '+fmt(getEff().val)+' ft';render()},
-    'Height':function(){ctx.modeText='HEIGHT = '+fmt(getEff().val)+' ft';render()}
+    'Board':boardHandler,'LF':lfHandler,'Blocks':blocksHandler,
+    'Stair':function(){location.hash='#stair'},
+    'Length':function(){lwhSet('L')},'Width':function(){lwhSet('W')},'Height':function(){lwhSet('H')}
   };
   window.kpPress=function(key){var fn=handlers[key];if(fn)fn(key)};
   /* Keyboard support */
