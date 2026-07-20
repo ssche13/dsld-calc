@@ -1071,7 +1071,9 @@ input:focus,select:focus{border-color:var(--gold)}
         <p><span class="guide-key">LF</span> &mdash; linear feet to how many 8', 12' and 16' sticks to order</p>
         <p><span class="guide-key">Blocks</span> &mdash; wall area in SF to 8&times;16 CMU count (1.125 per SF)</p>
         <p>Alongside <span class="guide-key">SF</span>, <span class="guide-key">SY</span>, <span class="guide-key">CY</span>, <span class="guide-key">CF</span>, <span class="guide-key">Acres</span> and the square/cube keys.</p>
-        <div class="guide-example">200 <span class="guide-key">Conv</span> <span class="guide-key">Blocks</span><br><span class="result">= 225 blocks</span></div>
+        <p><strong>Conversions never change your number.</strong> The first unit key locks in the calculated value as the base; every conversion after that works from the same base, so you can bounce SY &rarr; m&sup2; &rarr; SY all day. Press the key of the unit on screen to get the original number back exactly. The moment you press a digit or operator, the number you see becomes the working number.</p>
+        <div class="guide-example">100 SF &rarr; <span class="guide-key">Yds</span> 11.11 SY &rarr; <span class="guide-key">m</span> 9.29 m&sup2; &rarr; <span class="guide-key">m</span><br><span class="result">= 100 SF &mdash; right back where you started</span></div>
+        <div class="guide-example">200 <span class="guide-key">Conv</span> <span class="guide-key">Blocks</span><br><span class="result">= 225 blocks</span> &nbsp;(press Blocks again for your 200 back)</div>
       </div>
       <div class="guide-block">
         <div class="guide-block-title">Memory</div>
@@ -2050,88 +2052,114 @@ document.addEventListener('DOMContentLoaded',()=>{const tc=document.querySelecto
   function memRcl(){resetConvToggle();setDec(ctx.mem);ctx.state=ENTERING_STD;ctx.freshResult=true;render()}
   function memStor(){ctx.mem=getEff().val;render()}
 
-  /* Conversion toggle state */
-  var lastConv=null; // tracks last conversion for toggle: 'm','Yds'
-  var preConvValue=null; // original value before conversion, restored on toggle-back
-  var preConvMainOvr=null; // original mainOvr label before conversion
-  var preConvSubText=null; // original subText before conversion
-  /* Any action that produces a new value must clear the toggle, or a later m/Yds press "restores" a stale number */
-  function resetConvToggle(){lastConv=null;preConvValue=null;preConvMainOvr=null;preConvSubText=null}
+  /* ── Conversion sessions ──
+     The first conversion key captures the current value as the BASE. Every further
+     conversion key re-expresses that same base — never the displayed number — and
+     pressing the key of the unit on screen returns to the base exactly. Bouncing
+     between units can therefore never drift the number. Any non-conversion action
+     (digit, operator, equals, clear, Rcl…) ends the session and the displayed value
+     becomes the working number. */
+  function resetConvToggle(){
+    // Ending a session while a foreign unit is on screen: the working number is in
+    // that unit (SY, m², bd ft…), so the SF/CF dims labeling no longer applies to it.
+    if(ctx.convSess&&ctx.convSess.unit)ctx.dims=0;
+    ctx.convSess=null;
+  }
+  function convStart(){
+    if(ctx.convSess)return ctx.convSess;
+    var eff=getEff();
+    ctx.convSess={val:eff.val,dims:Math.max(ctx.dims,eff.dims||0),
+      ovr:ctx.mainOvr,mode:ctx.modeText,sub:ctx.subText,unit:null};
+    return ctx.convSess;
+  }
+  function convShowBase(){
+    var s=ctx.convSess;if(!s)return;
+    setDec(s.val);ctx.dims=s.dims;
+    ctx.mainOvr=s.ovr;ctx.modeText=s.mode;ctx.subText=s.sub;
+    if(!s.ovr&&!s.mode){
+      ctx.modeText='BASE = '+fmt(s.val)+(s.dims>=3?' CF':s.dims===2?' SF':' ft');
+    }
+    s.unit=null;ctx.state=READY;render();
+  }
+  /* Show the base in a unit. calc(s) returns {r, main, mode, sub}. Same key again → base. */
+  function convTo(unit,calc){
+    var s=convStart();
+    if(s.unit===unit){convShowBase();return}
+    var o=calc(s);
+    setDec(o.r);ctx.dims=s.dims;
+    ctx.mainOvr=o.main||null;ctx.modeText=o.mode||'';ctx.subText=o.sub||'';
+    s.unit=unit;ctx.state=READY;render();
+  }
+  /* Reinterpret a plain number as a unit (5 SY = 45 SF): the base itself changes. */
+  function convDeclare(dims,val,ovr,mode,sub){
+    var s=convStart();
+    s.val=val;s.dims=dims;s.ovr=ovr;s.mode=mode;s.sub=sub;s.unit=null;
+    convShowBase();
+  }
 
   /* Unary functions */
   function unaryFn(key){
     var eff=getEff(),v=eff.val,vs=eff.vs||fmtExpr(),r,d,md;
-    var restoreOvr=null,restoreSub=null; // deferred label restore for toggle-back
     if(eff.dims>ctx.dims)ctx.dims=eff.dims; // inherit dims from cycle state
     switch(key){
       case'Sqrt':r=Math.sqrt(Math.abs(v));d='\u221a('+vs+')';md='\u221a'+vs+' = '+fmt(r);break;
       case'Sine':r=Math.sin(v*Math.PI/180);d='sin('+vs+'\u00b0)';md='sin('+vs+'\u00b0) = '+fmt(r);break;
       case'Cos':r=Math.cos(v*Math.PI/180);d='cos('+vs+'\u00b0)';md='cos('+vs+'\u00b0) = '+fmt(r);break;
       case'Tan':r=Math.tan(v*Math.PI/180);d='tan('+vs+'\u00b0)';md='tan('+vs+'\u00b0) = '+fmt(r);break;
-      case'm':
-        // Chained conversions (Yds then m) must start from the original ft-based value AND labels
-        if(lastConv==='Yds'&&preConvValue!==null){v=preConvValue;vs=fmt(v);ctx.mainOvr=preConvMainOvr;ctx.subText=preConvSubText;lastConv=null}
-        if(lastConv==='m'){
-          // Toggle back: restore original value and labels exactly (no drift)
-          r=preConvValue;
-          if(ctx.dims>=3){md=fmt(v)+' m\u00b3 = '+fmt(r)+' CF'}
-          else if(ctx.dims>=2){md=fmt(v)+' m\u00b2 = '+fmt(r)+' SF'}
-          else{md=fmt(v)+' m = '+fmt(r)+' ft'}
-          d=vs+'m\u2192ft';lastConv=null;preConvValue=null;
-          restoreOvr=preConvMainOvr;restoreSub=preConvSubText;preConvMainOvr=null;preConvSubText=null;
-        }else{
-          preConvValue=v;preConvMainOvr=ctx.mainOvr;preConvSubText=ctx.subText;
-          if(ctx.dims>=3){r=v*Math.pow(0.3048,3);md=fmt(v)+' CF = '+fmt(r)+' m\u00b3';d=vs+'CF\u2192m\u00b3';restoreOvr=fmt(r)+' m\u00b3';restoreSub=''}
-          else if(ctx.dims>=2){r=v*Math.pow(0.3048,2);md=fmt(v)+' SF = '+fmt(r)+' m\u00b2';d=vs+'SF\u2192m\u00b2';restoreOvr=fmt(r)+' m\u00b2';restoreSub=''}
-          else{r=v*0.3048;md=fmt(v)+' ft = '+fmt(r)+' m';d=vs+'ft\u2192m'}
-          lastConv='m';
-        }
-        break;
-      case'Yds':
-        // Chained conversions (m then Yds) must start from the original ft-based value AND labels
-        if(lastConv==='m'&&preConvValue!==null){v=preConvValue;vs=fmt(v);ctx.mainOvr=preConvMainOvr;ctx.subText=preConvSubText;lastConv=null}
-        if(lastConv==='Yds'){
-          // Toggle back: restore original value and labels exactly (no drift)
-          r=preConvValue;
-          if(ctx.dims>=3){md=fmt(v)+' CY = '+fmt(r)+' CF'}
-          else if(ctx.dims>=2){md=fmt(v)+' SY = '+fmt(r)+' SF'}
-          else{md=fmt(v)+' yd = '+fmt(r)+' ft'}
-          d=vs+'yd\u2192ft';lastConv=null;preConvValue=null;
-          restoreOvr=preConvMainOvr;restoreSub=preConvSubText;preConvMainOvr=null;preConvSubText=null;
-        }else{
-          preConvValue=v;preConvMainOvr=ctx.mainOvr;preConvSubText=ctx.subText;
-          if(ctx.dims>=3){r=v/27;md=fmt(v)+' CF = '+fmt(r)+' CY';d=vs+'CF\u2192CY';restoreOvr=fmt(r)+' CY';restoreSub=''}
-          else if(ctx.dims>=2){r=v/9;md=fmt(v)+' SF = '+fmt(r)+' SY';d=vs+'SF\u2192SY';restoreOvr=fmt(r)+' SY';restoreSub=''}
-          else{r=v/3;md=fmt(v)+' ft = '+fmt(r)+' yd'}
-          lastConv='Yds';
-        }
-        break;
       case'Circ':r=Math.PI*v;d='\u03c0\u00d7'+vs;md='CIRCUMF(\u00d8'+vs+') = '+fmt(r);break;
       case'Arc':r=v*Math.PI/180;d=vs+'\u00b0\u2192rad';md=vs+'\u00b0 = '+fmt(r)+' rad';break;
       case'x\u00b2':r=v*v;d='('+vs+')\u00b2';md='x\u00b2 = '+fmt(r);break;
       case'x\u00b3':r=v*v*v;d='('+vs+')\u00b3';md='x\u00b3 = '+fmt(r);break;
       default:return;
     }
-    if(key!=='m'&&key!=='Yds'){lastConv=null;preConvValue=null;preConvMainOvr=null;preConvSubText=null;}
+    resetConvToggle();
     if(hasTrailingNum())ctx.tokens.pop();
     pushNum(r,d,false);setDec(r);ctx.modeText=md;
-    // Restore labels after setDec() clears mainOvr — toggle-back needs original labels
-    if(restoreOvr!==null){ctx.mainOvr=restoreOvr;ctx.subText=restoreSub}
     ctx.state=READY;render();
   }
 
+  /* Metric / yards — dims-aware, always computed from the session base */
+  function mHandler(){convTo('m',function(s){
+    if(s.dims>=3){var r3=s.val*0.028316846592;return{r:r3,main:fmt(r3)+' m³',mode:fmt(s.val)+' CF = '+fmt(r3)+' m³'}}
+    if(s.dims===2){var r2=s.val*0.09290304;return{r:r2,main:fmt(r2)+' m²',mode:fmt(s.val)+' SF = '+fmt(r2)+' m²'}}
+    var r1=s.val*0.3048;return{r:r1,mode:fmt(s.val)+' ft = '+fmt(r1)+' m',sub:fmt(r1*100)+' cm | '+fmt(r1*1000)+' mm'};
+  })}
+  function ydsHandler(){convTo('yd',function(s){
+    if(s.dims>=3){var r3=s.val/27;return{r:r3,main:fmt(r3)+' CY',mode:fmt(s.val)+' CF = '+fmt(r3)+' CY',sub:Math.ceil(r3*45)+' 80lb bags | '+Math.ceil(r3*60)+' 60lb bags'}}
+    if(s.dims===2){var r2=s.val/9;return{r:r2,main:fmt(r2)+' SY',mode:fmt(s.val)+' SF = '+fmt(r2)+' SY'}}
+    var r1=s.val/3;return{r:r1,mode:fmt(s.val)+' ft = '+fmt(r1)+' yd'};
+  })}
+
   /* Unit declaration/conversion keys \u2014 must set ctx.dims so m/Yds convert as area/volume, not linear */
-  function sfHandler(){var v=getEff().val;ctx.dims=2;resetConvToggle();ctx.modeText=fmt(v)+' SQ FT';ctx.subText=fmt(v/9)+' SY';render()}
-  function syHandler(){var v=getEff().val,sf=v*9;resetConvToggle();setDec(sf);ctx.dims=2;ctx.modeText=fmt(v)+' SQ YD \u2192 '+fmt(sf)+' SF';ctx.state=READY;render()}
-  function cyHandler(){var v=getEff().val,cf=v*27;resetConvToggle();setDec(cf);ctx.dims=3;ctx.modeText=fmt(v)+' CU YD = '+fmt(cf)+' CF';ctx.subText=Math.ceil(v*45)+' 80lb bags | '+Math.ceil(v*60)+' 60lb bags';ctx.state=READY;render()}
-  function cfHandler(){var v=getEff().val,cy=v/27;resetConvToggle();setDec(v);ctx.dims=3;ctx.modeText=fmt(v)+' CU FT \u2192 '+fmt(cy)+' CY';ctx.subText=fmt(cy)+' cu yd | '+Math.ceil(cy*45)+' 80lb bags';ctx.state=READY;render()}
-  function acresHandler(){var v=getEff().val,sf=v*43560;resetConvToggle();setDec(sf);ctx.dims=2;ctx.modeText=fmt(v)+' ACRES \u2192 '+fmt(sf)+' SF';ctx.state=READY;render()}
+  /* Area / volume keys. On a plain number they DECLARE the unit (5 SY = 45 SF base);
+     on a measured value they re-express the session base, reversibly. */
+  function sfHandler(){var s=convStart();
+    if(s.dims===0)convDeclare(2,s.val,fmt(s.val)+' SF',fmt(s.val)+' SQ FT',fmt(s.val/9)+' SY');
+    else convShowBase();
+  }
+  function syHandler(){var s=convStart();
+    if(s.dims===0)convDeclare(2,s.val*9,fmt(s.val*9)+' SF',fmt(s.val)+' SQ YD = '+fmt(s.val*9)+' SF','');
+    else ydsHandler();
+  }
+  function cyHandler(){var s=convStart();
+    if(s.dims===0)convDeclare(3,s.val*27,fmt(s.val*27)+' CF',fmt(s.val)+' CU YD = '+fmt(s.val*27)+' CF',Math.ceil(s.val*45)+' 80lb bags | '+Math.ceil(s.val*60)+' 60lb bags');
+    else ydsHandler();
+  }
+  function cfHandler(){var s=convStart();
+    if(s.dims===0)convDeclare(3,s.val,fmt(s.val)+' CF',fmt(s.val)+' CU FT',fmt(s.val/27)+' CY | '+Math.ceil(s.val/27*45)+' 80lb bags');
+    else convShowBase();
+  }
+  function acresHandler(){var s=convStart();
+    if(s.dims===0)convDeclare(2,s.val*43560,fmt(s.val*43560)+' SF',fmt(s.val)+' ACRES = '+fmt(s.val*43560)+' SF','');
+    else if(s.dims===2)convTo('ac',function(ss){var r=ss.val/43560;return{r:r,main:fmt(r)+' AC',mode:fmt(ss.val)+' SF = '+fmt(r)+' acres'}});
+    else convShowBase();
+  }
   /* Board feet: 1 bd ft = 1"\u00d712"\u00d712" = 1/12 cu ft, so bd ft = cubic feet \u00d7 12 */
-  function boardHandler(){var v=getEff().val,bf=v*12;resetConvToggle();setDec(bf);ctx.dims=0;ctx.modeText=fmt(v)+' CU FT \u2192 '+fmt(bf)+' BD FT';ctx.subText='1 bd ft = 1\u2033\u00d712\u2033\u00d712\u2033';ctx.state=READY;render()}
+  function boardHandler(){convTo('bd',function(s){var r=s.val*12;return{r:r,main:fmt(r)+' BD FT',mode:fmt(s.val)+' CF = '+fmt(r)+' BD FT',sub:'1 bd ft = 1\u2033\u00d712\u2033\u00d712\u2033'}})}
   /* Linear feet \u2192 how many sticks of common stock lengths to order */
-  function lfHandler(){var v=getEff().val;resetConvToggle();setDec(v);ctx.dims=0;ctx.modeText=fmt(v)+' LINEAR FT';ctx.subText='pcs \u2014 8\u2032:'+Math.ceil(v/8)+' 12\u2032:'+Math.ceil(v/12)+' 16\u2032:'+Math.ceil(v/16);ctx.state=READY;render()}
+  function lfHandler(){convTo('lf',function(s){return{r:s.val,mode:fmt(s.val)+' LINEAR FT',sub:'pcs \u2014 8\u2032:'+Math.ceil(s.val/8)+' 12\u2032:'+Math.ceil(s.val/12)+' 16\u2032:'+Math.ceil(s.val/16)}})}
   /* Wall area \u2192 8\u00d716 CMU count at the standard 1.125 blocks per square foot */
-  function blocksHandler(){var v=getEff().val,n=Math.ceil(v*1.125);resetConvToggle();setDec(n);ctx.dims=0;ctx.modeText=fmt(v)+' SF WALL \u2192 '+n+' BLOCKS';ctx.subText='8\u00d716 CMU @ 1.125/SF';ctx.state=READY;render()}
+  function blocksHandler(){convTo('bl',function(s){var n=Math.ceil(s.val*1.125);return{r:n,main:n+' BLOCKS',mode:fmt(s.val)+' SF WALL = '+n+' BLOCKS',sub:'8\u00d716 CMU @ 1.125/SF'}})}
   /* L \u00d7 W \u00d7 H dimension accumulator. One dim = echo; two = area; three = volume.
      Each key overwrites its own slot, so changing one dimension re-computes. */
   function lwhSet(which){
@@ -2183,7 +2211,7 @@ document.addEventListener('DOMContentLoaded',()=>{const tc=document.querySelecto
     'M+':memAdd,'Rcl':memRcl,'Stor':memStor,
     'Pitch':pitchH,'Rise':riseH,'Run':runH,'Diag':diagH,'Hip/V':hipH,'Jack':jackH,
     'Sqrt':function(){unaryFn('Sqrt')},'Sine':function(){unaryFn('Sine')},'Cos':function(){unaryFn('Cos')},'Tan':function(){unaryFn('Tan')},
-    'm':function(){unaryFn('m')},'Yds':function(){unaryFn('Yds')},'Circ':function(){unaryFn('Circ')},'Arc':function(){unaryFn('Arc')},
+    'm':mHandler,'Yds':ydsHandler,'Circ':function(){unaryFn('Circ')},'Arc':function(){unaryFn('Arc')},
     'x\u00b2':function(){unaryFn('x\u00b2')},'x\u00b3':function(){unaryFn('x\u00b3')},
     'SF':sfHandler,'SY':syHandler,'CY':cyHandler,'CF':cfHandler,'Acres':acresHandler,
     'Board':boardHandler,'LF':lfHandler,'Blocks':blocksHandler,
