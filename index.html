@@ -329,6 +329,7 @@ input:focus,select:focus{border-color:var(--gold)}
 .guide-backdrop.open+.guide-panel,.guide-panel.open{transform:translateX(0)}
 .guide-hdr{display:flex;align-items:center;justify-content:space-between;padding:calc(14px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) 14px 16px;background:var(--panel);border-bottom:1px solid var(--border);flex-shrink:0}
 .guide-hdr h2{font-family:'IBM Plex Mono',monospace;font-size:.9rem;font-weight:700;color:var(--gold)}
+.guide-build{font-family:'IBM Plex Mono',monospace;font-size:.58rem;color:var(--muted);letter-spacing:.06em;margin-top:2px}
 .guide-close{background:none;border:1px solid var(--border);border-radius:4px;color:var(--muted);font-size:1.1rem;width:32px;height:32px;cursor:pointer;display:flex;align-items:center;justify-content:center}
 .guide-close:hover{color:var(--val);border-color:var(--gold)}
 .guide-nav{display:flex;gap:0;overflow-x:auto;border-bottom:1px solid var(--border);flex-shrink:0;-webkit-overflow-scrolling:touch}
@@ -1023,7 +1024,7 @@ input:focus,select:focus{border-color:var(--gold)}
 <div id="guide-backdrop" class="guide-backdrop" onclick="closeGuide()"></div>
 <div id="guide-panel" class="guide-panel">
   <div class="guide-hdr">
-    <h2>User Guide</h2>
+    <div><h2>User Guide</h2><div class="guide-build" id="guide-build"></div></div>
     <button class="guide-close" onclick="closeGuide()">&times;</button>
   </div>
   <div class="guide-nav">
@@ -2851,7 +2852,17 @@ function calcFootings(){
 /* ── User Guide ── */
 (function(){
   const sectionMap={calculator:'guide-calc',roof:'guide-roof',roofarea:'guide-roofarea',stair:'guide-stair',concrete:'guide-concrete',converter:'guide-converter',money:'guide-money',notes:'guide-notes'};
-  window.openGuide=function(){$('guide-backdrop').classList.add('open');$('guide-panel').classList.add('open');renderInstallSlot();showGuideSection(sectionMap[currentRoute]||'guide-calc')};
+  /* Shows which build is actually running, so "is the update reaching my phone?"
+     is answerable by looking instead of guessing. Reads the live service worker
+     cache name, so it can never drift from what was deployed. */
+  function stampBuild(){
+    const el=$('guide-build');if(!el)return;
+    fetch('sw.js',{cache:'no-store'}).then(r=>r.text()).then(t=>{
+      const m=t.match(/dsld-calc-(v\d+)/);
+      el.textContent='Build '+(m?m[1]:'?')+(navigator.serviceWorker&&navigator.serviceWorker.controller?' · installed':' · browser');
+    }).catch(()=>{el.textContent='Build offline'});
+  }
+  window.openGuide=function(){$('guide-backdrop').classList.add('open');$('guide-panel').classList.add('open');renderInstallSlot();stampBuild();showGuideSection(sectionMap[currentRoute]||'guide-calc')};
   window.closeGuide=function(){$('guide-backdrop').classList.remove('open');$('guide-panel').classList.remove('open')};
   window.showGuideSection=function(id){
     document.querySelectorAll('.guide-section').forEach(s=>s.classList.remove('active'));
