@@ -15,7 +15,12 @@
 try{var _t=localStorage.getItem('dsld-theme');if(_t)document.documentElement.setAttribute('data-theme',_t)}catch(e){}
 /* Set the real visible height before first paint so the keypad never renders taller
    than the screen on browsers that ignore dvh. */
-try{document.documentElement.style.setProperty('--app-h',(window.visualViewport?window.visualViewport.height:window.innerHeight)+'px')}catch(e){}
+try{document.documentElement.style.setProperty('--app-h',(window.visualViewport?window.visualViewport.height:window.innerHeight)+'px');
+var _sw=(window.screen&&window.screen.width)||0,_r=_sw?window.innerWidth/_sw:1;
+if(_r>=1.5&&window.matchMedia&&window.matchMedia('(pointer:coarse)').matches){
+  document.documentElement.style.fontSize=(Math.min(2.2,_r)*16).toFixed(1)+'px';
+  document.documentElement.classList.add('forced-wide');}
+}catch(e){}
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -153,19 +158,17 @@ body{font-family:'IBM Plex Sans',-apple-system,BlinkMacSystemFont,sans-serif;bac
 /* Darker pill, not a lighter one — keeps the gold label high-contrast against it */
 .hdr-nav-item.active{color:var(--hdr-accent);background:rgba(0,0,0,.3)}
 @media(max-width:479px){.dsld-logo span.brand-word{display:none}}
-/* Eight toggles squeezed beside the logo are unusable at any handheld width, and
-   phones can report a wide viewport (desktop-site mode, foldables, tablets), so
-   the nav takes its own full-width row well past phone widths. */
-@media(max-width:900px){
-  .dsld-header{flex-wrap:wrap;row-gap:6px;
-    padding-left:calc(8px + env(safe-area-inset-left));padding-right:calc(8px + env(safe-area-inset-right))}
-  .dsld-divider{display:none}
-  .dsld-logo{margin-right:auto}
-  .hdr-nav{order:3;flex:0 0 100%;width:100%;gap:3px}
-  .hdr-nav-item{min-height:46px;padding:5px 2px;border-radius:9px}
-  .hdr-nav-item svg{width:19px;height:19px}
-  .hdr-nav-item .lbl,.hdr-nav-item .lbl-sm,.hdr-nav-item .lbl-lg{font-size:.5rem;letter-spacing:.01em}
-}
+/* The toggle row ALWAYS gets its own full-width line. No breakpoint: a phone can
+   report any viewport width it likes (desktop-site mode renders at 980px, foldables
+   and tablets vary), and every breakpoint guess so far has been missed by some
+   device. Eight toggles beside the logo are never big enough anyway. */
+.dsld-header{flex-wrap:wrap;row-gap:6px}
+.dsld-divider{display:none}
+.dsld-logo{margin-right:auto}
+.hdr-nav{order:3;flex:0 0 100%;width:100%;gap:3px;max-width:960px;margin:0 auto}
+.hdr-nav-item{min-height:46px;padding:5px 2px;border-radius:9px}
+.hdr-nav-item svg{width:19px;height:19px}
+.hdr-nav-item .lbl,.hdr-nav-item .lbl-sm,.hdr-nav-item .lbl-lg{font-size:.5rem;letter-spacing:.01em}
 @media(max-width:340px){.hdr-nav-item .lbl,.hdr-nav-item .lbl-sm,.hdr-nav-item .lbl-lg{font-size:.44rem}}
 
 /* ══ Money ══ */
@@ -194,11 +197,25 @@ body{font-family:'IBM Plex Sans',-apple-system,BlinkMacSystemFont,sans-serif;bac
   background:var(--gold-btn);color:var(--gold-fg);font-family:'IBM Plex Mono',monospace;font-size:.76rem;font-weight:700;
   padding:10px 18px;border-radius:999px;z-index:400;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;box-shadow:0 6px 20px rgba(0,0,0,.4)}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-@media(min-width:640px){
+/* Once each segment has room, spell the long labels out and size the row up. A
+   forced-wide viewport gets scaled down on a phone, so bigger is better here. */
+@media(min-width:480px){
   .hdr-nav{gap:4px}
-  .hdr-nav-item{padding:5px 6px}
+  .hdr-nav-item{padding:6px 6px;min-height:52px}
+  .hdr-nav-item svg{width:22px;height:22px}
   .hdr-nav-item .lbl-sm{display:none}.hdr-nav-item .lbl-lg{display:inline}
-  .hdr-nav-item .lbl,.hdr-nav-item .lbl-sm,.hdr-nav-item .lbl-lg{font-size:.58rem}
+  .hdr-nav-item .lbl,.hdr-nav-item .lbl-sm,.hdr-nav-item .lbl-lg{font-size:.62rem}
+}
+/* A phone in desktop-site mode squeezes ~980 CSS px into ~412 physical px, so
+   everything is scaled to ~42%. Size up hard here or it reads as tiny on glass. */
+@media(min-width:820px){
+  .hdr-nav{gap:6px}
+  .hdr-nav-item{min-height:74px;padding:8px 6px;gap:4px}
+  .hdr-nav-item svg{width:32px;height:32px}
+  .hdr-nav-item .lbl,.hdr-nav-item .lbl-sm,.hdr-nav-item .lbl-lg{font-size:.9rem;letter-spacing:.03em}
+  .dsld-logo{font-size:1.5rem}
+  .help-btn{width:38px;height:38px;font-size:1.1rem}
+  .help-btn svg{width:19px;height:19px}
 }
 
 /* Wrap */
@@ -269,7 +286,7 @@ input:focus,select:focus{border-color:var(--gold)}
 /* --app-h is the real visible height, measured in JS. vh/dvh are only fallbacks:
    older phone browsers ignore dvh and resolve 100vh to the toolbar-hidden height,
    which pushes the bottom key row off the screen. */
-.calc-shell{max-width:720px;width:100%;margin:0 auto;padding:10px calc(12px + env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom)) calc(12px + env(safe-area-inset-left));box-sizing:border-box;display:flex;flex-direction:column;min-height:calc(100vh - var(--hdr-h));min-height:calc(100dvh - var(--hdr-h));min-height:calc(var(--app-h,100vh) - var(--hdr-h))}
+.calc-shell{max-width:900px;width:100%;margin:0 auto;padding:10px calc(12px + env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom)) calc(12px + env(safe-area-inset-left));box-sizing:border-box;display:flex;flex-direction:column;min-height:calc(100vh - var(--hdr-h));min-height:calc(100dvh - var(--hdr-h));min-height:calc(var(--app-h,100vh) - var(--hdr-h))}
 /* The face grows with the window: it takes a share of the shell height, and every
    line scales on whichever dimension is tighter (min of vw/vh) so it fits portrait,
    landscape, and the taller viewport of the installed PWA. */
@@ -1309,9 +1326,27 @@ function navigate(hash){
 /* The keypad reserves the header's height. Measure it instead of hard-coding, so a
    notch/safe-area inset or a large browser text size can't push the bottom keys off screen. */
 function syncHeaderHeight(){
+  compensateForcedZoom();   // must run first: changing the root font resizes the header
   const h=document.querySelector('.dsld-header');
   if(h)document.documentElement.style.setProperty('--hdr-h',Math.ceil(h.getBoundingClientRect().height)+'px');
   syncAppHeight();
+}
+/* "Desktop site" mode on a phone renders the page at ~980 CSS px and then scales it
+   down to the physical screen (~42%), which is why everything reads as tiny. Detect
+   that gap and scale the root font up so rem-based text survives the downscale. */
+function compensateForcedZoom(){
+  try{
+    const sw=(window.screen&&window.screen.width)||0;
+    const ratio=sw?window.innerWidth/sw:1;
+    const touch=window.matchMedia&&window.matchMedia('(pointer:coarse)').matches;
+    if(touch&&ratio>=1.5){
+      document.documentElement.style.fontSize=(Math.min(2.2,ratio)*16).toFixed(1)+'px';
+      document.documentElement.classList.add('forced-wide');
+    }else{
+      document.documentElement.style.fontSize='';
+      document.documentElement.classList.remove('forced-wide');
+    }
+  }catch(e){}
 }
 /* The visible height, measured rather than trusted to vh/dvh support */
 function syncAppHeight(){
