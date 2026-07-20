@@ -2,154 +2,297 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#1a3a5c">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="DSLD Calc">
+<link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
 <title>DSLD Construction Calculator</title>
+<script>try{var _t=localStorage.getItem('dsld-theme');if(_t)document.documentElement.setAttribute('data-theme',_t)}catch(e){}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-/* ══ Theme ══ */
+/* ══ Themes ══ */
 :root {
   --bg:#0f1319;--panel:#171c25;--card:#1d2330;--border:#2c3345;--line:#232b3a;
   --gold:#e8a020;--red:#c0392b;--blue:#3d8ef0;--green:#27ae60;
-  --navy:#1a3a5c;--navy-lt:#2a5a8c;
+  --navy:#1a3a5c;--navy-lt:#2a5a8c;--navy-dk:#0d2540;--hdr-accent:#e8a020;
   --text:#d4dae6;--muted:#6b7896;--label:#8a9bbf;--val:#f0f4ff;--inp:#141820;
+  --gold-btn:#e8a020;--gold-fg:#0f1319;
+  --lcd:#e8ecd8;--lcd-border:#888;--lcd-text:#1a1a2e;--lcd-sub:#556;--lcd-op:#1a3a5c;--lcd-eq:#b07010;
+  --key-num:#d4d4d4;--key-num-fg:#1a1a2e;--key-func-bg:#242b3b;--key-func-fg:#a8b4cc;--key-op-bg:#2c3345;--key-op-fg:#f0f4ff;
+  --well:rgba(0,0,0,.25);--shadow:0 1px 2px rgba(0,0,0,.3);
+  --hdr-h:calc(62px + env(safe-area-inset-top)); /* correct before JS runs; JS then overwrites it with the measured height */
+}
+:root[data-theme=light]{
+  --bg:#e9edf2;--panel:#f7f9fb;--card:#ffffff;--border:#cdd6e1;--line:#e2e8f0;
+  --gold:#a06e10;--red:#c0392b;--blue:#1f6fd6;--green:#1e8e4d;
+  --navy:#1a3a5c;--navy-lt:#2a5a8c;--navy-dk:#0d2540;--hdr-accent:#e8a020;
+  --text:#2a3547;--muted:#6b7890;--label:#4d5d78;--val:#111a28;--inp:#ffffff;
+  --gold-btn:#e8a020;--gold-fg:#141a24;
+  --lcd:#eef2dd;--lcd-border:#9aa08a;--lcd-text:#1a1a2e;--lcd-sub:#556;--lcd-op:#1a3a5c;--lcd-eq:#b07010;
+  --key-num:#ffffff;--key-num-fg:#1a2332;--key-func-bg:#e7ebf2;--key-func-fg:#3d4c66;--key-op-bg:#33405a;--key-op-fg:#f5f8ff;
+  --well:#edf1f6;--shadow:0 1px 3px rgba(30,40,60,.14);
+}
+:root[data-theme=night]{
+  --bg:#000000;--panel:#0a0d12;--card:#0f131b;--border:#1f2633;--line:#161c26;
+  --gold:#ffb020;--red:#e05545;--blue:#5aa2f0;--green:#3dbf76;
+  --navy:#122a45;--navy-lt:#1e4066;--navy-dk:#000000;--hdr-accent:#ffb020;
+  --text:#c2cad8;--muted:#5a6478;--label:#8091ad;--val:#f2f6ff;--inp:#05070b;
+  --gold-btn:#ffb020;--gold-fg:#100c02;
+  --lcd:#0c150e;--lcd-border:#2c3a2e;--lcd-text:#7ee787;--lcd-sub:#57a25f;--lcd-op:#a5d6ff;--lcd-eq:#ffb020;
+  --key-num:#232b3a;--key-num-fg:#eef2fa;--key-func-bg:#12161f;--key-func-fg:#8b98b3;--key-op-bg:#1a2130;--key-op-fg:#e8eefc;
+  --well:rgba(255,255,255,.05);--shadow:0 1px 2px rgba(0,0,0,.6);
+}
+:root[data-theme=blueprint]{
+  --bg:#0a1c30;--panel:#0f2540;--card:#122c4d;--border:#28517d;--line:#1c3d61;
+  --gold:#5ec8f8;--red:#e06050;--blue:#7fb8f0;--green:#39c37a;
+  --navy:#0d2946;--navy-lt:#1c4a78;--navy-dk:#061726;--hdr-accent:#5ec8f8;
+  --text:#cfe2f5;--muted:#6f8db0;--label:#9dbcdc;--val:#f0f8ff;--inp:#081726;
+  --gold-btn:#38a8e8;--gold-fg:#04121f;
+  --lcd:#dfe9f2;--lcd-border:#7d93a8;--lcd-text:#12283e;--lcd-sub:#4a6076;--lcd-op:#1a3a5c;--lcd-eq:#9c6a10;
+  --key-num:#d8e4ef;--key-num-fg:#12233a;--key-func-bg:#0e2138;--key-func-fg:#9db8d8;--key-op-bg:#1b3a5e;--key-op-fg:#eaf4ff;
+  --well:rgba(0,0,0,.3);--shadow:0 1px 2px rgba(0,0,0,.35);
+}
+/* Sunlight — maximum contrast for working in direct sun */
+:root[data-theme=sun]{
+  --bg:#ffffff;--panel:#eef1f6;--card:#ffffff;--border:#8a94a3;--line:#c3ccd8;
+  --gold:#8a5a00;--red:#b3261e;--blue:#12559c;--green:#0f7a3d;
+  --navy:#0f2c4a;--navy-lt:#1f4d7a;--navy-dk:#071a2e;--hdr-accent:#ffc247;
+  --text:#0a0f18;--muted:#445061;--label:#1f2937;--val:#000000;--inp:#ffffff;
+  --gold-btn:#e8a020;--gold-fg:#1a1200;
+  --lcd:#ffffff;--lcd-border:#5a6270;--lcd-text:#000000;--lcd-sub:#333c48;--lcd-op:#0f2c4a;--lcd-eq:#8a5a00;
+  --key-num:#ffffff;--key-num-fg:#000000;--key-func-bg:#dde4ee;--key-func-fg:#16202e;--key-op-bg:#1f2c3f;--key-op-fg:#ffffff;
+  --well:#eef2f7;--shadow:0 1px 3px rgba(0,0,0,.22);
+}
+/* Hi-Vis — safety-vest yellow-green and amber on near-black */
+:root[data-theme=hivis]{
+  --bg:#12120e;--panel:#1b1b14;--card:#22221a;--border:#3c3c2b;--line:#2c2c20;
+  --gold:#c8f03c;--red:#ff5c42;--blue:#5ab8f0;--green:#66d97a;
+  --navy:#232318;--navy-lt:#3d3d28;--navy-dk:#0d0d09;--hdr-accent:#d8ff4a;
+  --text:#dcdcc8;--muted:#82826a;--label:#a8a888;--val:#f7f7e8;--inp:#0c0c08;
+  --gold-btn:#ff8c1a;--gold-fg:#1a1200;
+  --lcd:#181206;--lcd-border:#3d2f14;--lcd-text:#ffb340;--lcd-sub:#b3833a;--lcd-op:#ffd88a;--lcd-eq:#c8f03c;
+  --key-num:#2f2f22;--key-num-fg:#f4f4e2;--key-func-bg:#1a1a12;--key-func-fg:#adad93;--key-op-bg:#26261c;--key-op-fg:#f2f2e2;
+  --well:rgba(255,255,255,.05);--shadow:0 1px 2px rgba(0,0,0,.55);
+}
+/* Slate — warm industrial gray with copper accents */
+:root[data-theme=slate]{
+  --bg:#1c1e21;--panel:#25282c;--card:#2c3035;--border:#434952;--line:#343941;
+  --gold:#e0a458;--red:#d4614e;--blue:#5b9bd5;--green:#4fae72;
+  --navy:#2b3037;--navy-lt:#3d444d;--navy-dk:#15181c;--hdr-accent:#f0b070;
+  --text:#d5d9de;--muted:#828a94;--label:#9ea7b2;--val:#f4f7fa;--inp:#17191c;
+  --gold-btn:#d98b3a;--gold-fg:#150d04;
+  --lcd:#dfe0d8;--lcd-border:#8b8f86;--lcd-text:#1e2124;--lcd-sub:#535960;--lcd-op:#2b3037;--lcd-eq:#8f5f14;
+  --key-num:#c9ced4;--key-num-fg:#1a1d21;--key-func-bg:#2a2e34;--key-func-fg:#aeb7c2;--key-op-bg:#363c44;--key-op-fg:#eef2f6;
+  --well:rgba(0,0,0,.22);--shadow:0 1px 2px rgba(0,0,0,.4);
+}
+/* Classic — tan body and green LCD, like the Construction Master on the desk */
+:root[data-theme=classic]{
+  --bg:#2a2723;--panel:#332f29;--card:#3b3630;--border:#564e44;--line:#443e37;
+  --gold:#e8b23c;--red:#cf5f45;--blue:#6ba3d6;--green:#5eae6b;
+  --navy:#3a3229;--navy-lt:#544838;--navy-dk:#1e1a14;--hdr-accent:#f0be55;
+  --text:#e5ddd0;--muted:#9a9082;--label:#bbb09e;--val:#fdf8ef;--inp:#232019;
+  --gold-btn:#d99b28;--gold-fg:#1c1405;
+  --lcd:#c9d4b0;--lcd-border:#6f7860;--lcd-text:#1b2414;--lcd-sub:#4a543c;--lcd-op:#2d3d22;--lcd-eq:#7a5a10;
+  --key-num:#ddd6c8;--key-num-fg:#241f18;--key-func-bg:#332e27;--key-func-fg:#b8ad99;--key-op-bg:#413930;--key-op-fg:#f5efe2;
+  --well:rgba(0,0,0,.25);--shadow:0 1px 2px rgba(0,0,0,.4);
+}
+/* Forest — deep green with mint accents */
+:root[data-theme=forest]{
+  --bg:#0e1712;--panel:#152019;--card:#1a281f;--border:#2e4637;--line:#22332a;
+  --gold:#e8c04a;--red:#e0705c;--blue:#63b0e0;--green:#4fc47f;
+  --navy:#123528;--navy-lt:#1d5340;--navy-dk:#07190f;--hdr-accent:#7fe0a8;
+  --text:#cfe0d4;--muted:#718b79;--label:#97b7a4;--val:#f0fbf4;--inp:#0a1310;
+  --gold-btn:#d9a92e;--gold-fg:#12160a;
+  --lcd:#dfe9d8;--lcd-border:#7d8a76;--lcd-text:#12241a;--lcd-sub:#44563d;--lcd-op:#123528;--lcd-eq:#8a6a12;
+  --key-num:#cfdcd2;--key-num-fg:#14201a;--key-func-bg:#16241c;--key-func-fg:#9fbaab;--key-op-bg:#1f3229;--key-op-fg:#eaf6ee;
+  --well:rgba(0,0,0,.25);--shadow:0 1px 2px rgba(0,0,0,.45);
+}
+/* Brick — warm clay and terracotta */
+:root[data-theme=brick]{
+  --bg:#1a1113;--panel:#231619;--card:#2b1c20;--border:#4a2d33;--line:#372227;
+  --gold:#f0a53c;--red:#e5614c;--blue:#6fa8dc;--green:#57b477;
+  --navy:#3a1c22;--navy-lt:#5a2b33;--navy-dk:#1a0c0f;--hdr-accent:#ff9a5c;
+  --text:#e5d2d5;--muted:#927076;--label:#b78c94;--val:#fdf2f4;--inp:#140d0f;
+  --gold-btn:#e08a2a;--gold-fg:#1a0e04;
+  --lcd:#e8dcd4;--lcd-border:#8b7a72;--lcd-text:#241619;--lcd-sub:#5a4448;--lcd-op:#3a1c22;--lcd-eq:#9c5a10;
+  --key-num:#dccfc9;--key-num-fg:#1f1417;--key-func-bg:#241619;--key-func-fg:#b89fa5;--key-op-bg:#342126;--key-op-fg:#f7ecef;
+  --well:rgba(0,0,0,.25);--shadow:0 1px 2px rgba(0,0,0,.45);
 }
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'IBM Plex Sans',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-tap-highlight-color:transparent;overscroll-behavior:none}
+body{font-family:'IBM Plex Sans',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-tap-highlight-color:transparent;overscroll-behavior:none;touch-action:manipulation}
 .view{display:none}.view.active{display:block}.hidden{display:none!important}
 
 /* ══ DSLD Header ══ */
-.dsld-header{background:linear-gradient(135deg,var(--navy) 0%,#0d2540 100%);border-bottom:2px solid var(--gold);padding:10px 16px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:100}
-.dsld-logo{font-family:'IBM Plex Sans',sans-serif;font-size:1.1rem;font-weight:700;color:#fff;letter-spacing:.04em}
-.dsld-logo span{color:var(--gold)}
-.dsld-divider{width:1px;height:20px;background:rgba(255,255,255,.2)}
-.dsld-page{flex:1;font-family:'IBM Plex Mono',monospace;font-size:.72rem;font-weight:600;color:rgba(255,255,255,.7);letter-spacing:.06em}
-.help-btn{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);border-radius:50%;width:28px;height:28px;color:var(--gold);font-family:'IBM Plex Mono',monospace;font-size:.85rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s}
+.dsld-header{background:linear-gradient(135deg,var(--navy) 0%,var(--navy-dk) 100%);border-bottom:2px solid var(--hdr-accent);padding:calc(8px + env(safe-area-inset-top)) calc(12px + env(safe-area-inset-right)) 8px calc(12px + env(safe-area-inset-left));display:flex;align-items:center;gap:8px;position:sticky;top:0;z-index:100}
+.dsld-logo{font-family:'IBM Plex Sans',sans-serif;font-size:1.05rem;font-weight:700;color:#fff;letter-spacing:.04em;flex-shrink:0}
+.dsld-logo span{color:var(--hdr-accent)}
+.dsld-divider{width:1px;height:20px;background:rgba(255,255,255,.2);flex-shrink:0}
+.help-btn{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);border-radius:50%;width:28px;height:28px;color:var(--hdr-accent);font-family:'IBM Plex Mono',monospace;font-size:.85rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s}
 .help-btn:hover,.help-btn:active{background:rgba(232,160,32,.2)}
 
-/* Swipe dots */
-/* Bottom nav bar */
-.bottom-nav{display:flex;position:fixed;bottom:0;left:0;right:0;background:var(--panel);border-top:1px solid var(--border);z-index:90;padding:4px 0 env(safe-area-inset-bottom,4px)}
-.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 2px 4px;background:none;border:none;color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:.5rem;font-weight:600;letter-spacing:.03em;cursor:pointer;transition:color .15s;touch-action:manipulation;text-decoration:none;-webkit-tap-highlight-color:transparent}
-.nav-item:hover{color:var(--label)}
-.nav-item.active{color:var(--gold)}
-.nav-item svg{width:20px;height:20px;fill:currentColor}
-.nav-item span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
-/* Swipe dots (hidden, kept for JS compat) */
-.swipe-dots{display:none}
-.swipe-dot{width:8px;height:8px;border-radius:50%;background:var(--border);transition:background .2s,transform .2s}
-.swipe-dot.active{background:var(--gold);transform:scale(1.3)}
+/* Header calculator toggles — six equal segments, always fully visible */
+/* No scroll container here: items flex-shrink and labels ellipsis, so a scroll
+   container would only clip the focus ring without ever being needed. */
+.hdr-nav{flex:1;min-width:0;display:flex;align-items:stretch;gap:2px}
+.hdr-nav-item{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:5px 2px;min-height:44px;border-radius:8px;color:rgba(255,255,255,.72);text-decoration:none;cursor:pointer;transition:color .15s,background-color .15s;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.hdr-nav-item svg{width:18px;height:18px;fill:currentColor;display:block;flex-shrink:0}
+.hdr-nav-item .lbl,.hdr-nav-item .lbl-sm,.hdr-nav-item .lbl-lg{font-family:'IBM Plex Mono',monospace;font-size:.5rem;font-weight:700;letter-spacing:.02em;text-transform:uppercase;white-space:nowrap;line-height:1;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.hdr-nav-item .lbl-lg{display:none}
+.hdr-nav-item:hover{color:#fff}
+.hdr-nav-item:focus-visible{outline:2px solid var(--hdr-accent);outline-offset:-2px}
+/* Darker pill, not a lighter one — keeps the gold label high-contrast against it */
+.hdr-nav-item.active{color:var(--hdr-accent);background:rgba(0,0,0,.3)}
+@media(max-width:479px){.dsld-logo span.brand-word{display:none}}
+/* Seven segments need tighter spacing than six on a phone */
+@media(max-width:420px){.hdr-nav{gap:1px}.hdr-nav-item{padding:5px 1px}
+  .hdr-nav-item .lbl,.hdr-nav-item .lbl-sm,.hdr-nav-item .lbl-lg{font-size:.44rem;letter-spacing:0}}
+@media(max-width:359px){.dsld-header{padding-left:calc(8px + env(safe-area-inset-left));padding-right:calc(8px + env(safe-area-inset-right));gap:6px}.dsld-divider{display:none}}
+
+/* ══ Money ══ */
+.mt-chip{display:flex;align-items:center;gap:10px;background:var(--well);border:1px solid var(--border);border-radius:8px;
+  padding:9px 12px;margin-bottom:12px;font-family:'IBM Plex Mono',monospace;font-size:.7rem;color:var(--label);line-height:1.5}
+.mt-chip .btn-sm{margin-left:auto;flex-shrink:0}
+.mt-set{background:var(--well);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:12px}
+.mt-set .slbl{margin-top:14px}.mt-set .slbl:first-child{margin-top:0}
+.opt-win{border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px;background:var(--well)}
+.opt-win.best{border-color:var(--gold);box-shadow:inset 0 0 0 1px var(--gold)}
+.opt-win h4{font-family:'IBM Plex Mono',monospace;font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--label);margin-bottom:6px}
+.opt-win.best h4{color:var(--gold)}
+.mt-disc{font-size:.64rem;color:var(--muted);line-height:1.5;margin-top:12px;padding-top:10px;border-top:1px solid var(--line);font-style:italic}
+
+/* ══ Notes ══ */
+.nt-tools{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.nt-text{width:100%;background:var(--inp);border:1.5px solid var(--border);border-radius:8px;color:var(--val);
+  font-family:'IBM Plex Mono',monospace;font-size:.9rem;line-height:1.6;padding:12px;outline:none;
+  min-height:clamp(220px,46vh,540px);resize:vertical;transition:border-color .15s}
+.nt-text:focus{border-color:var(--gold)}
+.nt-status{margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:.62rem;font-weight:600;
+  letter-spacing:.06em;text-transform:uppercase;color:var(--green);opacity:0;transition:opacity .2s}
+.nt-status.show{opacity:1}
+.note-add-wrap{margin-top:12px;padding-top:10px;border-top:1px dashed var(--border);text-align:right}
+.toast{position:fixed;left:50%;transform:translateX(-50%) translateY(20px);bottom:calc(24px + env(safe-area-inset-bottom));
+  background:var(--gold-btn);color:var(--gold-fg);font-family:'IBM Plex Mono',monospace;font-size:.76rem;font-weight:700;
+  padding:10px 18px;border-radius:999px;z-index:400;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;box-shadow:0 6px 20px rgba(0,0,0,.4)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media(min-width:640px){
+  .hdr-nav{gap:4px}
+  .hdr-nav-item{padding:5px 6px}
+  .hdr-nav-item .lbl-sm{display:none}.hdr-nav-item .lbl-lg{display:inline}
+  .hdr-nav-item .lbl,.hdr-nav-item .lbl-sm,.hdr-nav-item .lbl-lg{font-size:.58rem}
+}
 
 /* Wrap */
-.wrap{max-width:920px;margin:0 auto;padding:20px 16px 90px;display:flex;flex-direction:column;gap:16px}
+.wrap{max-width:920px;margin:0 auto;padding:20px calc(16px + env(safe-area-inset-right)) calc(28px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left));display:flex;flex-direction:column;gap:16px}
 
-/* Install banner */
-.install-banner{position:fixed;bottom:0;left:0;right:0;background:var(--gold);color:#0f1319;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:.82rem;font-weight:700;z-index:200}
-.install-banner button{background:rgba(0,0,0,.15);border:none;color:#0f1319;padding:6px 14px;border-radius:4px;font-family:inherit;font-weight:700;font-size:.78rem;cursor:pointer}
-.install-banner .dismiss{background:none;font-size:1.2rem;padding:4px 8px}
-.install-btn-wrap{text-align:center;padding:4px 20px 6px}
-.install-btn-wrap button{background:var(--gold);color:#0f1319;border:none;padding:5px 14px;border-radius:6px;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:.68rem;cursor:pointer;display:inline-flex;align-items:center;gap:5px;width:auto;justify-content:center;opacity:.85}
-.install-btn-wrap button:active{opacity:.8}
-.install-btn-wrap.hidden{display:none}
+/* Install (lives in the guide panel) */
+.guide-install-btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;margin-top:4px;padding:10px 16px;background:var(--gold-btn);color:var(--gold-fg);border:none;border-radius:8px;font-family:'IBM Plex Mono',monospace;font-size:.74rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;cursor:pointer;touch-action:manipulation}
+.guide-install-btn:hover{filter:brightness(1.08)}.guide-install-btn:active{transform:scale(.97)}
+.guide-install-status{display:flex;align-items:center;gap:7px;margin-top:4px;padding:9px 12px;background:var(--well);border:1px solid var(--border);border-radius:8px;font-family:'IBM Plex Mono',monospace;font-size:.7rem;font-weight:600;color:var(--green)}
 
 /* ══ Cards ══ */
-.card{background:var(--card);border:1px solid var(--border);border-radius:6px;overflow:hidden}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.14)}
 .ch{display:flex;align-items:center;gap:10px;background:var(--panel);border-bottom:1px solid var(--border);padding:10px 16px}
 .dot{width:8px;height:8px;border-radius:50%;background:var(--gold);flex-shrink:0}
 .dot.r{background:var(--red)}.dot.b{background:var(--blue)}.dot.g{background:var(--green)}
 .ch h2{font-size:.78rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--label)}
 .ch.r h2{color:#d07060}
 .cb{padding:16px}
-.logic{background:rgba(0,0,0,.25);border:1px solid var(--border);border-left:3px solid var(--muted);border-radius:3px;padding:10px 12px;margin-bottom:14px;font-family:'IBM Plex Mono',monospace;font-size:.66rem;color:var(--muted);line-height:1.8}
+.logic{background:var(--well);border:1px solid var(--border);border-left:3px solid var(--muted);border-radius:6px;padding:10px 12px;margin-bottom:14px;font-family:'IBM Plex Mono',monospace;font-size:.7rem;color:var(--muted);line-height:1.8}
 .logic span{color:var(--label)}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
 .field{margin-bottom:10px}.field:last-of-type{margin-bottom:0}
-label{display:block;font-size:.65rem;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
-input[type=number],input[type=text],select{width:100%;background:var(--inp);border:1.5px solid var(--border);border-radius:4px;color:var(--val);font-family:'IBM Plex Mono',monospace;font-size:.9rem;padding:9px 10px;outline:none;transition:border-color .15s;-moz-appearance:textfield}
+label{display:block;font-size:.7rem;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--label);margin-bottom:4px}
+input[type=number],input[type=text],select{width:100%;background:var(--inp);border:1.5px solid var(--border);border-radius:8px;color:var(--val);font-family:'IBM Plex Mono',monospace;font-size:.95rem;padding:10px 10px;outline:none;transition:border-color .15s;-moz-appearance:textfield}
 input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none}
 select{-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%236b7896'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px}
 input:focus,select:focus{border-color:var(--gold)}
 .slbl{font-size:.63rem;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:var(--gold);padding-bottom:8px;border-bottom:1px solid var(--line);margin-bottom:10px}
 .slbl.b{color:var(--blue)}.slbl.g{color:var(--green)}
-.btn{width:100%;margin-top:14px;padding:10px;background:var(--gold);color:#0f1319;border:none;border-radius:4px;font-family:'IBM Plex Mono',monospace;font-size:.82rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;cursor:pointer;transition:background .12s;touch-action:manipulation}
-.btn:hover{background:#f5b540}.btn:active{transform:scale(.98)}
-.btn.r{background:var(--red);color:#fff}.btn.r:hover{background:#e04535}
-.btn.b{background:var(--blue);color:#fff}.btn.b:hover{background:#5aa0f5}
+.btn{width:100%;margin-top:14px;padding:11px;background:var(--gold-btn);color:var(--gold-fg);border:none;border-radius:8px;font-family:'IBM Plex Mono',monospace;font-size:.82rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;cursor:pointer;transition:filter .12s;touch-action:manipulation;box-shadow:var(--shadow)}
+.btn:hover{filter:brightness(1.08)}.btn:active{transform:scale(.98)}
+.btn.r{background:var(--red);color:#fff}
+.btn.b{background:var(--blue);color:#fff}
 .res{display:none;margin-top:14px;padding-top:12px;border-top:1px solid var(--border)}
 .rsect{margin-bottom:12px}.rsect:last-child{margin-bottom:0}
 .rtitle{font-size:.6rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);padding-bottom:5px;margin-bottom:2px;border-bottom:1px solid var(--line)}
 .rrow{display:flex;justify-content:space-between;align-items:baseline;padding:5px 0;border-bottom:1px solid var(--line)}.rrow:last-child{border-bottom:none}
-.rl{font-size:.75rem;color:var(--label)}
-.rv{font-family:'IBM Plex Mono',monospace;font-size:.86rem;font-weight:600;color:var(--val)}
-.rv.hi{color:var(--gold);font-size:1rem;font-weight:700}
+.rl{font-size:.8rem;color:var(--label)}
+.rv{font-family:'IBM Plex Mono',monospace;font-size:.9rem;font-weight:600;color:var(--val)}
+.rv.hi{color:var(--gold);font-size:1.05rem;font-weight:700}
 .rv.hi2{color:var(--blue);font-weight:700}
 .rv.warn{color:var(--red)}.rv.ok{color:var(--green)}
 .res2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .fnote{font-size:.66rem;color:var(--muted);margin-top:10px;font-style:italic;line-height:1.5}
 .calc-tabs{display:flex;gap:0;border-bottom:1px solid var(--border)}
-.calc-tab{flex:1;padding:10px 8px;background:var(--panel);color:var(--muted);border:none;border-bottom:2px solid transparent;cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:.7rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;transition:color .15s,border-color .15s;touch-action:manipulation}
+.calc-tab{flex:1;padding:11px 8px;background:var(--panel);color:var(--muted);border:none;border-bottom:2px solid transparent;cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:.74rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;transition:color .15s,border-color .15s;touch-action:manipulation}
 .calc-tab:hover{color:var(--label)}
 .calc-tab.active{color:var(--gold);border-bottom-color:var(--gold)}
 .tab-panel{display:none}.tab-panel.active{display:block}
 .check-row{display:flex;align-items:center;gap:8px;margin-top:10px}
 .check-row input[type=checkbox]{width:16px;height:16px;accent-color:var(--gold)}
 .check-row label{margin-bottom:0;font-size:.7rem}
-.dyn-row{display:flex;gap:8px;align-items:flex-start;padding:10px;margin-bottom:8px;background:rgba(0,0,0,.15);border:1px solid var(--border);border-radius:4px}
+.dyn-row{display:flex;gap:8px;align-items:flex-start;padding:10px;margin-bottom:8px;background:var(--well);border:1px solid var(--border);border-radius:8px}
 .dyn-row-fields{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .dyn-row-fields .field{margin-bottom:0}
 .dyn-row-del{background:none;border:1px solid var(--border);border-radius:4px;color:var(--red);font-size:1.1rem;width:32px;height:32px;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-top:18px;flex-shrink:0;touch-action:manipulation}
 .dyn-row-del:hover{background:rgba(192,57,43,.1)}
 .dyn-actions{display:flex;gap:8px;margin-top:10px}
-.btn-sm{padding:8px 14px;background:var(--card);border:1px solid var(--border);border-radius:4px;color:var(--gold);font-family:'IBM Plex Mono',monospace;font-size:.72rem;font-weight:600;cursor:pointer;touch-action:manipulation}
+.btn-sm{padding:8px 14px;background:var(--card);border:1px solid var(--border);border-radius:8px;color:var(--gold);font-family:'IBM Plex Mono',monospace;font-size:.72rem;font-weight:600;cursor:pointer;touch-action:manipulation}
 .btn-sm:hover{background:var(--panel);border-color:var(--gold)}
 .btn-sm.red{color:var(--red)}.btn-sm.red:hover{border-color:var(--red)}
 .live-label{display:flex;align-items:center;gap:6px;margin-bottom:8px}
 .live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s ease infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 
-/* ══ Keypad ══ */
-.calc-shell{max-width:500px;width:100%;margin:0 auto;padding:12px 12px 80px;box-sizing:border-box}
-.calc-display{background:#e8ecd8;border:2px solid #888;border-radius:8px;padding:12px 14px 10px;margin-bottom:10px;min-height:80px;position:relative}
-.calc-display-mode{font-family:'IBM Plex Mono',monospace;font-size:.6rem;font-weight:700;color:#556;letter-spacing:.1em;text-transform:uppercase;margin-bottom:2px}
-.calc-display-expr{font-family:'IBM Plex Mono',monospace;font-size:.72rem;color:#556;text-align:right;min-height:18px;line-height:1.3;word-break:break-all;overflow:hidden;direction:rtl;text-overflow:ellipsis;white-space:nowrap;padding:0 2px}
-.calc-display-expr span.op{color:#1a3a5c;font-weight:700}
-.calc-display-expr span.eq{color:#b07010;font-weight:700}
-.calc-display-main{font-family:'IBM Plex Mono',monospace;font-size:1.8rem;font-weight:700;color:#1a1a2e;text-align:right;line-height:1.2;min-height:36px;word-break:break-all}
-.calc-display-sub{font-family:'IBM Plex Mono',monospace;font-size:.75rem;color:#556;text-align:right;margin-top:2px}
-.mem-indicator{position:absolute;top:4px;left:8px;font-size:.5rem;font-weight:700;color:#1a1a2e;opacity:0}
+/* ══ Keypad — flexes to fill the phone screen; text scales with screen width ══ */
+.calc-shell{max-width:500px;width:100%;margin:0 auto;padding:10px calc(12px + env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom)) calc(12px + env(safe-area-inset-left));box-sizing:border-box;display:flex;flex-direction:column;min-height:min(calc(100vh - var(--hdr-h)),920px);min-height:min(calc(100dvh - var(--hdr-h)),920px)}
+/* The face grows with the window: it takes a share of the shell height, and every
+   line scales on whichever dimension is tighter (min of vw/vh) so it fits portrait,
+   landscape, and the taller viewport of the installed PWA. */
+.calc-display{background:var(--lcd);border:2px solid var(--lcd-border);border-radius:14px;padding:clamp(10px,1.6vh,18px) 14px clamp(8px,1.4vh,16px);margin-bottom:10px;min-height:clamp(96px,16vh,200px);position:relative;flex:1 1 0;display:flex;flex-direction:column;overflow:hidden;box-shadow:inset 0 2px 6px rgba(0,0,0,.12)}
+.calc-display-mode{font-family:'IBM Plex Mono',monospace;font-size:clamp(.62rem,min(2.9vw,1.9vh),.82rem);font-weight:700;color:var(--lcd-sub);letter-spacing:.1em;text-transform:uppercase;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.calc-display-expr{font-family:'IBM Plex Mono',monospace;font-size:clamp(.72rem,min(3.4vw,2.2vh),1rem);color:var(--lcd-sub);text-align:right;min-height:18px;line-height:1.3;word-break:break-all;overflow:hidden;direction:rtl;text-overflow:ellipsis;white-space:nowrap;padding:0 2px;margin-top:auto}
+.calc-display-expr span.op{color:var(--lcd-op);font-weight:700}
+.calc-display-expr span.eq{color:var(--lcd-eq);font-weight:700}
+.calc-display-main{font-family:'IBM Plex Mono',monospace;font-size:clamp(2rem,min(11vw,7.5vh),4.2rem);font-weight:700;color:var(--lcd-text);text-align:right;line-height:1.15;min-height:clamp(40px,7vh,68px);word-break:break-all}
+.calc-display-sub{font-family:'IBM Plex Mono',monospace;font-size:clamp(.78rem,min(3.6vw,2.4vh),1.1rem);color:var(--lcd-sub);text-align:right;margin-top:2px}
+.mem-indicator{position:absolute;top:4px;left:8px;font-size:clamp(.55rem,1.6vh,.75rem);font-weight:700;color:var(--lcd-text);opacity:0}
 .mem-indicator.active{opacity:1}
-.keypad{display:flex;flex-direction:column;gap:5px}
-.key-row{display:flex;gap:5px}
-.key{flex:1;min-height:46px;border:none;border-radius:5px;font-family:'IBM Plex Mono',monospace;font-size:.78rem;font-weight:700;cursor:pointer;transition:filter .1s,transform .05s;touch-action:manipulation;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.1;padding:4px 2px;position:relative}
-.key:active{transform:scale(.95);filter:brightness(1.1)}
-.key-label{position:absolute;top:2px;left:4px;font-size:.42rem;font-weight:600;color:inherit;opacity:.5;letter-spacing:.04em}
-.key-num{background:#d0d0d0;color:#1a1a2e}.key-num:hover{background:#ddd}
-.key-func{background:#b0b0b0;color:#1a1a2e;font-size:.62rem;letter-spacing:.02em}.key-func:hover{background:#bbb}
-.key-op{background:#2c3345;color:#f0f4ff;font-size:.9rem}.key-op:hover{background:#3a4458}
-.key-gold{background:var(--gold);color:#0f1319}.key-gold:hover{background:#f5b540}
-.key-red{background:var(--red);color:#fff}.key-red:hover{background:#e04535}
-.key-navy{background:var(--navy);color:#fff;font-size:.62rem}.key-navy:hover{background:var(--navy-lt)}
-.key-orange{background:#e07020;color:#fff}.key-orange:hover{background:#f08030}
+.keypad{display:flex;flex-direction:column;gap:6px;flex:4 1 0}
+.key-row{display:flex;gap:6px;flex:1 1 0}
+.key-row.num-block{margin-top:8px;padding-top:10px;border-top:1px solid var(--line)}
+.key{flex:1;min-width:0;overflow:hidden;min-height:44px;border:none;border-radius:10px;font-family:'IBM Plex Mono',monospace;font-size:clamp(.72rem,3.4vw,.95rem);font-weight:700;cursor:pointer;transition:filter .1s,transform .05s;touch-action:manipulation;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.1;padding:4px 2px;position:relative;box-shadow:var(--shadow)}
+.key:hover{filter:brightness(1.1)}
+.key:active{transform:scale(.95);filter:brightness(1.18)}
+.key:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.key-label{position:absolute;top:2px;left:4px;font-size:clamp(.4rem,1.9vw,.5rem);font-weight:600;color:inherit;opacity:.55;letter-spacing:.04em}
+.key-num{background:var(--key-num);color:var(--key-num-fg);font-size:clamp(.95rem,5vw,1.35rem)}
+.key-func{background:var(--key-func-bg);color:var(--key-func-fg);font-size:clamp(.58rem,2.9vw,.72rem);letter-spacing:.02em;border:1px solid var(--border)}
+.key-op{background:var(--key-op-bg);color:var(--key-op-fg);font-size:clamp(.9rem,4.5vw,1.2rem)}
+.key-gold{background:var(--gold-btn);color:var(--gold-fg)}
+.key-red{background:var(--red);color:#fff}
+.key-navy{background:var(--navy);color:#c8d8ec;font-size:clamp(.58rem,2.9vw,.72rem);border:1px solid var(--navy-lt)}
+.key-orange{background:#e07020;color:#fff}
 .key-wide{flex:2}
 /* Conv panel */
-.conv-panel{display:none;background:var(--panel);border:1px solid var(--gold);border-radius:6px;padding:10px;margin-bottom:8px}
+.conv-panel{display:none;background:var(--panel);border:1px solid var(--gold);border-radius:12px;padding:10px;margin-bottom:8px;flex-shrink:0}
 .conv-panel.open{display:block}
 .conv-title{font-family:'IBM Plex Mono',monospace;font-size:.6rem;font-weight:700;color:var(--gold);letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px;text-align:center}
-.conv-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:5px}
-.conv-grid .key{min-height:36px;font-size:.65rem}
+.conv-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.conv-grid .key{min-height:42px;font-size:clamp(.62rem,3vw,.78rem)}
 
 /* ══ Guide ══ */
 .guide-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:300;opacity:0;pointer-events:none;transition:opacity .25s}
 .guide-backdrop.open{opacity:1;pointer-events:auto}
 .guide-panel{position:fixed;top:0;right:0;bottom:0;width:85%;max-width:420px;background:var(--bg);border-left:2px solid var(--gold);z-index:310;transform:translateX(100%);transition:transform .3s ease;display:flex;flex-direction:column;overflow:hidden}
 .guide-backdrop.open+.guide-panel,.guide-panel.open{transform:translateX(0)}
-.guide-hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--panel);border-bottom:1px solid var(--border);flex-shrink:0}
+.guide-hdr{display:flex;align-items:center;justify-content:space-between;padding:calc(14px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) 14px 16px;background:var(--panel);border-bottom:1px solid var(--border);flex-shrink:0}
 .guide-hdr h2{font-family:'IBM Plex Mono',monospace;font-size:.9rem;font-weight:700;color:var(--gold)}
 .guide-close{background:none;border:1px solid var(--border);border-radius:4px;color:var(--muted);font-size:1.1rem;width:32px;height:32px;cursor:pointer;display:flex;align-items:center;justify-content:center}
 .guide-close:hover{color:var(--val);border-color:var(--gold)}
@@ -157,7 +300,7 @@ input:focus,select:focus{border-color:var(--gold)}
 .guide-nav-btn{flex-shrink:0;padding:8px 12px;background:none;border:none;border-bottom:2px solid transparent;color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:.58rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;cursor:pointer;white-space:nowrap;transition:color .15s,border-color .15s}
 .guide-nav-btn:hover{color:var(--label)}
 .guide-nav-btn.active{color:var(--gold);border-bottom-color:var(--gold)}
-.guide-body{flex:1;overflow-y:auto;padding:16px;-webkit-overflow-scrolling:touch}
+.guide-body{flex:1;overflow-y:auto;padding:16px calc(16px + env(safe-area-inset-right)) calc(16px + env(safe-area-inset-bottom)) 16px;-webkit-overflow-scrolling:touch}
 .guide-section{display:none;animation:guideFadeIn .2s ease}
 .guide-section.active{display:block}
 @keyframes guideFadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
@@ -168,30 +311,93 @@ input:focus,select:focus{border-color:var(--gold)}
 .guide-block p{font-size:.73rem;color:var(--text);line-height:1.6;margin-bottom:6px}
 .guide-block p:last-child{margin-bottom:0}
 .guide-key{display:inline-block;background:var(--panel);border:1px solid var(--border);border-radius:3px;padding:1px 6px;font-family:'IBM Plex Mono',monospace;font-size:.68rem;font-weight:600;color:var(--gold)}
-.guide-example{background:rgba(0,0,0,.3);border-left:3px solid var(--gold);border-radius:0 4px 4px 0;padding:8px 10px;margin:8px 0;font-family:'IBM Plex Mono',monospace;font-size:.72rem;color:var(--val);line-height:1.6}
+.guide-example{background:var(--well);border-left:3px solid var(--gold);border-radius:0 6px 6px 0;padding:8px 10px;margin:8px 0;font-family:'IBM Plex Mono',monospace;font-size:.72rem;color:var(--val);line-height:1.6}
 .guide-example .result{color:var(--gold);font-weight:700}
-.guide-try{display:inline-flex;align-items:center;gap:6px;margin-top:8px;padding:7px 14px;background:var(--gold);color:#0f1319;border:none;border-radius:4px;font-family:'IBM Plex Mono',monospace;font-size:.7rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;cursor:pointer;touch-action:manipulation}
-.guide-try:hover{background:#f5b540}.guide-try:active{transform:scale(.97)}
+.guide-try{display:inline-flex;align-items:center;gap:6px;margin-top:8px;padding:7px 14px;background:var(--gold-btn);color:var(--gold-fg);border:none;border-radius:8px;font-family:'IBM Plex Mono',monospace;font-size:.7rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;cursor:pointer;touch-action:manipulation}
+.guide-try:hover{filter:brightness(1.08)}.guide-try:active{transform:scale(.97)}
 .guide-legend{display:flex;gap:12px;margin-top:6px}
 .guide-legend span{font-size:.68rem;display:flex;align-items:center;gap:4px}
 .guide-legend .dot-g{width:8px;height:8px;border-radius:50%;background:var(--green)}
 .guide-legend .dot-r{width:8px;height:8px;border-radius:50%;background:var(--red)}
 
+/* ══ Theme picker ══ */
+.theme-panel{position:fixed;top:58px;right:calc(10px + env(safe-area-inset-right));background:var(--card);border:1px solid var(--border);border-radius:12px;padding:6px;z-index:330;display:none;box-shadow:0 12px 32px rgba(0,0,0,.45);min-width:190px;max-height:calc(100dvh - 80px - env(safe-area-inset-bottom));overflow-y:auto;-webkit-overflow-scrolling:touch}
+.theme-panel .theme-title{position:sticky;top:0;background:var(--card);z-index:1}
+.theme-panel.open{display:block}
+.theme-title{font-family:'IBM Plex Mono',monospace;font-size:.6rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);padding:6px 10px 4px}
+.theme-opt{display:flex;align-items:center;gap:10px;width:100%;padding:9px 10px;background:none;border:none;border-radius:8px;color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:.72rem;font-weight:600;cursor:pointer;text-align:left;touch-action:manipulation}
+.theme-opt:hover{background:var(--panel)}
+.theme-opt.active{color:var(--gold)}
+.theme-dots{display:flex;gap:3px;flex-shrink:0}
+.theme-dots span{width:12px;height:12px;border-radius:50%;border:1px solid rgba(128,128,128,.45)}
+.theme-check{margin-left:auto;opacity:0}
+.theme-opt.active .theme-check{opacity:1}
+
 /* ══ Responsive ══ */
 @media(max-width:600px){.row2,.res2{grid-template-columns:1fr}.row3{grid-template-columns:1fr}.dyn-row-fields{grid-template-columns:1fr}}
-@media(max-width:380px){.key{min-height:40px;font-size:.68rem}.key-func{font-size:.58rem}.calc-display-main{font-size:1.5rem}}
-@media(min-width:500px){.key{min-height:48px;font-size:.78rem}}
+@media(max-width:380px){.key{min-height:40px}}
+@media(min-width:500px){.key{min-height:50px}}
+/* Short viewports (phone landscape, small windows): give the keys the room instead of the face */
+@media(max-height:560px){
+  .calc-shell{padding-top:8px;padding-bottom:8px}
+  .calc-display{min-height:58px;flex:0 1 auto;margin-bottom:8px;padding:8px 12px 6px}
+  .calc-display-main{min-height:26px;font-size:clamp(1.35rem,min(5vw,9vh),2.1rem)}
+  .calc-display-expr,.calc-display-sub{font-size:clamp(.62rem,1.9vh,.8rem)}
+  .calc-display-mode{font-size:clamp(.55rem,1.7vh,.7rem)}
+  .key{min-height:38px}
+  .keypad{gap:5px}.key-row{gap:5px}
+  .key-row.num-block{margin-top:4px;padding-top:6px}
+}
 </style>
 </head>
 <body>
 
 <!-- ═══ DSLD Header ═══ -->
 <div class="dsld-header">
-  <a href="https://www.dsldhomes.com/" target="_blank" rel="noopener" class="dsld-logo" style="text-decoration:none">DSLD <span>Homes</span></a>
+  <a href="https://www.dsldhomes.com/" target="_blank" rel="noopener" class="dsld-logo" style="text-decoration:none">DSLD <span class="brand-word">Homes</span></a>
   <div class="dsld-divider"></div>
-  <div class="dsld-page" id="dsld-page-label"></div>
+  <nav class="hdr-nav" id="hdr-nav" aria-label="Calculators">
+    <a class="hdr-nav-item active" href="#calculator" data-route="calculator" title="Calculator" aria-label="Calculator">
+      <svg viewBox="0 0 24 24"><path d="M7 2h10a2 2 0 012 2v16a2 2 0 01-2 2H7a2 2 0 01-2-2V4a2 2 0 012-2zm0 2v4h10V4H7zm0 6v2h2v-2H7zm4 0v2h2v-2h-2zm4 0v2h2v-2h-2zm-8 4v2h2v-2H7zm4 0v2h2v-2h-2zm4 0v2h2v-2h-2zm-8 4v2h2v-2H7zm4 0v2h6v-2h-6z"/></svg>
+      <span class="lbl">Calc</span>
+    </a>
+    <a class="hdr-nav-item" href="#roof" data-route="roof" title="Roof Framing" aria-label="Roof Framing">
+      <svg viewBox="0 0 24 24"><path d="M3 21V10l9-7 9 7v11h-6v-6h-6v6H3z"/></svg>
+      <span class="lbl">Roof</span>
+    </a>
+    <a class="hdr-nav-item" href="#roofarea" data-route="roofarea" title="Roof Area" aria-label="Roof Area">
+      <svg viewBox="0 0 24 24"><path d="M3 21V10l9-7 9 7v11H3zm2-2h14v-8l-7-5.25L5 11v8zm3-3h8v-1H8v1zm0-3h8v-1H8v1z"/></svg>
+      <span class="lbl">Area</span>
+    </a>
+    <a class="hdr-nav-item" href="#stair" data-route="stair" title="Stair Layout" aria-label="Stair Layout">
+      <svg viewBox="0 0 24 24"><path d="M4 20v-4h4v-4h4V8h4V4h4v2h-2v4h-4v4h-4v4h-4v2H4z"/></svg>
+      <span class="lbl">Stair</span>
+    </a>
+    <a class="hdr-nav-item" href="#concrete" data-route="concrete" title="Concrete &amp; Material" aria-label="Concrete and Material">
+      <svg viewBox="0 0 24 24"><path d="M20 8h-3V6a2 2 0 00-2-2H9a2 2 0 00-2 2v2H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V10a2 2 0 00-2-2zM9 6h6v2H9V6zm11 14H4V10h16v10z"/></svg>
+      <span class="lbl-sm">Conc</span><span class="lbl-lg">Concrete</span>
+    </a>
+    <a class="hdr-nav-item" href="#converter" data-route="converter" title="Ft-In Converter" aria-label="Feet-Inches Converter">
+      <svg viewBox="0 0 24 24"><path d="M6.99 11L3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"/></svg>
+      <span class="lbl-sm">Conv</span><span class="lbl-lg">Convert</span>
+    </a>
+    <a class="hdr-nav-item" href="#money" data-route="money" title="Mortgage &amp; Business Money" aria-label="Money">
+      <svg viewBox="0 0 24 24"><path d="M12 2L2 8v2h20V8L12 2zM4 12v7H2v2h20v-2h-2v-7h-2v7h-3v-7h-2v7h-3v-7H8v7H6v-7H4z"/></svg>
+      <span class="lbl">Money</span>
+    </a>
+    <a class="hdr-nav-item" href="#notes" data-route="notes" title="Job Notes" aria-label="Job Notes">
+      <svg viewBox="0 0 24 24"><path d="M17 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V5a2 2 0 00-2-2zm0 16H7V5h10v14zM8.5 7.5h7V9h-7V7.5zm0 3.5h7v1.5h-7V11zm0 3.5h4.5V16H8.5v-1.5z"/></svg>
+      <span class="lbl">Note</span>
+    </a>
+  </nav>
+  <button class="help-btn" id="theme-btn" onclick="toggleThemePanel(event)" title="Theme" aria-label="Theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-panel">
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 2C6.49 2 2 6.49 2 12s4.49 10 10 10c1.38 0 2.5-1.12 2.5-2.5 0-.61-.23-1.2-.64-1.67-.08-.1-.13-.21-.13-.33 0-.28.22-.5.5-.5H16c3.31 0 6-2.69 6-6 0-4.96-4.49-9-10-9zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 8 6.5 8 8 8.67 8 9.5 7.33 11 6.5 11zm3-4C8.67 7 8 6.33 8 5.5S8.67 4 9.5 4s1.5.67 1.5 1.5S10.33 7 9.5 7zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 4 14.5 4s1.5.67 1.5 1.5S15.33 7 14.5 7zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 8 17.5 8s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+  </button>
   <button class="help-btn" onclick="openGuide()" title="User Guide">?</button>
 </div>
+<!-- ═══ Theme Picker ═══ -->
+<div id="theme-panel" class="theme-panel" role="menu" aria-label="Theme"></div>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
 
 <!-- ═══════════════════════════════════════════════════════ -->
 <!-- CONSTRUCTION CALCULATOR (Main Screen)                   -->
@@ -253,7 +459,7 @@ input:focus,select:focus{border-color:var(--gold)}
       <button class="key key-func" onclick="kpPress('Circ')"><span class="key-label">Column</span>Circ</button>
     </div>
     <!-- Row 4: Stor/Conv + 7 8 9 -->
-    <div class="key-row">
+    <div class="key-row num-block">
       <button class="key key-func" onclick="kpPress('Stor')"><span class="key-label">Prefs</span>Stor</button>
       <button class="key key-orange" onclick="toggleConv()" id="conv-btn">Conv</button>
       <button class="key key-num" onclick="kpPress('7')">7</button>
@@ -433,10 +639,9 @@ input:focus,select:focus{border-color:var(--gold)}
       </div>
       <div class="row2">
         <div class="field"><label>Tread Depth (inches)</label><input type="number" id="st-tread" step="0.125" min="0" inputmode="decimal" placeholder="10" value="10"></div>
-        <div class="field"><label>Nosing (inches)</label><input type="number" id="st-nosing" step="0.125" min="0" inputmode="decimal" placeholder="1.25" value="1.25"></div>
+        <div class="field"><label>Headroom (inches)</label><input type="number" id="st-headroom" step="0.125" min="0" inputmode="decimal" placeholder="96"></div>
       </div>
       <div class="row2">
-        <div class="field"><label>Headroom (inches)</label><input type="number" id="st-headroom" step="0.125" min="0" inputmode="decimal" placeholder="96"></div>
         <div class="field"><label>Number of Landings</label><input type="number" id="st-landings" step="1" min="0" max="5" inputmode="numeric" placeholder="0" value="0" oninput="stairToggleLandings()"></div>
       </div>
       <div id="st-landing-fields" style="display:none">
@@ -580,58 +785,204 @@ input:focus,select:focus{border-color:var(--gold)}
 </div>
 </section>
 
-<!-- ═══ Bottom Nav ═══ -->
-<nav class="bottom-nav" id="bottom-nav">
-  <a class="nav-item active" href="#calculator" data-route="calculator">
-    <svg viewBox="0 0 24 24"><path d="M7 2h10a2 2 0 012 2v16a2 2 0 01-2 2H7a2 2 0 01-2-2V4a2 2 0 012-2zm0 2v4h10V4H7zm0 6v2h2v-2H7zm4 0v2h2v-2h-2zm4 0v2h2v-2h-2zm-8 4v2h2v-2H7zm4 0v2h2v-2h-2zm4 0v2h2v-2h-2zm-8 4v2h2v-2H7zm4 0v2h6v-2h-6z"/></svg>
-    <span>Calc</span>
-  </a>
-  <a class="nav-item" href="#roof" data-route="roof">
-    <svg viewBox="0 0 24 24"><path d="M3 21V10l9-7 9 7v11h-6v-6h-6v6H3z"/></svg>
-    <span>Roof</span>
-  </a>
-  <a class="nav-item" href="#roofarea" data-route="roofarea">
-    <svg viewBox="0 0 24 24"><path d="M3 21V10l9-7 9 7v11H3zm2-2h14v-8l-7-5.25L5 11v8zm3-3h8v-1H8v1zm0-3h8v-1H8v1z"/></svg>
-    <span>Area</span>
-  </a>
-  <a class="nav-item" href="#stair" data-route="stair">
-    <svg viewBox="0 0 24 24"><path d="M4 20v-4h4v-4h4V8h4V4h4v2h-2v4h-4v4h-4v4h-4v2H4z"/></svg>
-    <span>Stair</span>
-  </a>
-  <a class="nav-item" href="#concrete" data-route="concrete">
-    <svg viewBox="0 0 24 24"><path d="M20 8h-3V6a2 2 0 00-2-2H9a2 2 0 00-2 2v2H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V10a2 2 0 00-2-2zM9 6h6v2H9V6zm11 14H4V10h16v10z"/></svg>
-    <span>Concrete</span>
-  </a>
-  <a class="nav-item" href="#converter" data-route="converter">
-    <svg viewBox="0 0 24 24"><path d="M6.99 11L3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"/></svg>
-    <span>Convert</span>
-  </a>
-</nav>
-<!-- Keep hidden dots for JS compat -->
-<div class="swipe-dots">
-  <div class="swipe-dot active" title="Calculator"></div>
-  <div class="swipe-dot" title="Roof Framing"></div>
-  <div class="swipe-dot" title="Roof Area"></div>
-  <div class="swipe-dot" title="Stair Layout"></div>
-  <div class="swipe-dot" title="Concrete"></div>
-  <div class="swipe-dot" title="Converter"></div>
-</div>
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- MONEY — MORTGAGE + BUSINESS                             -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<section id="view-money" class="view">
+<div class="wrap">
 
-<!-- ═══ Install Banner ═══ -->
-<div id="install-banner" class="install-banner hidden">
-  <span>Install to Home Screen</span>
-  <div>
-    <button onclick="installApp()">Install</button>
-    <button class="dismiss" onclick="dismissInstall()">&times;</button>
+  <!-- ── Mortgage ── -->
+  <div class="card" data-tabs>
+    <div class="ch"><div class="dot b"></div><h2>Mortgage</h2></div>
+    <div class="cb" style="padding-bottom:12px">
+      <div class="mt-chip hidden" id="mt-chip"><span id="mt-chip-text">&mdash;</span><button class="btn-sm" onclick="mtToggleSettings()">Edit</button></div>
+      <div class="mt-set" id="mt-set">
+        <div class="slbl">&#9656; Loan Setup &mdash; set once, used by every tab</div>
+        <div class="row2">
+          <div class="field"><label>Interest Rate (%)</label><input type="number" id="mt-rate" step="0.001" min="0" inputmode="decimal" placeholder="6.500"></div>
+          <div class="field"><label>Term (years)</label><select id="mt-term"><option value="30">30</option><option value="20">20</option><option value="15">15</option></select></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label>Loan Program</label><select id="mt-prog" onchange="mtProgChange()">
+            <option value="conv">Conventional</option><option value="fha">FHA</option><option value="va">VA</option></select></div>
+          <div class="field"><label>Down Payment (%)</label><input type="number" id="mt-down" step="0.5" min="0" max="100" inputmode="decimal" placeholder="5" value="5"></div>
+        </div>
+        <div class="row2" id="mt-va-row" style="display:none">
+          <div class="check-row"><input type="checkbox" id="mt-vafirst" checked><label for="mt-vafirst">First VA use</label></div>
+          <div class="check-row"><input type="checkbox" id="mt-vaexempt"><label for="mt-vaexempt">Funding fee exempt</label></div>
+        </div>
+        <div class="slbl">&#9656; Taxes, Insurance &amp; Dues</div>
+        <div class="row2">
+          <div class="field"><label>Property Tax Basis</label><select id="mt-taxmode" onchange="mtTaxModeChange()">
+            <option value="mill">LA Millage (homestead)</option><option value="pct">% of Price</option><option value="amt">$ per Year</option></select></div>
+          <div class="field"><label id="mt-taxlbl">Millage Rate</label><input type="number" id="mt-taxval" step="0.01" min="0" inputmode="decimal" placeholder="105"></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label>Homeowners Ins. ($/yr)</label><input type="number" id="mt-ins" step="10" min="0" inputmode="decimal" placeholder="required"></div>
+          <div class="field"><label>HOA ($/mo)</label><input type="number" id="mt-hoa" step="5" min="0" inputmode="decimal" placeholder="0"></div>
+        </div>
+        <div class="field"><label>PMI Rate Override (%/yr &mdash; blank = estimate)</label><input type="number" id="mt-pmiovr" step="0.01" min="0" inputmode="decimal" placeholder="auto"></div>
+        <div class="dyn-actions">
+          <button class="btn-sm" onclick="mtToggleSettings()">Done &mdash; Collapse</button>
+          <button class="btn-sm red" onclick="mtResetSettings()">Reset</button>
+        </div>
+      </div>
+    </div>
+    <div class="calc-tabs">
+      <button class="calc-tab active" data-tab="mtpay">Payment</button>
+      <button class="calc-tab" data-tab="mtmax">Max Price</button>
+      <button class="calc-tab" data-tab="mtbuy">Buydown</button>
+      <button class="calc-tab" data-tab="mtoff">Payoff</button>
+    </div>
+
+    <div class="tab-panel active" data-panel="mtpay">
+      <div class="cb">
+        <div class="logic"><span>P&amp;I</span> = L &times; i &divide; (1 &minus; (1+i)<sup>&minus;n</sup>) &nbsp;|&nbsp; <span>PITI</span> = P&amp;I + Tax + Ins + MI + HOA</div>
+        <div class="field"><label>Sale Price ($)</label><input type="number" id="mt-price" step="1000" min="0" inputmode="decimal" placeholder="285000"></div>
+        <button class="btn b" onclick="mtCalcPayment()">&#9654; Calculate Payment</button>
+        <div class="res" id="mt-pay-res"></div>
+      </div>
+    </div>
+
+    <div class="tab-panel" data-panel="mtmax">
+      <div class="cb">
+        <div class="logic">Solves <span>Price</span> from a monthly budget, then checks it against the debt-to-income ceiling. The lower one wins.</div>
+        <div class="field"><label>Target Payment ($/mo, all-in)</label><input type="number" id="mx-target" step="50" min="0" inputmode="decimal" placeholder="1900"></div>
+        <div class="slbl b" style="margin-top:14px">&#9656; Underwriting Check (optional)</div>
+        <div class="row2">
+          <div class="field"><label>Gross Income ($/mo)</label><input type="number" id="mx-income" step="100" min="0" inputmode="decimal" placeholder="5000"></div>
+          <div class="field"><label>Other Debts ($/mo)</label><input type="number" id="mx-debts" step="25" min="0" inputmode="decimal" placeholder="450"></div>
+        </div>
+        <div class="field"><label>Max DTI (%)</label><input type="number" id="mx-dti" step="1" min="0" max="60" inputmode="decimal" placeholder="45" value="45"></div>
+        <button class="btn b" onclick="mtCalcMax()">&#9654; Calculate Max Price</button>
+        <div class="res" id="mt-max-res"></div>
+      </div>
+    </div>
+
+    <div class="tab-panel" data-panel="mtbuy">
+      <div class="cb">
+        <div class="logic">Same incentive dollars, priced three ways &mdash; compared on <span>5-year cost</span> = cash to close + 60 payments &minus; principal paid.</div>
+        <div class="row2">
+          <div class="field"><label>Sale Price ($)</label><input type="number" id="bd-price" step="1000" min="0" inputmode="decimal" placeholder="285000"></div>
+          <div class="field"><label>Incentive Offered ($)</label><input type="number" id="bd-incentive" step="500" min="0" inputmode="decimal" placeholder="8000"></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label>Rate Drop per Point (%)</label><input type="number" id="bd-perpoint" step="0.05" min="0.01" inputmode="decimal" placeholder="0.25" value="0.25"></div>
+          <div class="field"><label>Closing Costs (% of price)</label><input type="number" id="bd-cc" step="0.25" min="0" inputmode="decimal" placeholder="3" value="3"></div>
+        </div>
+        <button class="btn b" onclick="mtCalcBuydown()">&#9654; Compare Options</button>
+        <div class="res" id="mt-buy-res"></div>
+      </div>
+    </div>
+
+    <div class="tab-panel" data-panel="mtoff">
+      <div class="cb">
+        <div class="logic">Adds extra principal each month and re-amortizes to find the real payoff date.</div>
+        <div class="row2">
+          <div class="field"><label>Loan Balance ($)</label><input type="number" id="po-loan" step="1000" min="0" inputmode="decimal" placeholder="270750"></div>
+          <div class="field"><label>Extra Principal ($/mo)</label><input type="number" id="po-extra" step="25" min="0" inputmode="decimal" placeholder="200"></div>
+        </div>
+        <button class="btn b" onclick="mtCalcPayoff()">&#9654; Calculate Payoff</button>
+        <div class="res" id="mt-off-res"></div>
+      </div>
+    </div>
+    <p class="mt-disc">ESTIMATE ONLY &mdash; not a loan offer, not an APR, and not a commitment to lend. Actual payment, fees and cash to close come from a lender's Loan Estimate. Mortgage insurance and fee factors change; verify before quoting a buyer.</p>
+  </div>
+
+  <!-- ── Business ── -->
+  <div class="card" data-tabs>
+    <div class="ch"><div class="dot g"></div><h2>Business &amp; Financing</h2></div>
+    <div class="calc-tabs">
+      <button class="calc-tab active" data-tab="bzmk">Markup</button>
+      <button class="calc-tab" data-tab="bzloan">Loan</button>
+      <button class="calc-tab" data-tab="bzdraw">Draw</button>
+    </div>
+
+    <div class="tab-panel active" data-panel="bzmk">
+      <div class="cb">
+        <div class="logic"><span>Markup</span> is % of cost &nbsp;|&nbsp; <span>Margin</span> is % of price &mdash; they are never the same number.</div>
+        <div class="slbl">&#9656; Cost Build-Up (optional)</div>
+        <div class="row3">
+          <div class="field"><label>Labor Hours</label><input type="number" id="mk-hrs" step="0.5" min="0" inputmode="decimal" placeholder="16"></div>
+          <div class="field"><label>Rate ($/hr)</label><input type="number" id="mk-rate" step="0.5" min="0" inputmode="decimal" placeholder="28"></div>
+          <div class="field"><label>Burden (%)</label><input type="number" id="mk-burden" step="1" min="0" inputmode="decimal" placeholder="35"></div>
+        </div>
+        <div class="field"><label>Material &amp; Sub Cost ($)</label><input type="number" id="mk-mat" step="50" min="0" inputmode="decimal" placeholder="1150"></div>
+        <div class="slbl" style="margin-top:14px">&#9656; Price It</div>
+        <div class="row2">
+          <div class="field"><label>Total Cost ($) &mdash; or build above</label><input type="number" id="mk-cost" step="50" min="0" inputmode="decimal" placeholder="1754.80"></div>
+          <div class="field"><label>Target Margin (%)</label><input type="number" id="mk-margin" step="1" min="0" max="99" inputmode="decimal" placeholder="20"></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label>Or Quoted Price ($)</label><input type="number" id="mk-price" step="50" min="0" inputmode="decimal" placeholder="2193.50"></div>
+          <div class="field"><label>Sales Tax (%)</label><input type="number" id="mk-tax" step="0.01" min="0" inputmode="decimal" placeholder="9.45"></div>
+        </div>
+        <button class="btn" onclick="bzCalcMarkup()">&#9654; Calculate</button>
+        <div class="res" id="bz-mk-res"></div>
+      </div>
+    </div>
+
+    <div class="tab-panel" data-panel="bzloan">
+      <div class="cb">
+        <div class="logic">Leave <span>exactly one</span> field blank &mdash; it solves that one. Truck, equipment, or any flat loan.</div>
+        <div class="row2">
+          <div class="field"><label>Amount Financed ($)</label><input type="number" id="fn-amt" step="500" min="0" inputmode="decimal" placeholder="45000"></div>
+          <div class="field"><label>Rate (APR %)</label><input type="number" id="fn-apr" step="0.05" min="0" inputmode="decimal" placeholder="6.9"></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label>Term (months)</label><input type="number" id="fn-term" step="1" min="1" max="600" inputmode="numeric" placeholder="60"></div>
+          <div class="field"><label>Payment ($/mo)</label><input type="number" id="fn-pmt" step="10" min="0" inputmode="decimal" placeholder="leave blank"></div>
+        </div>
+        <button class="btn" onclick="bzCalcLoan()">&#9654; Solve</button>
+        <div class="res" id="bz-loan-res"></div>
+      </div>
+    </div>
+
+    <div class="tab-panel" data-panel="bzdraw">
+      <div class="cb">
+        <div class="logic">AIA G702 order: complete &rarr; stored &rarr; retainage held &rarr; less previous payments = <span>this draw</span>.</div>
+        <div class="row2">
+          <div class="field"><label>Contract Amount ($)</label><input type="number" id="dw-contract" step="1000" min="0" inputmode="decimal" placeholder="185000"></div>
+          <div class="field"><label>Work Complete (%)</label><input type="number" id="dw-pct" step="1" min="0" max="100" inputmode="decimal" placeholder="65"></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label>Stored Materials ($)</label><input type="number" id="dw-stored" step="500" min="0" inputmode="decimal" placeholder="0"></div>
+          <div class="field"><label>Retainage (%)</label><input type="number" id="dw-ret" step="1" min="0" max="20" inputmode="decimal" placeholder="10" value="10"></div>
+        </div>
+        <div class="field"><label>Previously Paid ($ net of retainage)</label><input type="number" id="dw-prev" step="1000" min="0" inputmode="decimal" placeholder="98000"></div>
+        <div class="check-row"><input type="checkbox" id="dw-release"><label for="dw-release">Final draw &mdash; release all retainage</label></div>
+        <button class="btn" onclick="bzCalcDraw()">&#9654; Calculate Draw</button>
+        <div class="res" id="bz-draw-res"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- JOB NOTES                                               -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<section id="view-notes" class="view">
+<div class="wrap">
+  <div class="card">
+    <div class="ch"><div class="dot g"></div><h2>Job Notes</h2><span class="nt-status" id="nt-status">Saved</span></div>
+    <div class="cb">
+      <div class="logic">Notes save on this phone automatically &mdash; they survive closing the app. Use <span>+ Add to Notes</span> under any calculator result to drop it in here.</div>
+      <div class="nt-tools">
+        <button class="btn-sm" onclick="noteAddCalc()">+ Calc Result</button>
+        <button class="btn-sm" onclick="noteAddStamp()">+ Date</button>
+        <button class="btn-sm" onclick="noteCopy()">Copy All</button>
+        <button class="btn-sm" id="nt-share-btn" onclick="noteShare()">Share</button>
+        <button class="btn-sm red" onclick="noteClear()">Clear</button>
+      </div>
+      <textarea id="nt-text" class="nt-text" spellcheck="true" aria-label="Job notes"
+        placeholder="Lot 42 &mdash; measurements, punch list, whatever you need to remember.&#10;&#10;Tap + Calc Result to pull in the number on the calculator, or + Add to Notes under any result."></textarea>
+      <p class="fnote" id="nt-meta"></p>
+    </div>
   </div>
 </div>
-<!-- ═══ Persistent Install Button ═══ -->
-<div id="install-btn-wrap" class="install-btn-wrap">
-  <button id="install-btn" onclick="handleInstallBtn()">
-    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
-    Install App
-  </button>
-</div>
+</section>
 
 <!-- ═══ User Guide ═══ -->
 <div id="guide-backdrop" class="guide-backdrop" onclick="closeGuide()"></div>
@@ -647,6 +998,9 @@ input:focus,select:focus{border-color:var(--gold)}
     <button class="guide-nav-btn" data-guide="guide-stair" onclick="showGuideSection('guide-stair')">Stairs</button>
     <button class="guide-nav-btn" data-guide="guide-concrete" onclick="showGuideSection('guide-concrete')">Concrete</button>
     <button class="guide-nav-btn" data-guide="guide-converter" onclick="showGuideSection('guide-converter')">Converter</button>
+    <button class="guide-nav-btn" data-guide="guide-money" onclick="showGuideSection('guide-money')">Money</button>
+    <button class="guide-nav-btn" data-guide="guide-notes" onclick="showGuideSection('guide-notes')">Notes</button>
+    <button class="guide-nav-btn" data-guide="guide-install" onclick="showGuideSection('guide-install')">Install</button>
   </div>
   <div class="guide-body">
     <!-- Calculator Guide -->
@@ -657,6 +1011,7 @@ input:focus,select:focus{border-color:var(--gold)}
         <div class="guide-block-title">Feet-Inches Entry</div>
         <p>Type a number, then press <span class="guide-key">Feet</span> to lock it as feet. Type the next number, press <span class="guide-key">Inch</span> for inches.</p>
         <p>All math (+, -, &times;, &divide;) works in decimal feet internally, but the display shows feet-inches too.</p>
+        <p><strong>Fractions:</strong> type the numerator, press <span class="guide-key">/</span>, then the denominator. After locking inches, digits start a fraction directly: 5 <span class="guide-key">Feet</span> 4 <span class="guide-key">Inch</span> 3 <span class="guide-key">/</span> 8 &rarr; 5' 4 3/8". Or type 3 <span class="guide-key">/</span> 4 alone for 3/4".</p>
         <div class="guide-example">12 <span class="guide-key">Feet</span> 6 <span class="guide-key">Inch</span> + 3 <span class="guide-key">Feet</span> 2 <span class="guide-key">Inch</span> =<br><span class="result">= 15' 8"</span></div>
         <button class="guide-try" onclick="tryKeypadExample()">&#9654; Try It</button>
       </div>
@@ -674,8 +1029,9 @@ input:focus,select:focus{border-color:var(--gold)}
         <p>An <strong>M</strong> indicator appears in the display when memory has a value.</p>
       </div>
       <div class="guide-block">
-        <div class="guide-block-title">Swipe Navigation</div>
-        <p>Swipe left or right anywhere on the screen to switch between calculators. The dots at the bottom show which calculator you're on.</p>
+        <div class="guide-block-title">Switching Calculators</div>
+        <p>Tap any of the six icons in the header &mdash; <strong>Calc</strong>, <strong>Roof</strong>, <strong>Area</strong>, <strong>Stair</strong>, <strong>Conc</strong>, <strong>Conv</strong> &mdash; to jump straight to that calculator. The current one is highlighted in gold.</p>
+        <p>You can also swipe left or right anywhere on the screen to move between them.</p>
       </div>
     </div>
     <!-- Roof Guide -->
@@ -708,8 +1064,8 @@ input:focus,select:focus{border-color:var(--gold)}
       </div>
       <div class="guide-block">
         <div class="guide-block-title">Adding Multiple Areas</div>
-        <p>Click <strong>+ Add Area</strong> for each roof section. Enter length, width, and pitch for each. Different sections can have different pitches.</p>
-        <div class="guide-example">40' &times; 25' @ 8/12 = 1201.9 sq ft<br>30' &times; 20' @ 6/12 = 670.8 sq ft<br><span class="result">Total = 18.73 squares (21 with waste)</span></div>
+        <p>Click <strong>+ Add Area</strong> for each roof section. Enter the flat (plan) area in SF and the pitch for each. Different sections can have different pitches.</p>
+        <div class="guide-example">1000 SF @ 8/12 = 1201.9 sq ft<br>600 SF @ 6/12 = 670.8 sq ft<br><span class="result">Total = 18.73 squares (21 with waste)</span></div>
         <button class="guide-try" onclick="tryRoofAreaExample()">&#9654; Try It</button>
       </div>
     </div>
@@ -728,7 +1084,7 @@ input:focus,select:focus{border-color:var(--gold)}
         <div class="guide-block-title">Landings</div>
         <p>Set <strong>Number of Landings</strong> to split the stair into flights. Each landing adds its depth to the total run.</p>
         <p>The results show a flight-by-flight breakdown with risers, treads, and stringer length per flight.</p>
-        <div class="guide-example">108" total rise, 7.5" riser, 1 landing<br><span class="result">2 flights: 7R/7T + 7R/6T, 13.83 ft span</span></div>
+        <div class="guide-example">108" total rise, 7.5" riser, 1 landing<br><span class="result">2 flights: 7R/6T + 7R/6T, 13.00 ft span</span></div>
         <button class="guide-try" onclick="tryExample('stair',{'st-rise':'108','st-riser':'7.5','st-tread':'10','st-headroom':'96','st-landings':'1','st-landingdepth':'36'},true)">&#9654; Try It</button>
       </div>
       <div class="guide-block">
@@ -746,7 +1102,7 @@ input:focus,select:focus{border-color:var(--gold)}
         <div class="guide-block-title">Slab / Pad</div>
         <p>Enter Length (ft) &times; Width (ft) &times; Thickness (inches).</p>
         <div class="guide-example">20' &times; 30' &times; 4" thick<br><span class="result">= 8.15 cu yd (with 10% waste)</span></div>
-        <button class="guide-try" onclick="tryExample('concrete',{'sl-len':'20','sl-wid':'30','sl-thick':'4'},true)">&#9654; Try It</button>
+        <button class="guide-try" onclick="tryExample('concrete',{'sl-len':'20','sl-wid':'30','sl-thick':'4'},true,'slab')">&#9654; Try It</button>
       </div>
       <div class="guide-block">
         <div class="guide-block-title">Multiple Footings</div>
@@ -781,6 +1137,79 @@ input:focus,select:focus{border-color:var(--gold)}
         <button class="guide-try" onclick="tryExample('converter',{'cv-decimal':'12.5417'},false)">&#9654; Try It</button>
       </div>
     </div>
+    <!-- Money Guide -->
+    <div id="guide-money" class="guide-section">
+      <div class="guide-title">Mortgage &amp; Business</div>
+      <div class="guide-desc">Buyer payment math and contractor money math, sharing one loan setup you fill in once.</div>
+      <div class="guide-block">
+        <div class="guide-block-title">Set It Up Once</div>
+        <p>Fill in <strong>Loan Setup</strong> each morning &mdash; rate, term, program, down payment, taxes, insurance, HOA. It saves on your phone and collapses to a one-line summary. Every tab then needs only a price or a budget.</p>
+        <p>Insurance is deliberately left blank. Gulf-region wind premiums run far above the usual defaults, and a guessed number understates the payment by hundreds a month.</p>
+      </div>
+      <div class="guide-block">
+        <div class="guide-block-title">Payment</div>
+        <p>Enter a sale price, get the full <strong>PITI</strong> &mdash; principal, interest, taxes, insurance, mortgage insurance and dues &mdash; plus when the MI falls off.</p>
+        <div class="guide-example">$285,000 &middot; 5% down &middot; 6.5% &middot; 30 yr &middot; 105 mills &middot; $2,400 ins &middot; $25 HOA<br><span class="result">= $2,212.58/mo &nbsp; MI ends month 135</span></div>
+        <button class="guide-try" onclick="tryMoneyExample()">&#9654; Try It</button>
+      </div>
+      <div class="guide-block">
+        <div class="guide-block-title">Max Price &mdash; Budget vs Underwriter</div>
+        <p>Enter what the buyer says they can pay. Add income and debts and it also computes what the <strong>debt-to-income</strong> limit allows, then tells you which one is the real ceiling.</p>
+        <div class="guide-example">Budget $1,900 &middot; income $5,000/mo &middot; debts $450<br><span class="result">DTI caps them at $1,800 → $227,500</span></div>
+      </div>
+      <div class="guide-block">
+        <div class="guide-block-title">Buydown &mdash; Same Dollars, Three Ways</div>
+        <p>Enter the incentive once and see it priced as a <strong>closing credit</strong>, a <strong>permanent rate buydown</strong>, or a <strong>price cut</strong> &mdash; compared on five-year cost, with the winner highlighted.</p>
+        <div class="guide-example">$8,000 on a $285,000 house<br><span class="result">Buydown wins: 2.95 pts → 5.761%, $2,083/mo</span></div>
+      </div>
+      <div class="guide-block">
+        <div class="guide-block-title">Business Side</div>
+        <p><strong>Markup</strong> builds a cost from hours, burden and material, then prices it to a target margin &mdash; always showing markup and margin together, because 25% markup is 20% margin.</p>
+        <p><strong>Loan</strong> solves any one of amount, rate, term or payment &mdash; leave that field blank. Good for "they quoted $899 for 60 months on $45,000 &mdash; what rate is that?"</p>
+        <p><strong>Draw</strong> runs AIA G702 order: complete, stored, retainage held, less previous payments.</p>
+      </div>
+    </div>
+    <!-- Notes Guide -->
+    <div id="guide-notes" class="guide-section">
+      <div class="guide-title">Job Notes</div>
+      <div class="guide-desc">A scratch pad that saves itself on your phone, built to collect numbers from the other calculators instead of retyping them.</div>
+      <div class="guide-block">
+        <div class="guide-block-title">Pulling In Results</div>
+        <p>Run any calculator, then tap <span class="guide-key">+ Add to Notes</span> at the bottom of the results. The whole result &mdash; every label and value, with the date &mdash; drops into your notes.</p>
+        <p>Do a roof, a stair, and a concrete pour, and you have the full takeoff stacked up in one place.</p>
+        <div class="guide-example">COMMON RAFTER (Mar 14, 2026 8:12 AM)<br>&nbsp;&nbsp;&nbsp;&nbsp;Rise: 8.00 ft<br>&nbsp;&nbsp;&nbsp;&nbsp;Rafter Length: <span class="result">14.42 ft</span><br>&nbsp;&nbsp;&nbsp;&nbsp;Slope Angle: 33.69&deg;</div>
+      </div>
+      <div class="guide-block">
+        <div class="guide-block-title">From the Keypad</div>
+        <p><span class="guide-key">+ Calc Result</span> grabs whatever is on the calculator right now &mdash; the expression, the answer, and the feet-inch conversion under it.</p>
+        <p><span class="guide-key">+ Date</span> drops in a date and time divider to separate one job from the next.</p>
+      </div>
+      <div class="guide-block">
+        <div class="guide-block-title">Getting Notes Out</div>
+        <p><span class="guide-key">Copy All</span> puts everything on the clipboard. <span class="guide-key">Share</span> opens your phone's share sheet to text or email it to a super or a buyer.</p>
+        <p>Notes are stored on this phone only &mdash; they are not synced anywhere, and clearing your browser data erases them.</p>
+      </div>
+    </div>
+    <!-- Install Guide -->
+    <div id="guide-install" class="guide-section">
+      <div class="guide-title">Install on Your Phone</div>
+      <div class="guide-desc">Add the calculator to your home screen so it opens like a regular app &mdash; full screen, no browser bars, and it works with no signal.</div>
+      <div class="guide-block">
+        <div class="guide-block-title">Install</div>
+        <div id="install-slot"></div>
+      </div>
+      <div class="guide-block">
+        <div class="guide-block-title">Why Install</div>
+        <p><strong>Works offline</strong> &mdash; everything is cached on your phone, so it runs in a basement or anywhere with no service.</p>
+        <p><strong>Full screen</strong> &mdash; no address bar eating the keypad.</p>
+        <p><strong>Stays updated</strong> &mdash; it checks for a new version each time you open it and updates itself.</p>
+      </div>
+      <div class="guide-block">
+        <div class="guide-block-title">Manual Install</div>
+        <p><strong>iPhone / iPad (Safari):</strong> tap the Share button (box with an arrow), scroll down, then tap <strong>Add to Home Screen</strong>.</p>
+        <p><strong>Android (Chrome):</strong> tap the menu (&#8942;) in the top right, then tap <strong>Install app</strong> or <strong>Add to Home screen</strong>.</p>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -792,34 +1221,50 @@ input:focus,select:focus{border-color:var(--gold)}
 const $=id=>document.getElementById(id);
 const ft=(n,d=2)=>n.toFixed(d)+' ft';
 const dg=r=>(r*180/Math.PI).toFixed(2)+'°';
-const show=id=>{$(id).style.display='block'};
+const show=id=>{const el=$(id);if(!el)return;el.style.display='block';ensureNoteBtn(el)};
 
-const routeOrder=['calculator','roof','roofarea','stair','concrete','converter'];
+const routeOrder=['calculator','roof','roofarea','stair','concrete','converter','money','notes'];
 const routes={
   calculator:{view:'view-calculator',title:'Calculator'},
   roof:{view:'view-roof',title:'Roof Framing'},
   roofarea:{view:'view-roofarea',title:'Roof Area'},
   stair:{view:'view-stair',title:'Stair Layout'},
   concrete:{view:'view-concrete',title:'Concrete & Material'},
-  converter:{view:'view-converter',title:'Ft-In Converter'}
+  converter:{view:'view-converter',title:'Ft-In Converter'},
+  money:{view:'view-money',title:'Money'},
+  notes:{view:'view-notes',title:'Job Notes'}
 };
 let currentRoute='calculator';
 
 function navigate(hash){
-  const key=(hash||'').replace('#','')||'calculator';
-  const route=routes[key]||routes.calculator;
+  const raw=(hash||'').replace('#','')||'calculator';
+  // Resolve unknown hashes to the calculator BEFORE using the key, so the toggle
+  // highlight and swipe order never desync from the view that is actually shown.
+  const key=routes[raw]?raw:'calculator';
+  syncHeaderHeight();
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
-  $(route.view).classList.add('active');
-  const pageLabel=$('dsld-page-label');
-  if(pageLabel)pageLabel.textContent=key==='calculator'?'':route.title;
-  updateDots(key);currentRoute=key;window.scrollTo(0,0);
+  $(routes[key].view).classList.add('active');
+  updateNav(key);currentRoute=key;window.scrollTo(0,0);
 }
-function updateDots(key){
-  const dots=document.querySelectorAll('.swipe-dot');
-  const idx=routeOrder.indexOf(key);
-  dots.forEach((dot,i)=>dot.classList.toggle('active',i===idx));
-  // Update bottom nav
-  document.querySelectorAll('.nav-item').forEach(item=>item.classList.toggle('active',item.dataset.route===key));
+/* The keypad reserves the header's height. Measure it instead of hard-coding, so a
+   notch/safe-area inset or a large browser text size can't push the bottom keys off screen. */
+function syncHeaderHeight(){
+  const h=document.querySelector('.dsld-header');
+  if(h)document.documentElement.style.setProperty('--hdr-h',Math.ceil(h.getBoundingClientRect().height)+'px');
+}
+window.addEventListener('resize',syncHeaderHeight);
+window.addEventListener('orientationchange',syncHeaderHeight);
+if(window.ResizeObserver)document.addEventListener('DOMContentLoaded',()=>{
+  const h=document.querySelector('.dsld-header');if(h)new ResizeObserver(syncHeaderHeight).observe(h);
+});
+function updateNav(key){
+  document.querySelectorAll('.hdr-nav-item').forEach(item=>{
+    const on=item.dataset.route===key;
+    item.classList.toggle('active',on);
+    item.setAttribute('aria-current',on?'page':'false');
+    // The active toggle widens to show its name — keep it in view when the row scrolls
+    if(on&&item.scrollIntoView)item.scrollIntoView({block:'nearest',inline:'nearest'});
+  });
 }
 function initTabs(container){
   const tabs=container.querySelectorAll('.calc-tab');
@@ -852,7 +1297,8 @@ function initSwipe(){
 
 /* Conversion utilities */
 function decToFtIn(decFt,denom=16){
-  if(isNaN(decFt)||decFt<0)return'—';
+  if(isNaN(decFt))return'—';
+  if(decFt<0)return'-'+decToFtIn(-decFt,denom);
   const ti=decFt*12;let f=Math.floor(ti/12),ri=ti-f*12,wi=Math.floor(ri),fi=ri-wi;
   let num=Math.round(fi*denom);
   if(num===denom){num=0;wi++}
@@ -866,30 +1312,115 @@ function decToFtIn(decFt,denom=16){
 function ftToM(f){return f*0.3048}
 function mToFt(m){return m/0.3048}
 
-/* PWA Install */
+/* PWA Install \u2014 lives in the guide's Install tab (#install-slot) */
 let deferredPrompt;
-window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;const b=$('install-banner');if(b)b.classList.remove('hidden')});
-function installApp(){if(!deferredPrompt)return;deferredPrompt.prompt();deferredPrompt.userChoice.then(()=>{const b=$('install-banner');if(b)b.classList.add('hidden');deferredPrompt=null;hideInstallBtn()})}
-function dismissInstall(){const b=$('install-banner');if(b)b.classList.add('hidden')}
-function hideInstallBtn(){const w=$('install-btn-wrap');if(w)w.classList.add('hidden')}
-function handleInstallBtn(){
-  if(deferredPrompt){installApp();return}
-  var iOS=/iPad|iPhone|iPod/.test(navigator.userAgent);
-  if(iOS){alert('Tap the Share button (box with arrow) at the bottom of Safari, then tap "Add to Home Screen"')}
-  else{alert('Tap your browser menu (\u22ee) and select "Add to Home Screen" or "Install App"')}
+function isInstalled(){return window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true}
+function renderInstallSlot(){
+  const slot=$('install-slot');if(!slot)return;
+  if(isInstalled()){
+    slot.innerHTML='<div class="guide-install-status"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/></svg>Installed &mdash; you\'re running the app</div>';
+    return;
+  }
+  const iOS=/iPad|iPhone|iPod/.test(navigator.userAgent);
+  if(deferredPrompt){
+    slot.innerHTML='<p>Tap below to add DSLD Calc to your home screen.</p><button class="guide-install-btn" onclick="installApp()"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>Install App</button>';
+  }else if(iOS){
+    slot.innerHTML='<p>In Safari, tap the <strong>Share</strong> button (the box with an arrow) at the bottom of the screen, then choose <strong>Add to Home Screen</strong>.</p>';
+  }else{
+    slot.innerHTML='<p>Your browser will offer an install option shortly &mdash; or use the manual steps below. If nothing appears, make sure you opened this page in Chrome or Safari rather than an in-app browser.</p>';
+  }
 }
-/* Hide install button if already running as installed PWA */
-if(window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone){
-  document.addEventListener('DOMContentLoaded',hideInstallBtn);
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;renderInstallSlot()});
+window.addEventListener('appinstalled',()=>{deferredPrompt=null;renderInstallSlot()});
+function installApp(){
+  if(!deferredPrompt)return;
+  deferredPrompt.prompt();
+  deferredPrompt.userChoice.then(()=>{deferredPrompt=null;renderInstallSlot()});
+}
+document.addEventListener('DOMContentLoaded',renderInstallSlot);
+
+/* Service worker: cache for offline use, check for updates on every launch,
+   and reload once when a new version takes control so fixes actually reach the phone */
+if('serviceWorker' in navigator){
+  window.addEventListener('load',function(){
+    navigator.serviceWorker.register('./sw.js').then(function(reg){if(reg.update)reg.update()}).catch(function(){});
+    var hadController=!!navigator.serviceWorker.controller,reloaded=false;
+    navigator.serviceWorker.addEventListener('controllerchange',function(){
+      if(!hadController){hadController=true;return} // first install — nothing stale to replace
+      if(reloaded)return;reloaded=true;location.reload();
+    });
+  });
 }
 
 /* Init */
 window.addEventListener('DOMContentLoaded',()=>{
-  navigate(location.hash);initSwipe();
+  syncHeaderHeight();navigate(location.hash);initSwipe();
   document.querySelectorAll('[data-tabs]').forEach(initTabs);
 });
+window.addEventListener('load',syncHeaderHeight); // fonts can change header height after load
 window.addEventListener('hashchange',()=>navigate(location.hash));
-function toggleConv(){const p=document.getElementById('conv-panel');p.classList.toggle('open');const b=document.getElementById('conv-btn');b.style.background=p.classList.contains('open')?'var(--gold)':''}
+function toggleConv(){const p=document.getElementById('conv-panel');p.classList.toggle('open');const b=document.getElementById('conv-btn');b.style.background=p.classList.contains('open')?'var(--gold-btn)':''}
+
+/* ── Themes ── */
+const THEMES=[
+  {id:'',name:'DSLD Dark',dots:['#0f1319','#e8a020','#1a3a5c']},
+  {id:'light',name:'Daylight',dots:['#e9edf2','#e8a020','#1a3a5c']},
+  {id:'sun',name:'Sunlight',dots:['#ffffff','#ffc247','#0f2c4a']},
+  {id:'night',name:'Night Shift',dots:['#000000','#ffb020','#7ee787']},
+  {id:'hivis',name:'Hi-Vis',dots:['#12120e','#d8ff4a','#ff8c1a']},
+  {id:'blueprint',name:'Blueprint',dots:['#0a1c30','#38a8e8','#dfe9f2']},
+  {id:'slate',name:'Slate',dots:['#1c1e21','#f0b070','#c9ced4']},
+  {id:'classic',name:'Classic',dots:['#2a2723','#f0be55','#c9d4b0']},
+  {id:'forest',name:'Forest',dots:['#0e1712','#7fe0a8','#e8c04a']},
+  {id:'brick',name:'Brick',dots:['#1a1113','#ff9a5c','#e8dcd4']}
+];
+const THEME_BAR={'':'#1a3a5c','light':'#1a3a5c','sun':'#0f2c4a','night':'#0a0d12','hivis':'#232318',
+  'blueprint':'#0d2946','slate':'#2b3037','classic':'#3a3229','forest':'#123528','brick':'#3a1c22'};
+function currentTheme(){return document.documentElement.getAttribute('data-theme')||''}
+function applyTheme(id){
+  if(id)document.documentElement.setAttribute('data-theme',id);
+  else document.documentElement.removeAttribute('data-theme');
+  try{localStorage.setItem('dsld-theme',id)}catch(e){}
+  const tc=document.querySelector('meta[name=theme-color]');if(tc)tc.content=THEME_BAR[id]||'#1a3a5c';
+  renderThemePanel();
+}
+function renderThemePanel(){
+  const p=$('theme-panel');if(!p)return;
+  let html='<div class="theme-title">Theme</div>';
+  THEMES.forEach(t=>{
+    const on=currentTheme()===t.id;
+    html+='<button class="theme-opt'+(on?' active':'')+'" role="menuitemradio" aria-checked="'+on+'" onclick="applyTheme(\''+t.id+'\')">'
+      +'<span class="theme-dots" aria-hidden="true">'+t.dots.map(c=>'<span style="background:'+c+'"></span>').join('')+'</span>'
+      +t.name+'<span class="theme-check" aria-hidden="true">&#10003;</span></button>';
+  });
+  p.innerHTML=html;
+}
+function setThemePanelOpen(open){
+  const p=$('theme-panel'),b=$('theme-btn');
+  p.classList.toggle('open',open);
+  if(b)b.setAttribute('aria-expanded',open?'true':'false');
+}
+function toggleThemePanel(e){
+  if(e)e.stopPropagation();
+  renderThemePanel();
+  // Sit just below the header, whatever height it renders at on this screen
+  const hdr=document.querySelector('.dsld-header'),p=$('theme-panel');
+  if(hdr)p.style.top=Math.round(hdr.getBoundingClientRect().bottom+6)+'px';
+  setThemePanelOpen(!p.classList.contains('open'));
+}
+document.addEventListener('click',e=>{
+  const p=$('theme-panel');
+  if(p&&p.classList.contains('open')&&!p.contains(e.target)&&!e.target.closest('#theme-btn'))setThemePanelOpen(false);
+});
+/* Escape closes whatever overlay is open — capture phase so it never reaches the
+   keypad's Escape→Clear binding and wipes a calculation instead. */
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Escape')return;
+  const p=$('theme-panel'),gp=$('guide-panel');
+  if(p&&p.classList.contains('open')){setThemePanelOpen(false);const b=$('theme-btn');if(b)b.focus();e.preventDefault();e.stopPropagation();return}
+  if(gp&&gp.classList.contains('open')){closeGuide();e.preventDefault();e.stopPropagation()}
+},true);
+document.addEventListener('DOMContentLoaded',()=>{const tc=document.querySelector('meta[name=theme-color]');if(tc)tc.content=THEME_BAR[currentTheme()]||'#1a3a5c'});
 
 
 /* ── Keypad Calculator (FSM + Token Array) ── */
@@ -907,8 +1438,8 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
     canonInches:0, // single source of truth for ft-in values (decimal inches)
     acc:0, op:null,
     tokens:[], parenStack:[],
-    dims:0, lastFt:false, fBase:0,
-    pitchVal:null, riseVal:null, runVal:null,
+    dims:0, lastFt:false, fBase:0, fSlash:false, inchLocked:false,
+    pitchVal:null, riseVal:null, runVal:null, prrSolved:null, prrOrder:[],
     mem:0,
     modeText:'', subText:'', mainOvr:null
   };
@@ -923,11 +1454,16 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
   /* === Helpers === */
   function fmt(n){if(n===undefined||n===null||isNaN(n))return'0';if(Math.abs(n)>=1e10)return n.toExponential(4);return parseFloat(n.toFixed(8)).toString()}
   function doOp(a,b,op){switch(op){case'+':return a+b;case'-':return a-b;case'\u00d7':return a*b;case'\u00f7':return b!==0?a/b:NaN;default:return b}}
-  function inFtIn(){return ctx.feet!==0||ctx.inches>0||ctx.fNum>0}
-  /* Sync canonical inches from current ft-in parts */
-  function syncCanon(){ctx.canonInches=ctx.feet*12+ctx.inches+(ctx.fDen?ctx.fNum/ctx.fDen:0)}
+  function inFtIn(){return ctx.feet!==0||Object.is(ctx.feet,-0)||ctx.inches>0||ctx.fNum>0}
+  /* Sync canonical inches from current ft-in parts — only valid while the user is typing the parts */
+  function syncCanon(){var neg=ctx.feet<0||Object.is(ctx.feet,-0);var mag=Math.abs(ctx.feet)*12+ctx.inches+(ctx.fDen?ctx.fNum/ctx.fDen:0);ctx.canonInches=neg?-mag:mag}
   function getVal(){
-    if(inFtIn()){syncCanon();return ctx.canonInches/12} // return decimal feet for arithmetic compat
+    if(inFtIn()){
+      // canonInches is the source of truth; parts are 1/16-rounded for display.
+      // Re-derive only during active part entry, where the parts ARE the exact input.
+      if(ctx.state===ENTERING_FEET||ctx.state===ENTERING_INCH||ctx.state===ENTERING_FRAC)syncCanon();
+      return ctx.canonInches/12;
+    }
     return parseFloat(ctx.dig)||0;
   }
   /* Get effective value + dims accounting for FEET2/FEET3 cycle states.
@@ -940,10 +1476,11 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
     if(st===INCH1||st===INCH2||st===INCH3){return{val:ctx.fBase/12,dims:ctx.dims,ft:true,vs:null}}
     var v=getVal(),f=inFtIn();return{val:v,dims:ctx.dims,ft:f,vs:fmtExpr()}
   }
-  function resetEntry(){ctx.dig='0';ctx.feet=0;ctx.inches=0;ctx.fNum=0;ctx.fDen=0;ctx.canonInches=0;ctx.inchLocked=false;ctx.mainOvr=null;ctx.modeText='';ctx.subText=''}
+  function resetEntry(){ctx.dig='0';ctx.feet=0;ctx.inches=0;ctx.fNum=0;ctx.fDen=0;ctx.fSlash=false;ctx.canonInches=0;ctx.inchLocked=false;ctx.freshResult=false;ctx.mainOvr=null;ctx.modeText='';ctx.subText=''}
   function setDec(v){ctx.dig=fmt(v);ctx.feet=0;ctx.inches=0;ctx.fNum=0;ctx.fDen=0;ctx.canonInches=0;ctx.mainOvr=null}
   /* Convert decimal inches → ft-in parts (canonical inches is source of truth) */
   function showFtIn(totalInches){
+    ctx.mainOvr=null; // clear any stale overlay (e.g. negative inches display)
     var neg=totalInches<0,ti=Math.abs(totalInches);
     var f=Math.floor(ti/12),ri=ti-f*12,wi=Math.floor(ri),fi=ri-wi;
     var num=Math.round(fi*16),den=16;if(num===16){num=0;wi++}if(wi>=12){wi=0;f++}
@@ -952,24 +1489,31 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
     ctx.canonInches=totalInches;
     ctx.subText=fmt(totalInches/12)+' ft';ctx.modeText='FEET-INCH';
   }
-  /* Show as total inches display */
+  /* Show as total inches display (nearest 1/16 for parts; canonInches stays exact) */
   function showInches(totalInches){
     resetEntry();
     ctx.canonInches=totalInches;
-    ctx.inches=Math.round(totalInches);ctx.dig='0';
+    var neg=totalInches<0,ti=Math.abs(totalInches);
+    var wi=Math.floor(ti),fi=ti-wi,num=Math.round(fi*16),den=16;
+    if(num===16){num=0;wi++}
+    if(num>0){while(num%2===0&&den%2===0){num/=2;den/=2}}
+    ctx.inches=wi;ctx.fNum=num;ctx.fDen=num>0?den:0;ctx.dig='0';
     ctx.state=ENTERING_INCH;
-    var ftLabel=fmt(totalInches/12)+"'";
-    ctx.modeText='FT \u2192 IN';ctx.subText=ftLabel+' = '+Math.round(totalInches)+'"';
+    var inchStr=(neg?'-':'')+wi+(num>0?' '+num+'/'+den:'')+'"';
+    if(neg)ctx.mainOvr=inchStr;
+    ctx.modeText='FT \u2192 IN';ctx.subText=fmt(totalInches/12)+"' = "+inchStr;
   }
   function fmtExpr(){
     if(inFtIn()){
-      let s='';if(ctx.feet>0)s+=ctx.feet+'\u2032';
-      if(ctx.inches>0||ctx.fNum>0){if(ctx.feet>0)s+='-';s+=ctx.inches;if(ctx.fNum>0&&ctx.fDen>0)s+=' '+ctx.fNum+'/'+ctx.fDen;s+='\u2033'}
-      return s||ctx.dig;
+      var neg=ctx.feet<0||Object.is(ctx.feet,-0),fAbs=Math.abs(ctx.feet);
+      let s=neg?'-':'';if(fAbs>0)s+=fAbs+'\u2032';
+      if(ctx.inches>0||ctx.fNum>0){if(fAbs>0)s+='-';s+=ctx.inches;if(ctx.fNum>0&&ctx.fDen>0)s+=' '+ctx.fNum+'/'+ctx.fDen;s+='\u2033'}
+      return (s===''||s==='-')?ctx.dig:s;
     }
     return ctx.dig;
   }
-  function handleFrac(key){if(key==='.')return;const d=parseInt(key);if(ctx.fDen===0){if(ctx.fNum===0)ctx.fNum=d;else ctx.fDen=d}else if(ctx.fDen<100)ctx.fDen=ctx.fDen*10+d}
+  /* Fraction entry: digits fill the numerator until "/" (Frac) is pressed, then the denominator */
+  function handleFrac(key){if(key==='.')return;const d=parseInt(key);if(!ctx.fSlash){if(ctx.fNum<100)ctx.fNum=ctx.fNum*10+d}else if(ctx.fDen<100)ctx.fDen=ctx.fDen*10+d}
 
   /* === Token helpers === */
   const opSym={'+':' + ','-':' \u2212 ','\u00d7':' \u00d7 ','\u00f7':' \u00f7 '};
@@ -990,9 +1534,15 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
     // Main display
     if(ctx.mainOvr){m.textContent=ctx.mainOvr}
     else if(inFtIn()){
-      var t='';if(ctx.feet!==0)t+=ctx.feet+"'";
-      if(ctx.inches>0||ctx.state===ENTERING_INCH||ctx.state===ENTERING_FRAC){t+=' '+ctx.inches;if(ctx.fNum>0&&ctx.fDen>0)t+=' '+ctx.fNum+'/'+ctx.fDen;t+='"'}
-      m.textContent=t||'0';
+      var neg=ctx.feet<0||Object.is(ctx.feet,-0),fAbs=Math.abs(ctx.feet);
+      var t=neg?'-':'';if(fAbs!==0)t+=fAbs+"'";
+      if(ctx.inches>0||ctx.fNum>0||ctx.state===ENTERING_INCH||ctx.state===ENTERING_FRAC){
+        t+=(fAbs!==0?' ':'')+ctx.inches;
+        if(ctx.fNum>0&&ctx.fDen>0)t+=' '+ctx.fNum+'/'+ctx.fDen;
+        else if(ctx.state===ENTERING_FRAC&&(ctx.fNum>0||ctx.fSlash))t+=' '+ctx.fNum+(ctx.fSlash?'/':''); // show fraction as it's typed
+        t+='"';
+      }
+      m.textContent=(t===''||t==='-')?'0':t;
     }else{m.textContent=ctx.dig}
     // Sub + mode
     s.textContent=ctx.subText||'';md.textContent=ctx.modeText||'';
@@ -1010,25 +1560,38 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
   /* === PRR solver === */
   function solvePRR(){
     var known=(ctx.pitchVal!==null?1:0)+(ctx.riseVal!==null?1:0)+(ctx.runVal!==null?1:0);if(known<2)return;
-    if(ctx.pitchVal!==null&&ctx.runVal!==null&&ctx.riseVal===null){ctx.riseVal=ctx.runVal*ctx.pitchVal/12;setDec(ctx.riseVal);ctx.modeText='RISE (solved)'}
-    else if(ctx.pitchVal!==null&&ctx.riseVal!==null&&ctx.runVal===null){ctx.runVal=ctx.riseVal/(ctx.pitchVal/12);setDec(ctx.runVal);ctx.modeText='RUN (solved)'}
-    else if(ctx.riseVal!==null&&ctx.runVal!==null&&ctx.pitchVal===null){ctx.pitchVal=(ctx.riseVal/ctx.runVal)*12;setDec(ctx.pitchVal);ctx.modeText='PITCH (solved)'}
+    if(ctx.pitchVal!==null&&ctx.runVal!==null&&ctx.riseVal===null){ctx.riseVal=ctx.runVal*ctx.pitchVal/12;ctx.prrSolved='rise';setDec(ctx.riseVal);ctx.modeText='RISE (solved)'}
+    else if(ctx.pitchVal!==null&&ctx.riseVal!==null&&ctx.runVal===null){ctx.runVal=ctx.riseVal/(ctx.pitchVal/12);ctx.prrSolved='run';setDec(ctx.runVal);ctx.modeText='RUN (solved)'}
+    else if(ctx.riseVal!==null&&ctx.runVal!==null&&ctx.pitchVal===null){ctx.pitchVal=(ctx.riseVal/ctx.runVal)*12;ctx.prrSolved='pitch';setDec(ctx.pitchVal);ctx.modeText='PITCH (solved)'}
     ctx.state=READY;render();
+  }
+  /* Entering a value when all three are already set must invalidate one so the triangle re-solves
+     (prefer dropping the auto-solved slot, else the least-recently entered other) */
+  function prrEnter(slot){
+    ctx.prrOrder=ctx.prrOrder.filter(function(s){return s!==slot});ctx.prrOrder.push(slot);
+    if(ctx.pitchVal!==null&&ctx.riseVal!==null&&ctx.runVal!==null){
+      var others=['pitch','rise','run'].filter(function(s){return s!==slot});
+      var drop=(ctx.prrSolved&&ctx.prrSolved!==slot)?ctx.prrSolved
+        :others.sort(function(a,b){return ctx.prrOrder.indexOf(a)-ctx.prrOrder.indexOf(b)})[0];
+      ctx[drop+'Val']=null;ctx.prrSolved=null;
+      ctx.prrOrder=ctx.prrOrder.filter(function(s){return s!==drop});
+    }
   }
 
   /* === Handlers === */
 
   function digitHandler(key){
-    ctx.showEq=false;lastConv=null;preConvValue=null;
+    ctx.showEq=false;resetConvToggle();
     var st=ctx.state;
     if(st===READY){ctx.acc=0;ctx.op=null;ctx.tokens=[];resetEntry();ctx.dims=0;ctx.lastFt=false;ctx.state=ENTERING_STD}
     else if(st===READY_OP){resetEntry();ctx.state=ENTERING_STD}
     else if(st===OP_PENDING||st===PAREN_OPEN){resetEntry();ctx.state=ENTERING_STD}
+    else if(st===ENTERING_STD&&ctx.freshResult){resetEntry()} // % / ) / Rcl results: a digit starts a fresh operand
     else if(st===FEET1){
       ctx.mainOvr=null;ctx.modeText='';ctx.subText='';ctx.dig='0';
       // After Inch was pressed (inchLocked), digits go to fraction
       if(ctx.inchLocked){
-        ctx.fNum=0;ctx.fDen=0;ctx.state=ENTERING_FRAC;
+        ctx.fNum=0;ctx.fDen=0;ctx.fSlash=false;ctx.state=ENTERING_FRAC;
       }else{
         ctx.inches=0;ctx.fNum=0;ctx.fDen=0;ctx.state=ENTERING_INCH;
       }
@@ -1075,9 +1638,9 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
       ctx.subText=fmt(ctx.canonInches/12)+' ft';ctx.modeText='FEET-INCH';
       render();return;
     }
-    // From result display → convert decimal to ft-in
+    // From result display → convert to ft-in (use exact canonical value if result is ft-in)
     if(st===READY||st===READY_OP){
-      var decFt=parseFloat(ctx.dig)||0;ctx.fBase=decFt*12;
+      var decFt=inFtIn()?(ctx.canonInches/12):(parseFloat(ctx.dig)||0);ctx.fBase=decFt*12;
       showFtIn(decFt*12);
       ctx.state=FEET1;ctx.lastFt=true;render();return;
     }
@@ -1117,10 +1680,22 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
 
   function inchHandler(){
     var st=ctx.state;
-    // From ft-in display or FEET1 cycle → show as total inches
-    if(st===ENTERING_FEET||st===FEET1){
-      syncCanon();var ti=ctx.canonInches;ctx.fBase=ti;
-      showInches(ti);ctx.state=INCH1;render();return;
+    // From feet entry → sync parts (exact user input), then show as total inches
+    if(st===ENTERING_FEET){
+      syncCanon();ctx.fBase=ctx.canonInches;
+      showInches(ctx.fBase);ctx.state=INCH1;render();return;
+    }
+    // From locked ft-in (FEET1) → canonInches already exact, do NOT re-derive from rounded parts
+    if(st===FEET1){
+      ctx.fBase=ctx.canonInches;
+      showInches(ctx.fBase);ctx.state=INCH1;render();return;
+    }
+    // From fraction entry → lock as inches
+    if(st===ENTERING_FRAC){
+      syncCanon();ctx.fBase=ctx.canonInches;
+      ctx.state=FEET1;ctx.lastFt=true;ctx.inchLocked=true;
+      ctx.subText=fmt(ctx.canonInches/12)+' ft';ctx.modeText='FEET-INCH';
+      render();return;
     }
     // From FEET2 → show sq inches; FEET3 → show cu inches; FEET4 → linear inches
     if(st===FEET2){
@@ -1143,16 +1718,25 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
       var ti2=ctx.fBase;
       showInches(ti2);ctx.state=INCH1;render();return;
     }
-    // From result → convert decimal feet to inches
+    // From result → convert to inches (use exact canonical value if result is ft-in)
     if(st===READY||st===READY_OP){
-      var ft=parseFloat(ctx.dig)||0;ctx.fBase=ft*12;
+      var ft=inFtIn()?(ctx.canonInches/12):(parseFloat(ctx.dig)||0);ctx.fBase=ft*12;
       showInches(ft*12);ctx.state=INCH1;render();return;
     }
-    // From digit entry → mark as inches
+    // From digit entry → lock as inches, CM-style: digits typed AFTER Inch start a fraction.
+    // Decimals like 5.5 keep their fraction (nearest 1/16).
     if(st===ENTERING_STD){
-      if(ctx.dig!=='0')ctx.inches=parseInt(ctx.dig)||0;
+      var iv=parseFloat(ctx.dig)||0;
+      if(iv!==0){
+        var wi=Math.floor(iv),fr=iv-wi,num=Math.round(fr*16),den=16;
+        if(num===16){num=0;wi++}
+        if(num>0){while(num%2===0&&den%2===0){num/=2;den/=2}}
+        ctx.inches=wi;ctx.fNum=num;ctx.fDen=num>0?den:0;
+      }
       ctx.dig='0';syncCanon();ctx.fBase=ctx.canonInches;
-      ctx.state=ENTERING_INCH;render();return;
+      ctx.state=FEET1;ctx.lastFt=true;ctx.inchLocked=true;
+      ctx.subText=fmt(ctx.canonInches/12)+' ft';ctx.modeText='FEET-INCH';
+      render();return;
     }
     // From inch entry → lock the inches (confirm ft-in entry)
     if(st===ENTERING_INCH){
@@ -1186,20 +1770,21 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
   }
 
   function fracHandler(){
-    // If already in fraction mode, don't reset (/ is just separator)
-    if(ctx.state===ENTERING_FRAC)return;
-    // From inch entry: the current inches value stays, start fraction
-    if(ctx.state===ENTERING_INCH||ctx.state===FEET1){
-      ctx.fNum=0;ctx.fDen=0;ctx.state=ENTERING_FRAC;render();return;
+    // Already in fraction mode: "/" separates numerator from denominator
+    if(ctx.state===ENTERING_FRAC){if(!ctx.fSlash){ctx.fSlash=true;render()}return}
+    // From plain digit entry: typed number becomes the numerator ("3 / 4" → 3/4")
+    if(ctx.state===ENTERING_STD&&ctx.dig!=='0'&&!ctx.dig.includes('.')){
+      ctx.fNum=parseInt(ctx.dig)||0;ctx.dig='0';ctx.fDen=0;ctx.fSlash=true;ctx.state=ENTERING_FRAC;render();return;
     }
-    ctx.fNum=0;ctx.fDen=0;ctx.state=ENTERING_FRAC;render();
+    // From inch entry / locked ft-in: inches stay, start fraction
+    ctx.fNum=0;ctx.fDen=0;ctx.fSlash=false;ctx.state=ENTERING_FRAC;render();
   }
 
   /* === Inch cycle states === */
   const INCH1='INCH1',INCH2='INCH2',INCH3='INCH3';
 
   function operatorHandler(key){
-    ctx.showEq=false;lastConv=null;preConvValue=null;
+    ctx.showEq=false;resetConvToggle();
     var st=ctx.state;
     // If already pending an operator, just replace it (don't evaluate with 0)
     if(st===OP_PENDING){
@@ -1224,14 +1809,16 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
       resetEntry();ctx.mainOvr='ERROR';ctx.modeText='÷ by 0';ctx.subText='Press C to clear';
       ctx.state=READY;render();return;
     }
-    if(st===READY||st===READY_OP){ctx.tokens=[];pushNum(ctx.acc,fmt(ctx.acc),false)}
+    if(st===READY||st===READY_OP){ctx.tokens=[];pushNum(ctx.acc,vs||fmt(ctx.acc),ft)}
     else if(!hasTrailingNum()){pushNum(val,vs,ft)}
     pushOp(key);
     ctx.op=key;ctx.lastFt=ft;resetEntry();setDec(ctx.acc);ctx.state=OP_PENDING;render();
   }
 
   function equalsHandler(){
+    resetConvToggle();
     while(ctx.parenStack.length>0)closeParenHandler();
+    if(ctx.mainOvr==='ERROR')return; // paren close hit ÷0 — keep the error display
     var st=ctx.state;
     var eff=getEff(),val=eff.val,ft=eff.ft,vs=eff.vs;
     if(eff.dims>ctx.dims)ctx.dims=eff.dims;
@@ -1278,24 +1865,30 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
     var eff=getEff(),val=eff.val,ft=eff.ft,vs=eff.vs;
     if(eff.dims>ctx.dims)ctx.dims=eff.dims;
     if(!vs){showFtIn(ctx.fBase);ctx.mainOvr=null;vs=fmtExpr()}
+    // Count the closing operand's dimension for × so (10' × 10') is labeled SF
+    if(ft&&ctx.lastFt&&ctx.op==='×')ctx.dims++;
     var r;
     if(ctx.op){if(!hasTrailingNum())pushNum(val,vs,ft);r=doOp(ctx.acc,val,ctx.op)}
     else{if(!hasTrailingNum())pushNum(val,vs,ft);r=val}
+    if(isNaN(r)||!isFinite(r)){
+      resetEntry();ctx.parenStack=[];ctx.mainOvr='ERROR';ctx.modeText='÷ by 0';ctx.subText='Press C to clear';
+      ctx.state=READY;render();return;
+    }
     pushParen(')');
     var frame=ctx.parenStack.pop();
     ctx.acc=frame.acc;ctx.op=frame.op;
-    setDec(r);ctx.state=ENTERING_STD;render();
+    resetConvToggle();setDec(r);ctx.state=ENTERING_STD;ctx.freshResult=true;render();
   }
 
   function clearAll(){
     resetEntry();ctx.acc=0;ctx.op=null;ctx.tokens=[];ctx.parenStack=[];
     ctx.dims=0;ctx.lastFt=false;ctx.fBase=0;ctx.canonInches=0;
-    ctx.pitchVal=null;ctx.riseVal=null;ctx.runVal=null;
-    ctx.state=READY;render();
+    ctx.pitchVal=null;ctx.riseVal=null;ctx.runVal=null;ctx.prrSolved=null;ctx.prrOrder=[];
+    resetConvToggle();ctx.state=READY;render();
   }
-  function clearEntry(){resetEntry();ctx.dims=0;ctx.lastFt=false;
-    if(ctx.op){ctx.state=OP_PENDING}
-    else{ctx.acc=0;ctx.tokens=[];ctx.state=ENTERING_STD}
+  function clearEntry(){resetEntry();resetConvToggle();
+    if(ctx.op){ctx.state=OP_PENDING} // keep dims: committed operands still count for SF/CF labeling
+    else{ctx.acc=0;ctx.tokens=[];ctx.dims=0;ctx.lastFt=false;ctx.state=ENTERING_STD}
     render();
   }
   function backspace(){
@@ -1303,7 +1896,7 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
     if(st===ENTERING_STD){if(ctx.dig.length>1)ctx.dig=ctx.dig.slice(0,-1);else ctx.dig='0'}
     else if(st===ENTERING_INCH){ctx.inches=Math.floor(ctx.inches/10)}
     else if(st===ENTERING_FEET){ctx.feet=Math.floor(ctx.feet/10)}
-    else if(st===ENTERING_FRAC){if(ctx.fDen>0)ctx.fDen=Math.floor(ctx.fDen/10);else ctx.fNum=Math.floor(ctx.fNum/10)}
+    else if(st===ENTERING_FRAC){if(ctx.fDen>0)ctx.fDen=Math.floor(ctx.fDen/10);else if(ctx.fSlash)ctx.fSlash=false;else ctx.fNum=Math.floor(ctx.fNum/10)}
     render();
   }
   function percentHandler(){
@@ -1311,14 +1904,15 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
     // Contextual %: for +/- use acc×(v/100), for ×/÷ use v/100
     if(ctx.op==='+'||ctx.op==='-'){pv=ctx.acc*(v/100)}
     else{pv=v/100}
-    commitEntry();
-    if(hasTrailingNum())ctx.tokens.pop();
-    pushNum(pv,vs+'%',false);setDec(pv);ctx.state=READY;render();
+    var lt=lastTok();if(lt&&lt.type==='num')ctx.tokens.pop(); // never pop a ')'
+    pushNum(pv,vs+'%',false);setDec(pv);
+    // ENTERING_STD (not READY) so a following operator folds the pending op: 200 + 10% × 2 = 440
+    ctx.state=ENTERING_STD;ctx.freshResult=true;render();
   }
 
   /* Memory */
   function memAdd(){ctx.mem+=getEff().val;render()}
-  function memRcl(){setDec(ctx.mem);ctx.state=ENTERING_STD;render()}
+  function memRcl(){resetConvToggle();setDec(ctx.mem);ctx.state=ENTERING_STD;ctx.freshResult=true;render()}
   function memStor(){ctx.mem=getEff().val;render()}
 
   /* Conversion toggle state */
@@ -1326,6 +1920,8 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
   var preConvValue=null; // original value before conversion, restored on toggle-back
   var preConvMainOvr=null; // original mainOvr label before conversion
   var preConvSubText=null; // original subText before conversion
+  /* Any action that produces a new value must clear the toggle, or a later m/Yds press "restores" a stale number */
+  function resetConvToggle(){lastConv=null;preConvValue=null;preConvMainOvr=null;preConvSubText=null}
 
   /* Unary functions */
   function unaryFn(key){
@@ -1338,6 +1934,8 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
       case'Cos':r=Math.cos(v*Math.PI/180);d='cos('+vs+'\u00b0)';md='cos('+vs+'\u00b0) = '+fmt(r);break;
       case'Tan':r=Math.tan(v*Math.PI/180);d='tan('+vs+'\u00b0)';md='tan('+vs+'\u00b0) = '+fmt(r);break;
       case'm':
+        // Chained conversions (Yds then m) must start from the original ft-based value AND labels
+        if(lastConv==='Yds'&&preConvValue!==null){v=preConvValue;vs=fmt(v);ctx.mainOvr=preConvMainOvr;ctx.subText=preConvSubText;lastConv=null}
         if(lastConv==='m'){
           // Toggle back: restore original value and labels exactly (no drift)
           r=preConvValue;
@@ -1355,6 +1953,8 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
         }
         break;
       case'Yds':
+        // Chained conversions (m then Yds) must start from the original ft-based value AND labels
+        if(lastConv==='m'&&preConvValue!==null){v=preConvValue;vs=fmt(v);ctx.mainOvr=preConvMainOvr;ctx.subText=preConvSubText;lastConv=null}
         if(lastConv==='Yds'){
           // Toggle back: restore original value and labels exactly (no drift)
           r=preConvValue;
@@ -1385,30 +1985,33 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
     ctx.state=READY;render();
   }
 
-  /* Display-only conversions */
-  function sfHandler(){var v=getEff().val;ctx.modeText=fmt(v)+' SQ FT';ctx.subText=fmt(v/9)+' SY';render()}
-  function syHandler(){var v=getEff().val,sf=v*9;setDec(sf);ctx.modeText=fmt(v)+' SQ YD \u2192 '+fmt(sf)+' SF';ctx.state=READY;render()}
-  function cyHandler(){var v=getEff().val;setDec(v);ctx.modeText=fmt(v)+' CU YD ('+fmt(v*27)+' CF)';ctx.subText=fmt(v*27)+' cu ft | '+Math.ceil(v*45)+' 80lb bags';ctx.state=READY;render()}
-  function cfHandler(){var v=getEff().val,cy=v/27;setDec(v);ctx.modeText=fmt(v)+' CU FT \u2192 '+fmt(cy)+' CY';ctx.subText=fmt(cy)+' cu yd | '+Math.ceil(cy*45)+' 80lb bags';ctx.state=READY;render()}
-  function acresHandler(){var v=getEff().val,sf=v*43560;setDec(sf);ctx.modeText=fmt(v)+' ACRES \u2192 '+fmt(sf)+' SF';ctx.state=READY;render()}
+  /* Unit declaration/conversion keys \u2014 must set ctx.dims so m/Yds convert as area/volume, not linear */
+  function sfHandler(){var v=getEff().val;ctx.dims=2;resetConvToggle();ctx.modeText=fmt(v)+' SQ FT';ctx.subText=fmt(v/9)+' SY';render()}
+  function syHandler(){var v=getEff().val,sf=v*9;resetConvToggle();setDec(sf);ctx.dims=2;ctx.modeText=fmt(v)+' SQ YD \u2192 '+fmt(sf)+' SF';ctx.state=READY;render()}
+  function cyHandler(){var v=getEff().val,cf=v*27;resetConvToggle();setDec(cf);ctx.dims=3;ctx.modeText=fmt(v)+' CU YD = '+fmt(cf)+' CF';ctx.subText=Math.ceil(v*45)+' 80lb bags | '+Math.ceil(v*60)+' 60lb bags';ctx.state=READY;render()}
+  function cfHandler(){var v=getEff().val,cy=v/27;resetConvToggle();setDec(v);ctx.dims=3;ctx.modeText=fmt(v)+' CU FT \u2192 '+fmt(cy)+' CY';ctx.subText=fmt(cy)+' cu yd | '+Math.ceil(cy*45)+' 80lb bags';ctx.state=READY;render()}
+  function acresHandler(){var v=getEff().val,sf=v*43560;resetConvToggle();setDec(sf);ctx.dims=2;ctx.modeText=fmt(v)+' ACRES \u2192 '+fmt(sf)+' SF';ctx.state=READY;render()}
 
   /* PRR handlers — Pitch is always a unitless ratio (e.g. 8 means 8/12).
      Rise/Run use getEff() so ft-in entry works, but Pitch grabs raw display number. */
   function getRawDisplay(){
     var st=ctx.state;
-    if(st===ENTERING_INCH||st===INCH1||st===INCH2||st===INCH3)return ctx.inches||(parseFloat(ctx.dig)||0);
-    if(st===ENTERING_FEET||st===FEET1)return ctx.feet||(parseFloat(ctx.dig)||0);
+    if(st===ENTERING_INCH||st===INCH1||st===INCH2||st===INCH3)return (ctx.inches+(ctx.fDen?ctx.fNum/ctx.fDen:0))||(parseFloat(ctx.dig)||0);
+    if(st===ENTERING_FRAC)return ctx.inches+(ctx.fDen?ctx.fNum/ctx.fDen:0); // pitch like 8 1/2
+    if(st===ENTERING_FEET)return ctx.feet||(parseFloat(ctx.dig)||0);
+    if(st===FEET1){if(ctx.feet)return ctx.feet;if(ctx.inches||ctx.fNum)return ctx.inches+(ctx.fDen?ctx.fNum/ctx.fDen:0);return parseFloat(ctx.dig)||0}
     if(st===FEET2){return ctx.fBase/12}
     if(st===FEET3){return ctx.fBase/12}
     if(st===FEET4)return parseFloat(ctx.dig)||0;
     return parseFloat(ctx.dig)||0;
   }
-  function pitchH(){ctx.pitchVal=getRawDisplay();resetEntry();ctx.modeText='PITCH = '+ctx.pitchVal;ctx.state=OP_PENDING;solvePRR();render()}
-  function riseH(){ctx.riseVal=getEff().val;resetEntry();ctx.modeText='RISE = '+fmt(ctx.riseVal);ctx.state=OP_PENDING;solvePRR();render()}
-  function runH(){ctx.runVal=getEff().val;resetEntry();ctx.modeText='RUN = '+fmt(ctx.runVal);ctx.state=OP_PENDING;solvePRR();render()}
-  function diagH(){if(ctx.riseVal!==null&&ctx.runVal!==null){var r=Math.sqrt(ctx.riseVal**2+ctx.runVal**2);setDec(r);ctx.modeText='DIAG';ctx.state=READY;render()}}
-  function hipH(){if(ctx.runVal!==null&&ctx.pitchVal!==null){var r=ctx.runVal*ctx.pitchVal/12,p=ctx.runVal*Math.SQRT2;var hv=Math.sqrt(p**2+r**2);setDec(hv);ctx.modeText='HIP/VAL';ctx.state=READY;render()}}
-  function jackH(){if(ctx.runVal!==null&&ctx.pitchVal!==null){var oc=getEff().val,rise=oc*ctx.pitchVal/12,jack=Math.sqrt(oc**2+rise**2);setDec(jack);ctx.modeText='JACK @ '+oc+'" OC';ctx.state=READY;render()}}
+  function pitchH(){ctx.pitchVal=getRawDisplay();prrEnter('pitch');resetConvToggle();resetEntry();ctx.modeText='PITCH = '+ctx.pitchVal;ctx.state=OP_PENDING;solvePRR();render()}
+  function riseH(){ctx.riseVal=getEff().val;prrEnter('rise');resetConvToggle();resetEntry();ctx.modeText='RISE = '+fmt(ctx.riseVal);ctx.state=OP_PENDING;solvePRR();render()}
+  function runH(){ctx.runVal=getEff().val;prrEnter('run');resetConvToggle();resetEntry();ctx.modeText='RUN = '+fmt(ctx.runVal);ctx.state=OP_PENDING;solvePRR();render()}
+  function diagH(){if(ctx.riseVal!==null&&ctx.runVal!==null){var r=Math.sqrt(ctx.riseVal**2+ctx.runVal**2);resetConvToggle();setDec(r);ctx.modeText='DIAG';ctx.subText=decToFtIn(r);ctx.state=READY;render()}}
+  function hipH(){if(ctx.runVal!==null&&ctx.pitchVal!==null){var r=ctx.runVal*ctx.pitchVal/12,p=ctx.runVal*Math.SQRT2;var hv=Math.sqrt(p**2+r**2);resetConvToggle();setDec(hv);ctx.modeText='HIP/VAL';ctx.subText=decToFtIn(hv);ctx.state=READY;render()}}
+  /* OC spacing: a plain number is INCHES (16 → 16" OC); ft-in entry converts. Result = jack length increment. */
+  function jackH(){if(ctx.pitchVal!==null){var eff=getEff(),ocIn=eff.ft?eff.val*12:eff.val,ocFt=ocIn/12,rise=ocFt*ctx.pitchVal/12,jack=Math.sqrt(ocFt**2+rise**2);resetConvToggle();setDec(jack);ctx.modeText='JACK @ '+fmt(ocIn)+'" OC';ctx.subText=decToFtIn(jack);ctx.state=READY;render()}}
 
   /* === Dispatch === */
   var handlers={
@@ -1441,6 +2044,483 @@ function toggleConv(){const p=document.getElementById('conv-panel');p.classList.
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',render);else render();
 })();
 
+/* ── Money: Mortgage & Business ──
+   Amortization core. bal() uses the present-value-of-remaining-payments form,
+   which is numerically safer than L*(1+i)^k - PMT*((1+i)^k-1)/i over 360 months. */
+const MT_KEY='dsld-mtg';
+function usd(n,d){d=(d===undefined)?0:d;if(n===null||n===undefined||!isFinite(n))return'—';
+  return (n<0?'-$':'$')+Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d})}
+function pmtOf(L,i,n){if(!(n>0))return 0;if(i===0)return L/n;return L*i/(1-Math.pow(1+i,-n))}
+function balOf(L,i,n,k){if(!(n>0)||k>=n)return 0;if(i===0)return L*(1-k/n);
+  return pmtOf(L,i,n)*(1-Math.pow(1+i,-(n-k)))/i}
+function isBlank(id){const el=$(id);return !el||el.value.trim()===''}
+function fmtMonths(m){if(!isFinite(m))return'—';const y=Math.floor(m/12),r=Math.round(m%12);
+  return (y?y+' yr':'')+(y&&r?' ':'')+(r?r+' mo':(y?'':'0 mo'))}
+function rrow(l,v,cls){return '<div class="rrow"><span class="rl">'+l+'</span><span class="rv'+(cls?' '+cls:'')+'">'+v+'</span></div>'}
+function rsect(t,body){return '<div class="rsect"><div class="rtitle">'+t+'</div>'+body+'</div>'}
+
+/* Settings — shop constants only. Buyer income/debts are deliberately NOT persisted. */
+const MT_FIELDS=['mt-rate','mt-term','mt-prog','mt-down','mt-taxmode','mt-taxval','mt-ins','mt-hoa','mt-pmiovr'];
+const MT_CHECKS=['mt-vafirst','mt-vaexempt'];
+function mtSave(){try{const o={};MT_FIELDS.forEach(id=>{if($(id))o[id]=$(id).value});
+  MT_CHECKS.forEach(id=>{if($(id))o[id]=$(id).checked});localStorage.setItem(MT_KEY,JSON.stringify(o))}catch(e){}}
+function mtLoad(){try{const s=localStorage.getItem(MT_KEY);if(!s)return false;const o=JSON.parse(s);
+  MT_FIELDS.forEach(id=>{if(o[id]!==undefined&&$(id))$(id).value=o[id]});
+  MT_CHECKS.forEach(id=>{if(o[id]!==undefined&&$(id))$(id).checked=o[id]});return true}catch(e){return false}}
+function mtCfg(){return{rate:+$('mt-rate').value||0,term:+$('mt-term').value||30,prog:$('mt-prog').value,
+  down:+$('mt-down').value||0,taxMode:$('mt-taxmode').value,taxVal:+$('mt-taxval').value||0,
+  ins:+$('mt-ins').value||0,hoa:+$('mt-hoa').value||0,pmiOvr:$('mt-pmiovr').value.trim(),
+  vaFirst:$('mt-vafirst').checked,vaExempt:$('mt-vaexempt').checked}}
+function mtProgChange(){const va=$('mt-prog').value==='va';$('mt-va-row').style.display=va?'':'none';mtSave()}
+function mtTaxModeChange(){
+  const m=$('mt-taxmode').value,l=$('mt-taxlbl'),v=$('mt-taxval');
+  l.textContent=m==='mill'?'Millage Rate':(m==='pct'?'Tax Rate (% of price)':'Annual Tax ($)');
+  v.placeholder=m==='mill'?'105':(m==='pct'?'1.05':'2900');
+  mtSave();
+}
+function mtChipText(){const c=mtCfg(),prog={conv:'Conventional',fha:'FHA',va:'VA'}[c.prog];
+  const tax=c.taxMode==='mill'?(c.taxVal||'—')+' mills':(c.taxMode==='pct'?(c.taxVal||'—')+'% tax':usd(c.taxVal)+'/yr tax');
+  return [(c.rate?c.rate+'%':'rate —'),c.term+' yr',prog,c.down+'% down',tax,
+    (c.ins?usd(c.ins)+' ins':'ins —'),(c.hoa?usd(c.hoa)+' HOA':null)].filter(Boolean).join(' · ');}
+function mtToggleSettings(){
+  const s=$('mt-set'),c=$('mt-chip');
+  $('mt-chip-text').textContent=mtChipText();   // refresh either way so the chip is never stale
+  if(!s.classList.contains('hidden')){s.classList.add('hidden');c.classList.remove('hidden')}
+  else{s.classList.remove('hidden');c.classList.add('hidden')}
+  mtSave();
+}
+function mtResetSettings(){
+  if(!confirm('Reset loan setup to defaults?'))return;
+  try{localStorage.removeItem(MT_KEY)}catch(e){}
+  $('mt-rate').value='';$('mt-term').value='30';$('mt-prog').value='conv';$('mt-down').value='5';
+  $('mt-taxmode').value='mill';$('mt-taxval').value='';$('mt-ins').value='';$('mt-hoa').value='';$('mt-pmiovr').value='';
+  $('mt-vafirst').checked=true;$('mt-vaexempt').checked=false;
+  mtProgChange();mtTaxModeChange();toast('Loan setup reset');
+}
+/* PMI grid (740+ column, 30-yr), scaled for shorter terms per the standard adjustment */
+function mtPmiRate(ltv,years){
+  let r=ltv>0.95?0.0055:(ltv>0.90?0.0041:(ltv>0.85?0.0028:0.0019));
+  return r*(years<=15?0.45:(years<=20?0.80:1.00));
+}
+function mtProgram(price,cfg){
+  const d=cfg.down/100,base=price*(1-d),ltv=price>0?base/price:0,years=cfg.term;
+  let upfront=0,totalLoan=base,miMo=0,miNote='',miCapMo=null,upLabel='';
+  if(cfg.prog==='fha'){
+    upfront=base*0.0175;totalLoan=base+upfront;upLabel='FHA Upfront MIP (1.75%)';
+    const mipRate=(years>15)?(ltv>0.95?0.0055:0.0050):(ltv>0.90?0.0040:0.0015);
+    miMo=base*mipRate/12;                       // HUD 4000.1: on the BASE loan, not the UFMIP-inclusive total
+    if(ltv>0.90){miNote='Life of loan'}else{miNote='11 years';miCapMo=132}
+  }else if(cfg.prog==='va'){
+    const ff=cfg.vaExempt?0:(d<0.05?(cfg.vaFirst?0.0215:0.0330):(d<0.10?0.0150:0.0125));
+    upfront=base*ff;totalLoan=base+upfront;upLabel='VA Funding Fee ('+(ff*100).toFixed(2)+'%)';
+    miNote='None (VA)';
+  }else{
+    if(ltv>0.80){
+      const pmiA=cfg.pmiOvr!==''?(+cfg.pmiOvr/100):mtPmiRate(ltv,years);
+      miMo=base*pmiA/12;miNote='Drops at 78% LTV';
+    }else miNote='None (20%+ down)';
+  }
+  return {base,ltv,upfront,upLabel,totalLoan,miMo,miNote,miCapMo};
+}
+function mtAnnualTax(price,cfg){
+  if(cfg.taxMode==='mill'){const taxable=Math.max(0,price*0.10-7500);return taxable*(cfg.taxVal/1000)}
+  if(cfg.taxMode==='pct')return price*cfg.taxVal/100;
+  return cfg.taxVal;
+}
+function mtPITI(price,cfg){
+  const p=mtProgram(price,cfg),i=cfg.rate/100/12,n=cfg.term*12;
+  const pi=pmtOf(p.totalLoan,i,n),annualTax=mtAnnualTax(price,cfg);
+  const tax=annualTax/12,ins=cfg.ins/12;
+  return Object.assign(p,{i,n,pi,tax,ins,annualTax,hoa:cfg.hoa,total:pi+tax+ins+p.miMo+cfg.hoa});
+}
+function mtGuard(cfg){
+  if(!(cfg.rate>0)){alert('Enter the interest rate in Loan Setup.');return false}
+  if(!(cfg.ins>0)){alert('Enter homeowners insurance in Loan Setup.\n\nGulf-region wind premiums are high — a guessed number can understate the payment by hundreds a month.');return false}
+  return true;
+}
+
+function mtCalcPayment(){
+  const cfg=mtCfg();if(!mtGuard(cfg))return;
+  const price=+$('mt-price').value||0;
+  if(!(price>0))return alert('Enter the sale price.');
+  const m=mtPITI(price,cfg),down=price*cfg.down/100;
+  let mi='';
+  if(m.miMo>0){
+    let ends=m.miNote;
+    if(cfg.prog==='conv'){
+      let k=null;const cap=Math.ceil(m.n/2);
+      for(let t=1;t<=m.n;t++){if(balOf(m.totalLoan,m.i,m.n,t)<=0.78*price){k=Math.min(t,cap);break}}
+      ends=k?'month '+k+' ('+fmtMonths(k)+')':'—';
+    }else if(m.miCapMo)ends='month '+m.miCapMo+' (11 yr)';
+    mi=rrow('Mortgage Insurance',usd(m.miMo,2)+'/mo')+rrow('MI Ends',ends);
+  }else mi=rrow('Mortgage Insurance',m.miNote,'ok');
+  const totalPaid=m.pi*m.n,totalInt=totalPaid-m.totalLoan;
+  $('mt-pay-res').innerHTML=
+    rsect('Monthly Payment',
+      rrow('Principal &amp; Interest',usd(m.pi,2))+
+      rrow('Property Taxes',usd(m.tax,2)+'/mo')+
+      rrow('Homeowners Insurance',usd(m.ins,2)+'/mo')+
+      mi+
+      (cfg.hoa?rrow('HOA Dues',usd(cfg.hoa,2)+'/mo'):'')+
+      rrow('Total Monthly (PITI)',usd(m.total,2),'hi'))+
+    rsect('The Loan',
+      rrow('Down Payment ('+cfg.down+'%)',usd(down))+
+      rrow('Base Loan Amount',usd(m.base))+
+      (m.upfront>0?rrow(m.upLabel,usd(m.upfront)):'')+
+      rrow('Total Financed',usd(m.totalLoan),'hi2')+
+      rrow('Loan-to-Value',(m.ltv*100).toFixed(1)+'%'))+
+    rsect('Over '+cfg.term+' Years',
+      rrow('Annual Property Tax',usd(m.annualTax))+
+      rrow('Total Interest Paid',usd(totalInt))+
+      rrow('Total of Payments',usd(totalPaid)));
+  show('mt-pay-res');
+}
+
+function mtCalcMax(){
+  const cfg=mtCfg();if(!mtGuard(cfg))return;
+  const target=+$('mx-target').value||0,income=+$('mx-income').value||0,
+        debts=+$('mx-debts').value||0,dti=+$('mx-dti').value||45;
+  const dtiCap=income>0?(income*dti/100-debts):null;
+  let budget=target,bind='your budget',other=null;
+  if(dtiCap!==null){
+    if(dtiCap<=0)return alert('Existing debts already use the whole debt-to-income allowance.');
+    if(target<=0||dtiCap<target){budget=dtiCap;bind='debt-to-income';other=target>0?target:null}
+    else other=dtiCap;
+  }
+  if(!(budget>0))return alert('Enter a target payment, or income and debts.');
+  const d=cfg.down/100,i=cfg.rate/100/12,n=cfg.term*12,ltv=1-d;
+  const f=(i===0)?(1/n):(i/(1-Math.pow(1+i,-n)));
+  let uf=0,miPer=0;
+  if(cfg.prog==='fha'){uf=0.0175;
+    const mipRate=(cfg.term>15)?(ltv>0.95?0.0055:0.0050):(ltv>0.90?0.0040:0.0015);miPer=ltv*mipRate/12}
+  else if(cfg.prog==='va'){uf=cfg.vaExempt?0:(d<0.05?(cfg.vaFirst?0.0215:0.0330):(d<0.10?0.0150:0.0125))}
+  else if(ltv>0.80){const pmiA=cfg.pmiOvr!==''?(+cfg.pmiOvr/100):mtPmiRate(ltv,cfg.term);miPer=ltv*pmiA/12}
+  // Budget = Price*A + C  →  Price = (Budget - C)/A
+  let A=ltv*(1+uf)*f+miPer, C=cfg.ins/12+cfg.hoa;
+  if(cfg.taxMode==='mill'){A+=0.10*(cfg.taxVal/1000)/12;C-=7500*(cfg.taxVal/1000)/12}
+  else if(cfg.taxMode==='pct'){A+=cfg.taxVal/100/12}
+  else{C+=cfg.taxVal/12}
+  const price=(budget-C)/A;
+  if(!(price>0))return alert('That payment will not cover taxes, insurance and dues alone. Raise the budget.');
+  // Round to a sellable price FIRST, then re-run the full engine so every row ties out
+  const priceR=Math.floor(price/500)*500;
+  const chk=mtPITI(priceR,cfg);
+  $('mt-max-res').innerHTML=
+    rsect('What They Can Buy',
+      rrow('Maximum Sale Price',usd(priceR),'hi')+
+      rrow('Down Payment ('+cfg.down+'%)',usd(priceR*d))+
+      rrow('Loan Amount',usd(chk.totalLoan))+
+      rrow('Payment at That Price',usd(chk.total,2)))+
+    rsect('The Real Ceiling',
+      rrow('Limited By',bind==='your budget'?'Buyer’s budget':'Debt-to-income limit',bind==='your budget'?'':'warn')+
+      rrow('Binding Payment',usd(budget,2),'hi2')+
+      (other!==null?rrow('Other Limit (not binding)',usd(other,2)):'')+
+      (dtiCap!==null?rrow('DTI Allowance at '+dti+'%',usd(income*dti/100,2)+' less '+usd(debts,2)+' debts'):''))+
+    '<p class="fnote">Price rounded down to the nearest $500. Underwriting guidelines vary by lender and program.</p>';
+  show('mt-max-res');
+}
+
+function mtCalcBuydown(){
+  const cfg=mtCfg();if(!mtGuard(cfg))return;
+  const price=+$('bd-price').value||0,inc=+$('bd-incentive').value||0,
+        per=+$('bd-perpoint').value||0.25,ccPct=+$('bd-cc').value||0;
+  if(!(price>0))return alert('Enter the sale price.');
+  if(!(inc>0))return alert('Enter the incentive amount.');
+  const d=cfg.down/100,base=mtPITI(price,cfg);
+  const opts=[];
+  opts.push({name:'Closing Cost Credit',note:'Payment unchanged, less cash needed',
+    m:base,cash:price*d+price*ccPct/100-inc,rate:cfg.rate});
+  const points=base.base>0?inc/(base.base*0.01):0,drop=points*per,newRate=Math.max(0,cfg.rate-drop);
+  const mB=mtPITI(price,Object.assign({},cfg,{rate:newRate}));
+  opts.push({name:'Permanent Rate Buydown',note:points.toFixed(2)+' points → rate '+newRate.toFixed(3)+'%',
+    m:mB,cash:price*d+price*ccPct/100,rate:newRate});
+  const newPrice=Math.max(0,price-inc),mC=mtPITI(newPrice,cfg);
+  opts.push({name:'Price Reduction',note:'Sale price '+usd(newPrice),
+    m:mC,cash:newPrice*d+newPrice*ccPct/100,rate:cfg.rate});
+  opts.forEach(o=>{o.prin60=o.m.totalLoan-balOf(o.m.totalLoan,o.m.i,o.m.n,60);
+    o.cost5=o.cash+60*o.m.total-o.prin60});
+  const best=opts.reduce((a,b)=>b.cost5<a.cost5?b:a);
+  let html='';
+  opts.forEach(o=>{
+    html+='<div class="opt-win'+(o===best?' best':'')+'"><h4>'+o.name+(o===best?' — best value':'')+'</h4>'+
+      '<div class="rrow"><span class="rl">'+o.note+'</span><span class="rv"></span></div>'+
+      rrow('Monthly Payment',usd(o.m.total,2),o===best?'hi':'')+
+      rrow('Cash to Close',usd(o.cash))+
+      rrow('5-Year Cost',usd(o.cost5),o===best?'hi':'')+'</div>';
+  });
+  const save=base.total-mB.total;
+  html+=rsect('Points Break-Even',
+    rrow('Monthly Saved vs Base',usd(save,2))+
+    rrow('Break-Even',save>0?fmtMonths(Math.ceil(inc/save))+' ('+Math.ceil(inc/save)+' payments)':'—'));
+  html+='<p class="fnote">5-year cost = cash to close + 60 payments &minus; principal paid down. Buydown assumes 1 point = 1% of the base loan.</p>';
+  $('mt-buy-res').innerHTML=html;show('mt-buy-res');
+}
+
+function mtCalcPayoff(){
+  const cfg=mtCfg();
+  if(!(cfg.rate>0))return alert('Enter the interest rate in Loan Setup.');
+  const L=+$('po-loan').value||0,extra=+$('po-extra').value||0;
+  if(!(L>0))return alert('Enter the loan balance.');
+  const i=cfg.rate/100/12,n=cfg.term*12,pmt=pmtOf(L,i,n);
+  const baseInt=pmt*n-L;
+  if(extra>0&&pmt+extra<=L*i)return alert('That payment never pays the loan off — it does not cover the interest.');
+  let bal=L,months=0,paidInt=0;
+  while(bal>0.005&&months<1200){
+    const int=bal*i;let prin=pmt+extra-int;
+    if(prin>bal)prin=bal;
+    paidInt+=int;bal-=prin;months++;
+  }
+  $('mt-off-res').innerHTML=
+    rsect('With '+usd(extra)+' Extra Each Month',
+      rrow('Monthly Payment (P&amp;I)',usd(pmt,2)+' + '+usd(extra)+' = '+usd(pmt+extra,2),'hi')+
+      rrow('Paid Off In',fmtMonths(months),'hi')+
+      rrow('Instead Of',fmtMonths(n))+
+      rrow('Time Saved',fmtMonths(n-months),'ok'))+
+    rsect('Interest',
+      rrow('Interest With Extra',usd(paidInt))+
+      rrow('Interest Without',usd(baseInt))+
+      rrow('Interest Saved',usd(baseInt-paidInt),'ok'))+
+    '<p class="fnote">Principal and interest only — taxes, insurance and dues are not part of a payoff calculation.</p>';
+  show('mt-off-res');
+}
+
+/* ── Business & Financing ── */
+function bzCalcMarkup(){
+  const hrs=+$('mk-hrs').value||0,rate=+$('mk-rate').value||0,burden=+$('mk-burden').value||0,mat=+$('mk-mat').value||0;
+  const labor=hrs*rate*(1+burden/100),built=labor+mat;
+  let cost=+$('mk-cost').value||0;
+  if(!cost&&built>0)cost=built;
+  if(!(cost>0))return alert('Enter a total cost, or build one from hours and materials.');
+  const marginIn=isBlank('mk-margin')?null:+$('mk-margin').value;
+  const price=+$('mk-price').value||0,taxPct=+$('mk-tax').value||0;
+  if(marginIn!==null&&marginIn>=100)return alert('Margin must be under 100% — a 100% margin means the job costs nothing.');
+  let html='';
+  if(built>0)html+=rsect('Cost Build-Up',
+    rrow('Labor ('+hrs+' hr &times; '+usd(rate,2)+' &times; '+(1+burden/100).toFixed(2)+')',usd(labor,2))+
+    rrow('Material &amp; Subs',usd(mat,2))+
+    rrow('Total Cost',usd(cost,2),'hi'));
+  if(marginIn!==null){
+    const tp=cost/(1-marginIn/100),mk=marginIn/(100-marginIn)*100;
+    html+=rsect('To Hit '+marginIn+'% Margin',
+      rrow('Price to Charge',usd(tp,2),'hi')+
+      rrow('Profit',usd(tp-cost,2))+
+      rrow('Markup (% of cost)',mk.toFixed(2)+'%')+
+      rrow('Margin (% of price)',marginIn.toFixed(2)+'%'));
+    if(taxPct>0)html+=rsect('With Sales Tax',
+      rrow('Sales Tax ('+taxPct+'%)',usd(tp*taxPct/100,2))+
+      rrow('Total to Customer',usd(tp*(1+taxPct/100),2),'hi2'));
+  }
+  if(price>0){
+    const profit=price-cost,mk=profit/cost*100,mg=profit/price*100;
+    html+=rsect('At '+usd(price,2),
+      rrow('Profit',usd(profit,2),profit<0?'warn':'hi')+
+      rrow('Markup (% of cost)',mk.toFixed(2)+'%')+
+      rrow('Margin (% of price)',mg.toFixed(2)+'%',mg<0?'warn':''));
+    if(taxPct>0)html+=rsect('With Sales Tax',
+      rrow('Sales Tax ('+taxPct+'%)',usd(price*taxPct/100,2))+
+      rrow('Total to Customer',usd(price*(1+taxPct/100),2),'hi2'));
+  }
+  if(marginIn===null&&!(price>0))html+='<p class="fnote">Enter a target margin, a quoted price, or both.</p>';
+  $('bz-mk-res').innerHTML=html;show('bz-mk-res');
+}
+
+function bzCalcLoan(){
+  const ids=['fn-amt','fn-apr','fn-term','fn-pmt'],blanks=ids.filter(isBlank);
+  if(blanks.length!==1)return alert('Leave exactly one field blank — that is the one it solves.\n\n'+blanks.length+' are blank right now.');
+  const target=blanks[0];
+  let Amt=+$('fn-amt').value||0,apr=+$('fn-apr').value||0,N=+$('fn-term').value||0,pmt=+$('fn-pmt').value||0;
+  if(target!=='fn-term'&&!(N>=1&&N<=600))return alert('Term must be between 1 and 600 months.');
+  let i=apr/100/12,solved='';
+  if(target==='fn-pmt'){
+    if(!(Amt>0))return alert('Enter the amount financed.');
+    pmt=pmtOf(Amt,i,N);solved='Payment';
+  }else if(target==='fn-amt'){
+    if(!(pmt>0))return alert('Enter the payment.');
+    Amt=pmt*((i===0)?N:(1-Math.pow(1+i,-N))/i);solved='Amount Financed';
+  }else if(target==='fn-term'){
+    if(!(Amt>0&&pmt>0))return alert('Enter the amount and the payment.');
+    if(i===0)N=Amt/pmt;
+    else{
+      if(pmt<=Amt*i)return alert('That payment never pays it off — it does not cover the monthly interest of '+usd(Amt*i,2)+'.');
+      N=-Math.log(1-Amt*i/pmt)/Math.log(1+i);
+    }
+    if(N>600)return alert('That works out to over 600 months. Check the numbers.');
+    solved='Term';
+  }else{
+    if(!(Amt>0&&pmt>0))return alert('Enter the amount and the payment.');
+    if(pmt*N<Amt)return alert('Those payments total less than the amount financed — check the numbers.');
+    const f=x=>{const an=(x===0)?N:(1-Math.pow(1+x,-N))/x;return pmt*an-Amt};
+    let lo=1e-9,hi=1.0;
+    if(f(lo)<0)return alert('No rate fits those numbers.');
+    for(let k=0;k<200;k++){const mid=(lo+hi)/2;if(f(mid)>0)lo=mid;else hi=mid}
+    i=(lo+hi)/2;if(i<1e-7)i=0;                 // snap a true 0% promo instead of showing 1.7e-9
+    apr=i*12*100;solved='Rate';
+  }
+  const total=pmt*N,interest=total-Amt;
+  $('bz-loan-res').innerHTML=
+    rsect('Solved: '+solved,
+      rrow('Amount Financed',usd(Amt,2),target==='fn-amt'?'hi':'')+
+      rrow('Rate (APR)',apr.toFixed(3)+'%',target==='fn-apr'?'hi':'')+
+      rrow('Term',(Math.abs(N-Math.round(N))<0.005?Math.round(N):N.toFixed(2))+' months'+(N>=12?' ('+fmtMonths(N)+')':''),target==='fn-term'?'hi':'')+
+      rrow('Payment',usd(pmt,2)+'/mo',target==='fn-pmt'?'hi':''))+
+    rsect('Cost of the Money',
+      rrow('Total of Payments',usd(total,2))+
+      rrow('Total Interest',usd(interest,2))+
+      rrow('Interest as % of Amount',(Amt>0?(interest/Amt*100).toFixed(1):'—')+'%')+
+      rrow('Effective Annual Rate',((Math.pow(1+i,12)-1)*100).toFixed(3)+'%'))+
+    (Math.abs(N-Math.round(N))>=0.005?'<p class="fnote">That is '+Math.ceil(N)+' payments — the last one partial.</p>':'');
+  show('bz-loan-res');
+}
+
+function bzCalcDraw(){
+  const contract=+$('dw-contract').value||0,pct=+$('dw-pct').value||0,stored=+$('dw-stored').value||0,
+        ret=+$('dw-ret').value||0,prev=+$('dw-prev').value||0,release=$('dw-release').checked;
+  if(!(contract>0))return alert('Enter the contract amount.');
+  if(pct<0||pct>100)return alert('Work complete must be between 0 and 100%.');
+  const completed=contract*pct/100,totalCS=completed+stored;
+  const retHeld=release?0:totalCS*ret/100;
+  const earned=totalCS-retHeld,due=earned-prev,balToFinish=contract-totalCS;
+  $('bz-draw-res').innerHTML=
+    rsect('This Application',
+      rrow('Completed to Date ('+pct+'%)',usd(completed,2))+
+      rrow('Stored Materials',usd(stored,2))+
+      rrow('Total Completed &amp; Stored',usd(totalCS,2))+
+      rrow('Retainage Held'+(release?' (released)':' ('+ret+'%)'),usd(retHeld,2),release?'ok':'')+
+      rrow('Earned Less Retainage',usd(earned,2))+
+      rrow('Less Previous Payments',usd(prev,2))+
+      rrow('Payment Due This Draw',usd(due,2),due<0?'warn':'hi'))+
+    rsect('Contract Position',
+      rrow('Balance to Finish',usd(balToFinish,2))+
+      rrow('Retainage Outstanding',usd(release?0:retHeld,2))+
+      rrow('Contract Amount',usd(contract,2)))+
+    (due<0?'<p class="fnote">Negative means previous payments already exceed what is earned — check the "previously paid" figure, which should be net of retainage.</p>':'');
+  show('bz-draw-res');
+}
+
+(function(){
+  function init(){
+    if(!$('mt-taxmode'))return;
+    const had=mtLoad();
+    mtProgChange();mtTaxModeChange();
+    MT_FIELDS.concat(MT_CHECKS).forEach(id=>{const el=$(id);if(el)el.addEventListener('change',mtSave)});
+    if(had){$('mt-set').classList.add('hidden');$('mt-chip').classList.remove('hidden');$('mt-chip-text').textContent=mtChipText()}
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+})();
+
+/* ── Job Notes ──
+   One pad, saved on the device. Every result panel gets an "+ Add to Notes" button
+   automatically via show(), so a takeoff can be stacked up without retyping numbers. */
+(function(){
+  const KEY='dsld-notes';
+  let saveTimer=null;
+  function el(){return $('nt-text')}
+  function load(){try{return localStorage.getItem(KEY)||''}catch(e){return ''}}
+  function persist(){
+    const t=el();if(!t)return;
+    try{localStorage.setItem(KEY,t.value)}catch(e){toast('Storage full — note not saved')}
+    flagSaved();updateMeta();
+  }
+  function flagSaved(){const s=$('nt-status');if(!s)return;s.classList.add('show');clearTimeout(flagSaved._t);flagSaved._t=setTimeout(()=>s.classList.remove('show'),1200)}
+  function updateMeta(){
+    const t=el(),m=$('nt-meta');if(!t||!m)return;
+    const chars=t.value.length,lines=t.value?t.value.split('\n').length:0;
+    m.textContent=chars?lines+' line'+(lines===1?'':'s')+' · '+chars+' characters · saved on this device':'';
+  }
+  function scheduleSave(){clearTimeout(saveTimer);saveTimer=setTimeout(persist,400)}
+  /* Append text to the pad, creating separation from whatever is already there */
+  window.noteAppend=function(text){
+    const t=el();if(!t)return;
+    const cur=t.value.replace(/\s+$/,'');
+    t.value=(cur?cur+'\n\n':'')+text+'\n';
+    persist();
+    t.scrollTop=t.scrollHeight;
+  };
+  function stamp(){
+    const d=new Date();
+    return d.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'})+' '+
+           d.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'});
+  }
+  window.noteAddStamp=function(){noteAppend('── '+stamp()+' ──');goNotes('Date added')};
+  window.noteAddCalc=function(){
+    const main=($('kp-main')||{}).textContent||'',sub=($('kp-sub')||{}).textContent||'',
+          expr=($('kp-expr')||{}).textContent||'',mode=($('kp-mode')||{}).textContent||'';
+    if(!main||main==='0'){toast('Nothing on the calculator yet');return}
+    let s='CALCULATOR  ('+stamp()+')';
+    if(expr.trim())s+='\n  '+expr.trim();
+    s+='\n  = '+main+(mode.trim()?'  ['+mode.trim()+']':'');
+    if(sub.trim())s+='\n  '+sub.trim();
+    noteAppend(s);toast('Added to Notes');
+  };
+  /* Serialize a rendered result panel (.rtitle / .rrow / .fnote) into plain text */
+  window.captureToNotes=function(panel){
+    const title=(panel.closest('.card')||{}).querySelector?panel.closest('.card').querySelector('.ch h2'):null;
+    const lines=[(title?title.textContent.toUpperCase():'RESULT')+'  ('+stamp()+')'];
+    panel.querySelectorAll('.rtitle,.rrow,.fnote').forEach(n=>{
+      if(n.classList.contains('rtitle')){lines.push('  '+n.textContent.trim()+':');return}
+      if(n.classList.contains('fnote')){const f=n.textContent.trim();if(f)lines.push('  '+f);return}
+      const l=n.querySelector('.rl'),v=n.querySelector('.rv');
+      if(l&&v){
+        const lv=l.textContent.trim(),vv=v.textContent.trim();
+        if(vv&&vv!=='—')lines.push('    '+lv+': '+vv);
+      }
+    });
+    if(lines.length<2){toast('Nothing to add yet');return}
+    noteAppend(lines.join('\n'));toast('Added to Notes');
+  };
+  window.ensureNoteBtn=function(panel){
+    if(!panel||panel.querySelector('.note-add'))return;
+    const wrap=document.createElement('div');wrap.className='note-add-wrap';
+    const b=document.createElement('button');
+    b.type='button';b.className='btn-sm note-add';b.textContent='+ Add to Notes';
+    b.addEventListener('click',()=>captureToNotes(panel));
+    wrap.appendChild(b);panel.appendChild(wrap);
+  };
+  window.noteCopy=function(){
+    const t=el();if(!t||!t.value.trim()){toast('Nothing to copy');return}
+    copyText(t.value).then(ok=>toast(ok?'Notes copied':'Copy failed'));
+  };
+  window.noteShare=function(){
+    const t=el();if(!t||!t.value.trim()){toast('Nothing to share');return}
+    if(navigator.share){navigator.share({title:'DSLD Job Notes',text:t.value}).catch(()=>{})}
+    else copyText(t.value).then(ok=>toast(ok?'Copied — paste to share':'Copy failed'));
+  };
+  window.noteClear=function(){
+    const t=el();if(!t||!t.value){return}
+    if(!confirm('Erase all notes? This cannot be undone.'))return;
+    t.value='';persist();toast('Notes cleared');
+  };
+  function copyText(s){
+    if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(s).then(()=>true).catch(()=>legacyCopy(s));
+    return Promise.resolve(legacyCopy(s));
+  }
+  function legacyCopy(s){
+    try{const ta=document.createElement('textarea');ta.value=s;ta.setAttribute('readonly','');
+      ta.style.cssText='position:fixed;top:0;left:0;opacity:0';document.body.appendChild(ta);
+      ta.select();ta.setSelectionRange(0,ta.value.length);
+      const ok=document.execCommand('copy');document.body.removeChild(ta);return ok;
+    }catch(e){return false}
+  }
+  function goNotes(msg){if(currentRoute!=='notes')location.hash='#notes';if(msg)toast(msg)}
+  function init(){
+    const t=el();if(!t)return;
+    t.value=load();updateMeta();
+    t.addEventListener('input',()=>{scheduleSave();updateMeta()});
+    t.addEventListener('blur',persist);
+    const sb=$('nt-share-btn');if(sb&&!navigator.share)sb.textContent='Copy to Share';
+    // A phone can kill the app without warning — flush before it goes away
+    window.addEventListener('pagehide',persist);
+    document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')persist()});
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+})();
+let toastTimer=null;
+function toast(msg){
+  const t=$('toast');if(!t)return;
+  t.textContent=msg;t.classList.add('show');
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),1900);
+}
+
 /* ── Roof Framing ── */
 function calcCommon(){
   const run=+$('cr-run').value,pitch=+$('cr-pitch').value;
@@ -1454,10 +2534,11 @@ function calcEqualHip(){
   const run=+$('ep-run').value,pitch=+$('ep-pitch').value;
   if(!run||!pitch||run<=0||pitch<=0)return alert('Enter Run and Pitch.');
   const rise=run*pitch/12,planLen=run*Math.SQRT2,actLen=Math.sqrt(planLen**2+rise**2),slope=Math.atan(rise/planLen);
-  const backing=Math.atan(Math.sin(Math.PI/4)*(pitch/12));
+  // Backing bevel: cross-section dihedral, tan β = t/√(t²+2) (30° at 12/12). Side cut: tan = cos(hip slope).
+  const t=pitch/12,backing=Math.atan(t/Math.sqrt(t*t+2)),cheek=Math.atan(Math.cos(slope));
   $('ep-rise').textContent=ft(rise);$('ep-plan').textContent=ft(planLen);$('ep-len').textContent=ft(actLen);
   $('ep-slope').textContent=dg(slope);$('ep-plumb').textContent=dg(slope);
-  $('ep-cheek').textContent='35.26° (constant for equal pitch)';$('ep-back').textContent=dg(backing);
+  $('ep-cheek').textContent=dg(cheek);$('ep-back').textContent=dg(backing);
   $('ep-unit').textContent=(actLen/run).toFixed(4)+' ft / ft run';show('ep-res');
 }
 function calcUneq(){
@@ -1466,7 +2547,9 @@ function calcUneq(){
   const tA=runA/pB,tB=runB/pA,t=Math.min(tA,tB);
   const xEnd=t*pA,yEnd=t*pB,planLen=t*Math.sqrt(pA**2+pB**2),rise=t*pA*pB/12,actLen=Math.sqrt(planLen**2+rise**2),slope=Math.atan2(rise,planLen);
   const angA=Math.atan2(pB,pA),angB=Math.atan2(pA,pB);
-  const backA=Math.atan(Math.sin(angA)*Math.tan(Math.atan(pA/12))),backB=Math.atan(Math.sin(angB)*Math.tan(Math.atan(pB/12)));
+  // Backing bevel per side (verified against 3D cross-section): tan βX = tX² / √(tA²·tB² + tA² + tB²)
+  const tAr=pA/12,tBr=pB/12,backDen=Math.sqrt(tAr*tAr*tBr*tBr+tAr*tAr+tBr*tBr);
+  const backA=Math.atan(tAr*tAr/backDen),backB=Math.atan(tBr*tBr/backDen);
   const ridA=runA*pA/12,ridB=runB*pB/12,diff=Math.abs(ridA-ridB);
   const who=ridA>ridB?' (A higher)':ridB>ridA?' (B higher)':' (equal)';
   const EPS=0.001,term=Math.abs(tA-tB)<EPS?'Both ridges (equal height)':tB<tA?'Ridge B':'Ridge A';
@@ -1520,34 +2603,38 @@ function stairToggleLandings(){
 }
 function calcStair(){
   const totalRise=+$('st-rise').value,targetRiser=+$('st-riser').value,treadDepth=+$('st-tread').value;
-  const nosing=+$('st-nosing').value||0,headroom=+$('st-headroom').value;
+  const headroom=+$('st-headroom').value;
   const numLandings=parseInt($('st-landings').value)||0,landingDepth=+$('st-landingdepth').value||36;
   if(!totalRise||totalRise<=0)return alert('Enter Total Rise.');
   if(!targetRiser||targetRiser<=0)return alert('Enter Target Riser Height.');
   if(!treadDepth||treadDepth<=0)return alert('Enter Tread Depth.');
   const numRisers=Math.round(totalRise/targetRiser);if(numRisers<=0)return alert('Invalid riser count.');
-  const actualRiser=totalRise/numRisers,numTreads=numRisers-1;
-  const numFlights=numLandings+1,stairRun=numTreads*treadDepth,landingRun=numLandings*landingDepth,totalRun=stairRun+landingRun;
+  const actualRiser=totalRise/numRisers,numFlights=numLandings+1;
+  // Each flight's top step lands on the landing (or upper floor), so every flight has risers-1 treads
+  const numTreads=numRisers-numFlights;if(numTreads<0)return alert('Too many landings for this rise.');
+  const stairRun=numTreads*treadDepth,landingRun=numLandings*landingDepth,totalRun=stairRun+landingRun;
   const risersPerFlight=Math.floor(numRisers/numFlights),extraRisers=numRisers%numFlights,flights=[];
   for(let i=0;i<numFlights;i++){
     const flightRisers=risersPerFlight+(i<extraRisers?1:0);
-    const actualTreads=i===numFlights-1?flightRisers-1:flightRisers;
+    const actualTreads=flightRisers-1;
     const flightRise=flightRisers*actualRiser,flightRun=actualTreads*treadDepth;
     flights.push({risers:flightRisers,treads:actualTreads,rise:flightRise,run:flightRun,stringerLen:Math.sqrt(flightRun**2+flightRise**2),angle:Math.atan2(flightRise,flightRun)});
   }
-  const stringerLen=Math.sqrt(stairRun**2+totalRise**2),stringerAngle=Math.atan2(totalRise,stairRun);
+  // Stair slope = riser/tread ratio (the actual cut angle); a single stringer only exists without landings
+  const stringerLen=Math.sqrt(stairRun**2+totalRise**2),stairAngle=Math.atan2(actualRiser,treadDepth);
   const riserOK=actualRiser>=4.0&&actualRiser<=7.75,treadOK=treadDepth>=10.0,riseRunSum=actualRiser+treadDepth,sumOK=riseRunSum>=17&&riseRunSum<=18;
   let headroomNote='—';if(headroom>0){headroomNote=headroom.toFixed(1)+'" '+(headroom>=80?'(OK — meets 80" min)':'(BELOW 80" minimum)')}
   const totalRiseFt=totalRise/12,totalRunFt=totalRun/12,stringerLenFt=stringerLen/12;
   $('st-numrisers').textContent=numRisers;$('st-numtreads').textContent=numTreads;
   $('st-actriser').textContent=actualRiser.toFixed(3)+'"';$('st-actriser').className='rv'+(riserOK?' ok':' warn');
   $('st-totalrun').textContent=totalRun.toFixed(2)+'" ('+ft(totalRunFt)+')';
-  $('st-strlen').textContent=stringerLen.toFixed(2)+'" ('+ft(stringerLenFt)+')';$('st-strang').textContent=dg(stringerAngle);
+  $('st-strlen').textContent=numLandings>0?'— per flight (see breakdown)':stringerLen.toFixed(2)+'" ('+ft(stringerLenFt)+')';
+  $('st-strang').textContent=dg(stairAngle);
   $('st-riserchk').textContent=actualRiser.toFixed(3)+'"';$('st-riserchk').className='rv'+(riserOK?' ok':' warn');
   $('st-treadchk').textContent=treadDepth.toFixed(1)+'"';$('st-treadchk').className='rv'+(treadOK?' ok':' warn');
   $('st-riserun').textContent=riseRunSum.toFixed(2)+'"';$('st-riserun').className='rv'+(sumOK?' ok':(riseRunSum>18?' warn':''));
   $('st-headclr').textContent=headroomNote;
-  $('st-riseftin').textContent=decToFtIn(totalRiseFt);$('st-runftin').textContent=decToFtIn(totalRunFt);$('st-strftin').textContent=decToFtIn(stringerLenFt);
+  $('st-riseftin').textContent=decToFtIn(totalRiseFt);$('st-runftin').textContent=decToFtIn(totalRunFt);$('st-strftin').textContent=numLandings>0?'—':decToFtIn(stringerLenFt);
   const ls=document.getElementById('st-landing-res');
   if(numLandings>0&&ls){
     let html='<div class="rtitle">Flight Breakdown ('+numFlights+' flights, '+numLandings+' landing'+(numLandings>1?'s':'')+')</div>';
@@ -1622,7 +2709,7 @@ function calcFootings(){
     if(!decInput)return;
     decInput.addEventListener('input',()=>{if(updating)return;updating=true;const dec=parseFloat(decInput.value);if(!isNaN(dec)&&dec>=0){updateFtIn(dec);updateMetric(dec)}updating=false});
     [feetInput,inchInput,fracSelect].forEach(el=>{
-      el.addEventListener('input',()=>{if(updating)return;updating=true;const dec=(parseInt(feetInput.value)||0)+((parseInt(inchInput.value)||0)+(parseFloat(fracSelect.value)||0))/12;decInput.value=dec.toFixed(4);updateMetric(dec);updating=false});
+      el.addEventListener('input',()=>{if(updating)return;updating=true;const dec=(parseInt(feetInput.value)||0)+((parseInt(inchInput.value)||0)+(parseFloat(fracSelect.value)||0))/12;decInput.value=dec.toFixed(4);$('cv-display').textContent=decToFtIn(dec);updateMetric(dec);updating=false});
       el.addEventListener('change',()=>el.dispatchEvent(new Event('input')));
     });
     mInput.addEventListener('input',()=>{if(updating)return;updating=true;const m=parseFloat(mInput.value);if(!isNaN(m)&&m>=0){const dec=mToFt(m);decInput.value=dec.toFixed(4);cmInput.value=(m*100).toFixed(2);mmInput.value=(m*1000).toFixed(1);updateFtIn(dec)}updating=false});
@@ -1630,9 +2717,12 @@ function calcFootings(){
     mmInput.addEventListener('input',()=>{if(updating)return;updating=true;const mm=parseFloat(mmInput.value);if(!isNaN(mm)&&mm>=0){const m=mm/1000,dec=mToFt(m);decInput.value=dec.toFixed(4);mInput.value=m.toFixed(4);cmInput.value=(m*100).toFixed(2);updateFtIn(dec)}updating=false});
   }
   function updateFtIn(dec){
-    const ti=dec*12,f=Math.floor(ti/12),ri=ti-f*12,wi=Math.floor(ri),fi=ri-wi;
+    const ti=dec*12;let f=Math.floor(ti/12),ri=ti-f*12,wi=Math.floor(ri),fi=ri-wi;
+    let n16=Math.round(fi*16);
+    if(n16===16){n16=0;wi++} // fraction rounds up to a whole inch — carry
+    if(wi>=12){wi-=12;f++}
     $('cv-feet').value=f;$('cv-inches').value=wi;
-    const n16=Math.round(fi*16),fv=n16/16;const sel=$('cv-frac');let best=0;
+    const fv=n16/16,sel=$('cv-frac');let best=0;
     for(let i=0;i<sel.options.length;i++){if(Math.abs(parseFloat(sel.options[i].value)-fv)<0.001){best=i;break}}
     sel.selectedIndex=best;$('cv-display').textContent=decToFtIn(dec);
   }
@@ -1642,8 +2732,8 @@ function calcFootings(){
 
 /* ── User Guide ── */
 (function(){
-  const sectionMap={calculator:'guide-calc',roof:'guide-roof',roofarea:'guide-roofarea',stair:'guide-stair',concrete:'guide-concrete',converter:'guide-converter'};
-  window.openGuide=function(){$('guide-backdrop').classList.add('open');$('guide-panel').classList.add('open');showGuideSection(sectionMap[currentRoute]||'guide-calc')};
+  const sectionMap={calculator:'guide-calc',roof:'guide-roof',roofarea:'guide-roofarea',stair:'guide-stair',concrete:'guide-concrete',converter:'guide-converter',money:'guide-money',notes:'guide-notes'};
+  window.openGuide=function(){$('guide-backdrop').classList.add('open');$('guide-panel').classList.add('open');renderInstallSlot();showGuideSection(sectionMap[currentRoute]||'guide-calc')};
   window.closeGuide=function(){$('guide-backdrop').classList.remove('open');$('guide-panel').classList.remove('open')};
   window.showGuideSection=function(id){
     document.querySelectorAll('.guide-section').forEach(s=>s.classList.remove('active'));
@@ -1651,12 +2741,29 @@ function calcFootings(){
     const sec=document.getElementById(id);if(sec)sec.classList.add('active');
     const btn=document.querySelector('[data-guide="'+id+'"]');if(btn)btn.classList.add('active');
   };
-  window.tryExample=function(route,fills,autoCalc){
+  window.tryExample=function(route,fills,autoCalc,tab){
     closeGuide();location.hash='#'+route;
-    setTimeout(function(){Object.keys(fills).forEach(function(id){var el=document.getElementById(id);if(el){el.value=fills[id];el.dispatchEvent(new Event('input',{bubbles:true}))}});if(autoCalc){var btn=document.querySelector('#view-'+route+' .btn');if(btn)btn.click()}},200);
+    setTimeout(function(){
+      if(tab){var tb=document.querySelector('#view-'+route+' [data-tab="'+tab+'"]');if(tb)tb.click()}
+      Object.keys(fills).forEach(function(id){var el=document.getElementById(id);if(el){el.value=fills[id];el.dispatchEvent(new Event('input',{bubbles:true}))}});
+      if(autoCalc){var btn=document.querySelector('#view-'+route+' .tab-panel.active .btn')||document.querySelector('#view-'+route+' .btn');if(btn)btn.click()}
+    },200);
+  };
+  window.tryMoneyExample=function(){
+    closeGuide();location.hash='#money';
+    setTimeout(function(){
+      var set={'mt-rate':'6.5','mt-term':'30','mt-prog':'conv','mt-down':'5','mt-taxmode':'mill',
+               'mt-taxval':'105','mt-ins':'2400','mt-hoa':'25','mt-price':'285000'};
+      Object.keys(set).forEach(function(id){var el=document.getElementById(id);if(el)el.value=set[id]});
+      if(window.mtTaxModeChange)mtTaxModeChange();
+      if(window.mtProgChange)mtProgChange();
+      if(window.mtSave)mtSave();
+      var tab=document.querySelector('#view-money [data-tab="mtpay"]');if(tab)tab.click();
+      mtCalcPayment();
+    },220);
   };
   window.tryKeypadExample=function(){closeGuide();location.hash='#calculator';setTimeout(function(){kpPress('C');kpPress('1');kpPress('2');kpPress('Feet');kpPress('6');kpPress('Inch');kpPress('+');kpPress('3');kpPress('Feet');kpPress('2');kpPress('Inch');kpPress('=')},200)};
-  window.tryRoofAreaExample=function(){closeGuide();location.hash='#roofarea';setTimeout(function(){document.getElementById('ra-rows').innerHTML='';raAddRow();raAddRow();var rows=document.querySelectorAll('#ra-rows .dyn-row');if(rows[0]){rows[0].querySelector('.ra-len').value='40';rows[0].querySelector('.ra-wid').value='25';rows[0].querySelector('.ra-pitch').value='8'}if(rows[1]){rows[1].querySelector('.ra-len').value='30';rows[1].querySelector('.ra-wid').value='20';rows[1].querySelector('.ra-pitch').value='6'}calcRoofArea()},200)};
+  window.tryRoofAreaExample=function(){closeGuide();location.hash='#roofarea';setTimeout(function(){document.getElementById('ra-rows').innerHTML='';raAddRow();raAddRow();var rows=document.querySelectorAll('#ra-rows .dyn-row');if(rows[0]){rows[0].querySelector('.ra-area').value='1000';rows[0].querySelector('.ra-pitch').value='8'}if(rows[1]){rows[1].querySelector('.ra-area').value='600';rows[1].querySelector('.ra-pitch').value='6'}calcRoofArea()},200)};
   window.tryFootingExample=function(){closeGuide();location.hash='#concrete';setTimeout(function(){var tab=document.querySelector('[data-tab="footing"]');if(tab)tab.click();setTimeout(function(){document.getElementById('ft-rows').innerHTML='';ftAddRow(2);ftAddRow(4);var rows=document.querySelectorAll('#ft-rows .dyn-row');if(rows[0])rows[0].querySelector('.ft-len').value='80';if(rows[1])rows[1].querySelector('.ft-len').value='50';calcFootings()},100)},200)};
   var guideStartX=0;
   document.addEventListener('DOMContentLoaded',function(){var panel=document.getElementById('guide-panel');if(!panel)return;panel.addEventListener('touchstart',function(e){guideStartX=e.touches[0].clientX},{passive:true});panel.addEventListener('touchend',function(e){if(e.changedTouches[0].clientX-guideStartX>80)closeGuide()},{passive:true})});

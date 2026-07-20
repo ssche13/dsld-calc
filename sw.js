@@ -1,7 +1,8 @@
-const CACHE_NAME = 'dsld-calc-v8';
+const CACHE_NAME = 'dsld-calc-v9';
 const ASSETS = [
   './',
   './index.html',
+  './dsld-calc.html',
   './manifest.json',
   './icons/icon-192.png',
   './icons/icon-512.png',
