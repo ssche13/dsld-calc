@@ -1,4 +1,4 @@
-const CACHE_NAME = 'dsld-calc-v16';
+const CACHE_NAME = 'dsld-calc-v17';
 const ASSETS = [
   './',
   './index.html',

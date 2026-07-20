@@ -786,6 +786,27 @@ input:focus,select:focus{border-color:var(--gold)}
 <section id="view-converter" class="view">
 <div class="wrap">
   <div class="card">
+    <div class="ch"><div class="dot b"></div><h2>Any Unit Converter</h2></div>
+    <div class="cb">
+      <div class="live-label"><div class="live-dot"></div><label style="margin-bottom:0">Live conversion</label></div>
+      <div class="field"><label>Amount</label><input type="number" id="uc-val" step="any" inputmode="decimal" placeholder="1"></div>
+      <div class="uc-row">
+        <div class="field" style="flex:1;min-width:0;margin-bottom:0">
+          <label>From</label><select id="uc-from" onchange="ucFromChange()"></select>
+        </div>
+        <button type="button" class="btn-sm uc-swap" onclick="ucSwap()" title="Swap units" aria-label="Swap units">&#8646;</button>
+        <div class="field" style="flex:1;min-width:0;margin-bottom:0">
+          <label>To</label><select id="uc-to" onchange="ucConvert()"></select>
+        </div>
+      </div>
+      <div class="rrow" style="margin-top:14px">
+        <span class="rl" id="uc-eq">&mdash;</span><span class="rv hi" id="uc-out">&mdash;</span>
+      </div>
+      <p class="fnote" id="uc-note"></p>
+    </div>
+  </div>
+
+  <div class="card">
     <div class="ch"><div class="dot g"></div><h2>Feet-Inches Converter</h2></div>
     <div class="cb">
       <div class="live-label"><div class="live-dot"></div><label style="margin-bottom:0">Live conversion</label></div>
@@ -818,27 +839,6 @@ input:focus,select:focus{border-color:var(--gold)}
         <div class="field"><label>Centimeters</label><input type="number" id="cv-cm" step="0.01" min="0" inputmode="decimal" placeholder="381.00"></div>
         <div class="field"><label>Millimeters</label><input type="number" id="cv-mm" step="0.1" min="0" inputmode="decimal" placeholder="3810.0"></div>
       </div>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="ch"><div class="dot b"></div><h2>Any Unit Converter</h2></div>
-    <div class="cb">
-      <div class="live-label"><div class="live-dot"></div><label style="margin-bottom:0">Live conversion</label></div>
-      <div class="field"><label>Amount</label><input type="number" id="uc-val" step="any" inputmode="decimal" placeholder="1"></div>
-      <div class="uc-row">
-        <div class="field" style="flex:1;min-width:0;margin-bottom:0">
-          <label>From</label><select id="uc-from" onchange="ucFromChange()"></select>
-        </div>
-        <button type="button" class="btn-sm uc-swap" onclick="ucSwap()" title="Swap units" aria-label="Swap units">&#8646;</button>
-        <div class="field" style="flex:1;min-width:0;margin-bottom:0">
-          <label>To</label><select id="uc-to" onchange="ucConvert()"></select>
-        </div>
-      </div>
-      <div class="rrow" style="margin-top:14px">
-        <span class="rl" id="uc-eq">&mdash;</span><span class="rv hi" id="uc-out">&mdash;</span>
-      </div>
-      <p class="fnote" id="uc-note"></p>
     </div>
   </div>
 </div>
@@ -1198,28 +1198,24 @@ input:focus,select:focus{border-color:var(--gold)}
     </div>
     <!-- Converter Guide -->
     <div id="guide-converter" class="guide-section">
-      <div class="guide-title">Feet-Inches Converter</div>
-      <div class="guide-desc">Live conversion between decimal feet, feet-inches-fractions and metric &mdash; plus an any-unit converter for volume, weight and temperature.</div>
+      <div class="guide-title">Converter</div>
+      <div class="guide-desc">An any-unit converter for length, area, volume, weight and temperature, plus the feet-inches converter underneath it.</div>
       <div class="guide-block">
-        <div class="guide-block-title">How It Works</div>
-        <p>Edit <strong>any</strong> field and all others update instantly &mdash; no calculate button needed.</p>
-        <p>The green dot indicates live mode is active.</p>
+        <div class="guide-block-title">Any Unit Converter</div>
+        <p>The top card converts anything to anything. Type an <strong>Amount</strong>, pick the unit you have in <strong>From</strong>, pick what you want in <strong>To</strong>, and the answer updates as you type.</p>
+        <p>Five groups: <strong>Length</strong> (in, ft, yd, mi, mm, cm, m, km), <strong>Area</strong> (in&sup2;, ft&sup2;, yd&sup2;, acre, m&sup2;, hectare), <strong>Volume</strong> (fl oz, cup, pint, quart, gallon, mL, L, in&sup3;, ft&sup3;, yd&sup3;, m&sup3;), <strong>Weight</strong> (oz, lb, ton, g, kg, metric ton) and <strong>Temperature</strong>.</p>
+        <p>Pick a From unit and the To list narrows to that group, so you can never ask for gallons in pounds. The <span class="guide-key">&#8646;</span> button swaps the two.</p>
+        <p>Under the answer it shows the rate for a single unit &mdash; handy when you just want to remember that 1 yd&sup3; is 27 ft&sup3;.</p>
+        <div class="guide-example">5 gal &rarr; L<br><span class="result">= 18.927059 L</span><br>1 acre &rarr; ft&sup2; &nbsp;<span class="result">= 43,560 ft&sup2;</span></div>
       </div>
       <div class="guide-block">
-        <div class="guide-block-title">Three Formats</div>
+        <div class="guide-block-title">Feet-Inches Converter</div>
+        <p>The card underneath links three formats. Edit <strong>any</strong> field and all the others update instantly &mdash; no calculate button. The green dot means live mode is on.</p>
         <p><strong>Decimal Feet</strong> &mdash; e.g., 12.5417</p>
         <p><strong>Feet-Inches-Fraction</strong> &mdash; separate fields for feet, whole inches, and fraction (to 1/16")</p>
         <p><strong>Metric</strong> &mdash; meters, centimeters, and millimeters (all linked)</p>
         <div class="guide-example">12.5417 ft = 12' 6 1/2" = 3.8227 m</div>
         <button class="guide-try" onclick="tryExample('converter',{'cv-decimal':'12.5417'},false)">&#9654; Try It</button>
-      </div>
-      <div class="guide-block">
-        <div class="guide-block-title">Any Unit Converter</div>
-        <p>The second card converts anything to anything. Type an <strong>Amount</strong>, pick the unit you have in <strong>From</strong>, pick what you want in <strong>To</strong>, and the answer updates as you type.</p>
-        <p>Five groups: <strong>Length</strong> (in, ft, yd, mi, mm, cm, m, km), <strong>Area</strong> (in&sup2;, ft&sup2;, yd&sup2;, acre, m&sup2;, hectare), <strong>Volume</strong> (fl oz, cup, pint, quart, gallon, mL, L, in&sup3;, ft&sup3;, yd&sup3;, m&sup3;), <strong>Weight</strong> (oz, lb, ton, g, kg, metric ton) and <strong>Temperature</strong>.</p>
-        <p>Pick a From unit and the To list narrows to that group, so you can never ask for gallons in pounds. The <span class="guide-key">&#8646;</span> button swaps the two.</p>
-        <p>Under the answer it shows the rate for a single unit &mdash; handy when you just want to remember that 1 yd&sup3; is 27 ft&sup3;.</p>
-        <div class="guide-example">5 gal &rarr; L<br><span class="result">= 18.927059 L</span><br>1 acre &rarr; ft&sup2; &nbsp;<span class="result">= 43,560 ft&sup2;</span></div>
       </div>
     </div>
     <!-- Money Guide (Mortgage card) -->
