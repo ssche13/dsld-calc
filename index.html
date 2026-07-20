@@ -278,6 +278,8 @@ input:focus,select:focus{border-color:var(--gold)}
 .btn-sm{padding:8px 14px;background:var(--card);border:1px solid var(--border);border-radius:8px;color:var(--gold);font-family:'IBM Plex Mono',monospace;font-size:.72rem;font-weight:600;cursor:pointer;touch-action:manipulation}
 .btn-sm:hover{background:var(--panel);border-color:var(--gold)}
 .btn-sm.red{color:var(--red)}.btn-sm.red:hover{border-color:var(--red)}
+.uc-row{display:flex;gap:8px;align-items:flex-end;margin-top:10px}
+.uc-swap{flex:0 0 46px;height:42px;font-size:1rem;display:flex;align-items:center;justify-content:center}
 .live-label{display:flex;align-items:center;gap:6px;margin-bottom:8px}
 .live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s ease infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
@@ -818,6 +820,27 @@ input:focus,select:focus{border-color:var(--gold)}
       </div>
     </div>
   </div>
+
+  <div class="card">
+    <div class="ch"><div class="dot b"></div><h2>Any Unit Converter</h2></div>
+    <div class="cb">
+      <div class="live-label"><div class="live-dot"></div><label style="margin-bottom:0">Live conversion</label></div>
+      <div class="field"><label>Amount</label><input type="number" id="uc-val" step="any" inputmode="decimal" placeholder="1"></div>
+      <div class="uc-row">
+        <div class="field" style="flex:1;min-width:0;margin-bottom:0">
+          <label>From</label><select id="uc-from" onchange="ucFromChange()"></select>
+        </div>
+        <button type="button" class="btn-sm uc-swap" onclick="ucSwap()" title="Swap units" aria-label="Swap units">&#8646;</button>
+        <div class="field" style="flex:1;min-width:0;margin-bottom:0">
+          <label>To</label><select id="uc-to" onchange="ucConvert()"></select>
+        </div>
+      </div>
+      <div class="rrow" style="margin-top:14px">
+        <span class="rl" id="uc-eq">&mdash;</span><span class="rv hi" id="uc-out">&mdash;</span>
+      </div>
+      <p class="fnote" id="uc-note"></p>
+    </div>
+  </div>
 </div>
 </section>
 
@@ -1176,7 +1199,7 @@ input:focus,select:focus{border-color:var(--gold)}
     <!-- Converter Guide -->
     <div id="guide-converter" class="guide-section">
       <div class="guide-title">Feet-Inches Converter</div>
-      <div class="guide-desc">Live bidirectional conversion between decimal feet, feet-inches-fractions, and metric.</div>
+      <div class="guide-desc">Live conversion between decimal feet, feet-inches-fractions and metric &mdash; plus an any-unit converter for volume, weight and temperature.</div>
       <div class="guide-block">
         <div class="guide-block-title">How It Works</div>
         <p>Edit <strong>any</strong> field and all others update instantly &mdash; no calculate button needed.</p>
@@ -1189,6 +1212,14 @@ input:focus,select:focus{border-color:var(--gold)}
         <p><strong>Metric</strong> &mdash; meters, centimeters, and millimeters (all linked)</p>
         <div class="guide-example">12.5417 ft = 12' 6 1/2" = 3.8227 m</div>
         <button class="guide-try" onclick="tryExample('converter',{'cv-decimal':'12.5417'},false)">&#9654; Try It</button>
+      </div>
+      <div class="guide-block">
+        <div class="guide-block-title">Any Unit Converter</div>
+        <p>The second card converts anything to anything. Type an <strong>Amount</strong>, pick the unit you have in <strong>From</strong>, pick what you want in <strong>To</strong>, and the answer updates as you type.</p>
+        <p>Five groups: <strong>Length</strong> (in, ft, yd, mi, mm, cm, m, km), <strong>Area</strong> (in&sup2;, ft&sup2;, yd&sup2;, acre, m&sup2;, hectare), <strong>Volume</strong> (fl oz, cup, pint, quart, gallon, mL, L, in&sup3;, ft&sup3;, yd&sup3;, m&sup3;), <strong>Weight</strong> (oz, lb, ton, g, kg, metric ton) and <strong>Temperature</strong>.</p>
+        <p>Pick a From unit and the To list narrows to that group, so you can never ask for gallons in pounds. The <span class="guide-key">&#8646;</span> button swaps the two.</p>
+        <p>Under the answer it shows the rate for a single unit &mdash; handy when you just want to remember that 1 yd&sup3; is 27 ft&sup3;.</p>
+        <div class="guide-example">5 gal &rarr; L<br><span class="result">= 18.927059 L</span><br>1 acre &rarr; ft&sup2; &nbsp;<span class="result">= 43,560 ft&sup2;</span></div>
       </div>
     </div>
     <!-- Money Guide (Mortgage card) -->
@@ -2914,6 +2945,84 @@ function calcFootings(){
     sel.selectedIndex=best;$('cv-display').textContent=decToFtIn(dec);
   }
   function updateMetric(dec){const m=ftToM(dec);$('cv-meters').value=m.toFixed(4);$('cv-cm').value=(m*100).toFixed(2);$('cv-mm').value=(m*1000).toFixed(1)}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+})();
+
+/* ── Any Unit Converter ──
+   Factors are exact and defined per category against one base unit (m, m², L, kg).
+   Temperature is affine, so it is handled separately rather than by a factor. */
+(function(){
+  const UC={
+    len:{label:'Length',units:[['in','inches',0.0254],['ft','feet',0.3048],['yd','yards',0.9144],['mi','miles',1609.344],['mm','millimeters',0.001],['cm','centimeters',0.01],['m','meters',1],['km','kilometers',1000]]},
+    area:{label:'Area',units:[['in²','square inches',0.00064516],['ft²','square feet',0.09290304],['yd²','square yards',0.83612736],['acre','acres',4046.8564224],['m²','square meters',1],['ha','hectares',10000]]},
+    vol:{label:'Volume',units:[['fl oz','fluid ounces',0.0295735295625],['cup','cups',0.2365882365],['pt','pints',0.473176473],['qt','quarts',0.946352946],['gal','gallons',3.785411784],['mL','milliliters',0.001],['L','liters',1],['in³','cubic inches',0.016387064],['ft³','cubic feet',28.316846592],['yd³','cubic yards',764.554857984],['m³','cubic meters',1000]]},
+    wt:{label:'Weight',units:[['oz','ounces',0.028349523125],['lb','pounds',0.45359237],['ton','US tons',907.18474],['g','grams',0.001],['kg','kilograms',1],['t','metric tons',1000]]},
+    temp:{label:'Temperature',units:[['°F','Fahrenheit',null],['°C','Celsius',null]]}
+  };
+  const KEY='dsld-uc';
+  function unit(id){for(const c in UC){const us=UC[c].units;for(let i=0;i<us.length;i++)if(us[i][0]===id)return{cat:c,abbr:us[i][0],name:us[i][1],f:us[i][2]}}return null}
+  function convert(v,from,to){
+    if(from.cat==='temp')return from.abbr===to.abbr?v:(from.abbr==='°F'?(v-32)*5/9:v*9/5+32);
+    return v*from.f/to.f;
+  }
+  function fill(sel,cat,keep){
+    sel.innerHTML='';
+    const add=(parent,u)=>{const o=document.createElement('option');o.value=u[0];o.textContent=u[0]+' — '+u[1];parent.appendChild(o)};
+    if(cat)UC[cat].units.forEach(u=>add(sel,u));
+    else for(const c in UC){const g=document.createElement('optgroup');g.label=UC[c].label;UC[c].units.forEach(u=>add(g,u));sel.appendChild(g)}
+    if(keep&&[].some.call(sel.options,o=>o.value===keep))sel.value=keep;
+  }
+  /* Trim float noise without throwing away small values: 18.927059 (not
+     18.92705892000001) but still 0.0000229568 acre rather than a rounded 0.000023 */
+  function tidy(n){
+    if(!isFinite(n))return '—';
+    if(n===0)return '0';
+    const a=Math.abs(n);
+    if(a<1e-9||a>=1e12)return n.toExponential(4);
+    if(a<0.001)return parseFloat(n.toPrecision(6)).toString();
+    return parseFloat(n.toFixed(6)).toLocaleString('en-US',{maximumFractionDigits:6});
+  }
+  window.ucConvert=function(){
+    const from=unit($('uc-from').value),to=unit($('uc-to').value);
+    if(!from||!to||from.cat!==to.cat)return;
+    try{localStorage.setItem(KEY,from.abbr+'|'+to.abbr)}catch(e){}
+    const raw=$('uc-val').value.trim();
+    if(raw===''){$('uc-out').textContent='—';$('uc-eq').textContent='Enter an amount';$('uc-note').textContent='';return}
+    const v=parseFloat(raw);
+    if(isNaN(v)){$('uc-out').textContent='—';$('uc-eq').textContent='Enter a number';$('uc-note').textContent='';return}
+    const r=convert(v,from,to);
+    $('uc-out').textContent=tidy(r)+' '+to.abbr;
+    $('uc-eq').textContent=tidy(v)+' '+from.abbr+' =';
+    $('uc-note').textContent=from.name+' → '+to.name+(from.cat==='temp'?'':'  ·  1 '+from.abbr+' = '+tidy(convert(1,from,to))+' '+to.abbr);
+  };
+  window.ucFromChange=function(){
+    const from=unit($('uc-from').value);if(!from)return;
+    const to=$('uc-to');
+    fill(to,from.cat,to.value);                       // the To list follows the From category
+    if(to.value===from.abbr){                          // never sit on X → X
+      const us=UC[from.cat].units;
+      for(let i=0;i<us.length;i++)if(us[i][0]!==from.abbr){to.value=us[i][0];break}
+    }
+    ucConvert();
+  };
+  window.ucSwap=function(){
+    const f=$('uc-from').value,t=$('uc-to').value,u=unit(t);if(!u)return;
+    $('uc-from').value=t;fill($('uc-to'),u.cat,f);$('uc-to').value=f;
+    ucConvert();
+  };
+  function init(){
+    const from=$('uc-from');if(!from)return;
+    fill(from,null,null);
+    let saved=[];try{saved=(localStorage.getItem(KEY)||'').split('|')}catch(e){}
+    const f=(saved[0]&&unit(saved[0]))?saved[0]:'ft';
+    from.value=f;
+    const cat=unit(f).cat;
+    const t=(saved[1]&&unit(saved[1])&&unit(saved[1]).cat===cat)?saved[1]:null;
+    fill($('uc-to'),cat,t);
+    if($('uc-to').value===f){const us=UC[cat].units;for(let i=0;i<us.length;i++)if(us[i][0]!==f){$('uc-to').value=us[i][0];break}}
+    $('uc-val').addEventListener('input',ucConvert);
+    ucConvert();
+  }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
 
