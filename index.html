@@ -3474,33 +3474,64 @@ const HVAC={
 };
 /* HVACMATH:END */
 
-  const S={bagYield:0.45, concreteInc:0.5, tileBox:15, paintCov:350, coats:2, cmuPerSf:1.125, truckYd:10,
-  studOC:16, brickJoint:BRICK.DEFAULTS.joint, mortarJoint:BRICK.DEFAULTS.mortarJoint,
-  mortarWaste:BRICK.DEFAULTS.mortarWaste, mortarBagCF:BRICK.DEFAULTS.bagCF,
-  cubeKing:0, strapKing:0, cubeQueen:0, strapQueen:0, cubeModular:0, strapModular:0};
-  // Cube / strap sizes are the user's own (no defaults on the public page); remembered on this device.
-  const PERSIST=["cubeKing","strapKing","cubeQueen","strapQueen","cubeModular","strapModular"];
-  PERSIST.forEach(k=>{ try{ const v=parseFloat(localStorage.getItem("jm."+k)); if(v>0) S[k]=v; }catch(e){} });
-  const persist=k=>{ if(!PERSIST.includes(k)) return; try{ localStorage.setItem("jm."+k, String(S[k]||"")); }catch(e){} };
+  const BD=BRICK.DEFAULTS, SIZES3=["King","Queen","Modular"];
+  // Brick factors are adjustable (his ruling 11-14 "the brick factors should be adjustable").
+  // Defaults = the standard; perSF / perLF / mortarCF overrides of 0 = "use the standard from
+  // the size + joint". Everything brick-related is remembered on this device only.
+  const BRICK_STD={brickJoint:BD.joint, mortarJoint:BD.mortarJoint, mortarWaste:BD.mortarWaste, mortarBagCF:BD.bagCF,
+    brickWastePct:BD.waste, rowlockWastePct:BD.rowlockWaste};
+  SIZES3.forEach(s=>{ BRICK_STD["perSF"+s]=0; BRICK_STD["perLF"+s]=0; BRICK_STD["mortarCF"+s]=0; });
+  const S=Object.assign({bagYield:0.45, concreteInc:0.5, tileBox:15, paintCov:350, coats:2, cmuPerSf:1.125, truckYd:10, studOC:16,
+    cubeKing:0, strapKing:0, cubeQueen:0, strapQueen:0, cubeModular:0, strapModular:0}, BRICK_STD);
+  const PERSIST=[...Object.keys(BRICK_STD), "cubeKing","strapKing","cubeQueen","strapQueen","cubeModular","strapModular"];
+  const ZERO_OK=new Set(["mortarWaste","brickWastePct","rowlockWastePct"]);
+  PERSIST.forEach(k=>{ try{ const raw=localStorage.getItem("jm."+k); if(raw==null||raw==="") return; const v=parseFloat(raw);
+    if(!isNaN(v) && (v>0 || (v===0 && ZERO_OK.has(k)))) S[k]=v; }catch(e){} });
+  const persist=k=>{ if(!PERSIST.includes(k)) return; try{ localStorage.setItem("jm."+k, String(S[k]==null?"":S[k])); }catch(e){} };
+  function resetBrick(){ Object.entries(BRICK_STD).forEach(([k,v])=>{ S[k]=v; persist(k); }); }
 const orderConc=y=>Math.ceil(y/S.concreteInc)*S.concreteInc;
-function brickRates(size){ return BRICK.rates(BRICK.SIZES[size], S.brickJoint, S.mortarJoint); }
+// the rates from the size + joint (the standard formula), then any override the user typed
+function brickBaseRates(size){ return BRICK.rates(BRICK.SIZES[size], S.brickJoint, S.mortarJoint); }
+function brickRates(size){ const r=brickBaseRates(size);
+  if(S["perSF"+size]>0) r.perSF=S["perSF"+size];
+  if(S["perLF"+size]>0) r.perLF=S["perLF"+size];
+  if(S["mortarCF"+size]>0) r.mortarCF=S["mortarCF"+size];
+  return r; }
+// which factors differ from the standard, in words (empty = all standard)
+function brickCustom(size, kind){ const c=[], same=(a,b)=>Math.abs(a-b)<1e-12;
+  if(!same(S.brickJoint,BD.joint)) c.push(`joint ${frac8(S.brickJoint)}"`);
+  if(kind==="brick"){ if(S["perSF"+size]>0) c.push(`${fmtNum(S["perSF"+size])} brick / SF`);
+    if(!same(S.brickWastePct,BD.waste)) c.push(`brick waste ${fmtNum(S.brickWastePct)}%`); }
+  if(kind==="rowlock"){ if(S["perLF"+size]>0) c.push(`${fmtNum(S["perLF"+size])} rowlock / LF`);
+    if(!same(S.rowlockWastePct,BD.rowlockWaste)) c.push(`rowlock waste ${fmtNum(S.rowlockWastePct)}%`); }
+  if(!same(S.mortarJoint,BD.mortarJoint)) c.push(`mortar joint ${frac8(S.mortarJoint)}"`);
+  if(S["mortarCF"+size]>0) c.push(`mortar ${S["mortarCF"+size]} cu ft / brick`);
+  if(!same(S.mortarWaste,BD.mortarWaste)) c.push(`mortar waste ${fmtNum(S.mortarWaste)}%`);
+  if(!same(S.mortarBagCF,BD.bagCF)) c.push(`bag ${fmtNum(S.mortarBagCF)} cu ft`);
+  return c; }
 // inches -> whole + fraction to the 1/16 (9.625 -> 9⅝, 0.4375 -> 7/16)
 function frac8(x){ let w=Math.floor(x), s=Math.round((x-w)*16); if(s===16){w++;s=0;}
   const U={2:"⅛",4:"¼",6:"⅜",8:"½",10:"⅝",12:"¾",14:"⅞"};
   const fr=!s?"":(U[s]||(s+"/16")); const sep=(w&&fr.includes("/"))?" ":"";
   return ((w?String(w):"")+sep+fr)||"0"; }
-function brickAssume(vr, withCube){
-  const z=BRICK.SIZES[vr.size], r=brickRates(vr.size);
+function brickAssume(vr, isBrick){
+  const z=BRICK.SIZES[vr.size], r=brickRates(vr.size), std=brickBaseRates(vr.size);
+  const custom=brickCustom(vr.size, isBrick?"brick":"rowlock");
   const a=[
-    {info:`<b>${vr.name}</b> ${frac8(z.L)} × ${frac8(z.H)} × ${frac8(z.W)} in (length × height × width) → ${r.perSF.toFixed(2)} brick / SF · ${r.perLF.toFixed(2)} rowlock / LF · ${r.mortarCF.toFixed(4)} cu ft mortar / brick`},
+    {info:`<b>${vr.name}</b> ${frac8(z.L)} × ${frac8(z.H)} × ${frac8(z.W)} in (length × height × width). In use: ${r.perSF.toFixed(2)} brick / SF · ${r.perLF.toFixed(2)} rowlock / LF · ${r.mortarCF.toFixed(4)} cu ft mortar / brick.`+
+      (custom.length?` <b style="color:var(--amber)">Custom:</b> ${custom.join(" · ")}.`:" All standard.")},
     {label:"Brick joint",key:"brickJoint",unit:"in",step:0.0625},
+    isBrick ? {label:vr.name+" bricks per SF",key:"perSF"+vr.size,unit:"/ SF",step:0.01,blank:true,ph:std.perSF.toFixed(2)}
+            : {label:vr.name+" rowlock per LF",key:"perLF"+vr.size,unit:"/ LF",step:0.01,blank:true,ph:std.perLF.toFixed(2)},
     {label:"Mortar figured at joint",key:"mortarJoint",unit:"in",step:0.0625},
+    {label:vr.name+" mortar per brick",key:"mortarCF"+vr.size,unit:"cu ft",step:0.0001,blank:true,ph:std.mortarCF.toFixed(4)},
     {label:"Mortar waste",key:"mortarWaste",unit:"%",step:1,allowZero:true},
     {label:"Mortar bag yield",key:"mortarBagCF",unit:"cu ft",step:0.05}];
-  if(withCube) a.push(
+  if(isBrick) a.push(
     {label:vr.name+" bricks per cube",key:"cube"+vr.size,unit:"brk",step:1,blank:true},
     {label:vr.name+" bricks per strap",key:"strap"+vr.size,unit:"brk",step:1,blank:true});
-  a.push({info:"Standard brick sizes. Bricks / SF = 144 ÷ ((length + joint) × (height + joint)); rowlock / LF = 12 ÷ (height + joint); mortar cu ft / brick = (length + height) × width × mortar joint ÷ 1728, on the bricks before waste. Waste is its own step. Cube and strap sizes come from your supplier and are saved on this device only."});
+  a.push({button:"Reset factors to standard",onClick:resetBrick});
+  a.push({info:"Every factor can be changed; a blank box uses the standard from the brick size and joint (shown in grey). Bricks / SF = 144 ÷ ((length + joint) × (height + joint)); rowlock / LF = 12 ÷ (height + joint); mortar cu ft / brick = (length + height) × width × mortar joint ÷ 1728, on the bricks before waste. Waste (the slider) is its own step. Changes and your cube / strap sizes are saved on this device only; the answer says <b>Custom</b> while any factor differs from the standard. Reset puts the factors back (it keeps your cube / strap sizes)."});
   return a;
 }
 
@@ -3726,7 +3757,7 @@ const REG={
       coach:{cls:"buy",icon:"ti-wall",html:`<b>Two ways to build it.</b> Pour solid at ${order.toFixed(1)} yd³, or lay ${blocks} block (8×8×16). Add grout and rebar for filled cells.`},
       job:{name:"Wall — concrete / CMU",qty:order.toFixed(1)+" yd³",icon:"ti-wall"}};}},
 
-  brick:{name:"Brick veneer",icon:"ti-bricks",tab:"masonry",waste:10,
+  brick:{name:"Brick veneer",icon:"ti-bricks",tab:"masonry",waste:10,wasteKey:"brickWastePct",
     variants:[{name:"King",size:"King"},{name:"Queen",size:"Queen"},{name:"Modular",size:"Modular"}],
     assume:vr=>brickAssume(vr,true),
     fields:[{k:"len",label:"Wall length",def:480},{k:"hgt",label:"Wall height",def:96}],
@@ -3740,15 +3771,20 @@ const REG={
       const br=BRICK.count({sf},r,waste/100,0);
       const mortar=BRICK.mortarBags({sf},r,S.mortarWaste/100,S.mortarBagCF);
       const cube=S["cube"+vr.size], strap=S["strap"+vr.size]; const ord=BRICK.order(br,cube,strap);
-      return{outs:[
+      const custom=brickCustom(vr.size,"brick");
+      const outs=[
         {l:"Brick needed",v:br.toLocaleString(),hero:true,sub:vr.name+" · "+r.perSF.toFixed(2)+" / SF + "+waste+"% waste"},
         {l:"Order",v:ord||"—",sub:ord?cube.toLocaleString()+" / cube"+(strap?" · "+strap+" / strap":""):"add your cube size in Assumptions"},
         {l:"Mortar",v:mortar,sub:"bags · not field-checked"},
-        {l:"Wall area",v:sf.toFixed(0),sub:"sq ft"}],
-      coach:{cls:"buy",icon:"ti-shopping-cart",html:`<b>${br.toLocaleString()} ${vr.name} brick${ord?" = "+ord:""}.</b> ${sf.toFixed(0)} sq ft × ${r.perSF.toFixed(2)} brick / SF (${frac8(S.brickJoint)}" joint), plus ${waste}% waste as its own step. Mortar: ${mortar} bags (${r.mortarCF.toFixed(4)} cu ft / brick at a ${frac8(S.mortarJoint)}" joint, +${S.mortarWaste}% waste).`},
-      job:{name:"Brick — "+vr.name,qty:ord||br.toLocaleString()+" brick",icon:"ti-bricks"}};}},
+        {l:"Wall area",v:sf.toFixed(0),sub:"sq ft"}];
+      if(custom.length) outs.push({l:"Factors",v:"Custom",sub:custom.join(" · ")+" · Reset in Assumptions"});
+      const why=`${sf.toFixed(0)} sq ft × ${r.perSF.toFixed(2)} brick / SF (${frac8(S.brickJoint)}" joint), plus ${waste}% waste as its own step. Mortar: ${mortar} bags (${r.mortarCF.toFixed(4)} cu ft / brick at a ${frac8(S.mortarJoint)}" joint, +${S.mortarWaste}% waste).`;
+      return{outs, custom,
+      coach:custom.length?{cls:"code",html:`<b>Custom factors: ${custom.join(" · ")}.</b> ${br.toLocaleString()} ${vr.name} brick${ord?" = "+ord:""}. ${why}`}
+                         :{cls:"buy",icon:"ti-shopping-cart",html:`<b>${br.toLocaleString()} ${vr.name} brick${ord?" = "+ord:""}.</b> ${why}`},
+      job:{name:"Brick — "+vr.name+(custom.length?" (custom factors)":""),qty:ord||br.toLocaleString()+" brick",icon:"ti-bricks"}};}},
 
-  rowlock:{name:"Rowlock course",icon:"ti-layout-rows",tab:"masonry",waste:10,
+  rowlock:{name:"Rowlock course",icon:"ti-layout-rows",tab:"masonry",waste:10,wasteKey:"rowlockWastePct",
     variants:[{name:"King",size:"King"},{name:"Queen",size:"Queen"},{name:"Modular",size:"Modular"}],
     assume:vr=>brickAssume(vr,false),
     fields:[{k:"len",label:"Course length",def:120}],
@@ -3758,13 +3794,18 @@ const REG={
     compute(v,waste,vr){const lf=v.len/12;const r=brickRates(vr.size);
       const br=BRICK.count({rl:lf},r,0,waste/100);
       const mortar=BRICK.mortarBags({rl:lf},r,S.mortarWaste/100,S.mortarBagCF);
-      return{outs:[
+      const custom=brickCustom(vr.size,"rowlock");
+      const outs=[
         {l:"Brick needed",v:br.toLocaleString(),hero:true,sub:vr.name+" · single course"},
         {l:"Rate",v:r.perLF.toFixed(2),sub:"brick / LF"},
         {l:"Mortar",v:mortar,sub:"bags · not field-checked"},
-        {l:"Course length",v:fi(v.len)}],
-      coach:{cls:"buy",icon:"ti-shopping-cart",html:`<b>${br.toLocaleString()} ${vr.name} brick for the rowlock.</b> ${lf.toFixed(1)} LF × ${r.perLF.toFixed(2)} brick / LF (12 ÷ (brick height + ${frac8(S.brickJoint)}" joint)), plus ${waste}% waste. Sills, wall caps and watertables.`},
-      job:{name:"Rowlock — "+vr.name,qty:br.toLocaleString()+" brick",icon:"ti-layout-rows"}};}},
+        {l:"Course length",v:fi(v.len)}];
+      if(custom.length) outs.push({l:"Factors",v:"Custom",sub:custom.join(" · ")+" · Reset in Assumptions"});
+      const why=`${lf.toFixed(1)} LF × ${r.perLF.toFixed(2)} brick / LF (12 ÷ (brick height + ${frac8(S.brickJoint)}" joint)), plus ${waste}% waste. Sills, wall caps and watertables.`;
+      return{outs, custom,
+      coach:custom.length?{cls:"code",html:`<b>Custom factors: ${custom.join(" · ")}.</b> ${br.toLocaleString()} ${vr.name} brick for the rowlock. ${why}`}
+                         :{cls:"buy",icon:"ti-shopping-cart",html:`<b>${br.toLocaleString()} ${vr.name} brick for the rowlock.</b> ${why}`},
+      job:{name:"Rowlock — "+vr.name+(custom.length?" (custom factors)":""),qty:br.toLocaleString()+" brick",icon:"ti-layout-rows"}};}},
 
   framing:{name:"Wall framing",icon:"ti-fence",tab:"trade",waste:10,
     assume:[{label:"Stud spacing (O.C.)",key:"studOC",unit:"in",step:1}],
@@ -3958,7 +3999,7 @@ function hvacSvg(svg,label){const W=300,H=200;
     cur.fields.forEach(f=>curVals[f.k]=f.def);
     (cur.picks||[]).forEach(p=>{ curVals[p.key]=(typeof p.def==="function"?p.def():p.def)||p.options[0]; });
     const pf=cur.fields.find(f=>f.pitch); if(pf) curVals.pitchVal=pf.def||6;
-    curWaste=cur.waste||10;
+    curWaste=(cur.wasteKey && S[cur.wasteKey]!=null) ? S[cur.wasteKey] : (cur.waste||10);
     $("#jm-title").textContent=cur.name;
     const _i=ORDER.indexOf(key); const _c=$("#jm-counter"); if(_c) _c.textContent=_i>=0?(_i+1)+" / "+ORDER.length:"";
     $("#jm-home").hidden=true; $("#jm-detail").hidden=false;
@@ -4043,7 +4084,9 @@ function hvacSvg(svg,label){const W=300,H=200;
       const w=el("div","jm-waste");
       w.innerHTML=`<div class="jm-wtop"><span>Waste allowance</span><b id="jm-wv">${curWaste}%</b></div>`;
       const r=el("input","jm-slider"); r.type="range"; r.min="0"; r.max="25"; r.step="1"; r.value=curWaste;
-      r.oninput=()=>{curWaste=+r.value; $("#jm-wv").textContent=curWaste+"%"; render();};
+      r.oninput=()=>{curWaste=+r.value; if(cur.wasteKey){ S[cur.wasteKey]=curWaste; persist(cur.wasteKey); }
+        $("#jm-wv").textContent=curWaste+"%"; render();};
+      r.onchange=()=>{ if(cur.assume) buildControls(); };   // the Assumptions "Custom" line follows the slider
       w.appendChild(r); ww.appendChild(w);
     }
     const aw=$("#jm-assumewrap"); aw.innerHTML="";
@@ -4051,14 +4094,21 @@ function hvacSvg(svg,label){const W=300,H=200;
       const list=typeof cur.assume==="function"?cur.assume(cur.variants?cur.variants[curVariant]:null,curVals):cur.assume;
       const d=el("details","jm-assume"); d.open=assumeOpen; d.ontoggle=()=>{assumeOpen=d.open;};
       let rows=`<summary>${cur.assumeTitle||"Assumptions — adjust for your supplier"}</summary>`;
-      list.forEach(a=>{
+      // an item is bound to S[key], or to its own get()/set(); blank:true = an empty box means "standard"
+      // (the grey placeholder shows that standard); a button item runs onClick (e.g. reset)
+      list.forEach((a,i)=>{
         if(a.info){ rows+=`<div class="jm-arow"><span style="display:block;font-size:.72rem;color:var(--muted);line-height:1.5">${a.info}</span></div>`; return; }
-        const val=S[a.key], shown=(a.blank&&!val)?"":val;
-        rows+=`<div class="jm-arow"><label>${a.label}</label><span class="jm-aval"><input type="number" inputmode="decimal" step="${a.step}" value="${shown}"${a.blank?' placeholder="—"':""} data-key="${a.key}" data-blank="${a.blank?1:""}" data-zero="${a.allowZero?1:""}"><i>${a.unit||""}</i></span></div>`; });
+        if(a.button){ rows+=`<div class="jm-arow"><button type="button" class="jm-chip" data-bi="${i}" style="width:100%;font-weight:600">${a.button}</button></div>`; return; }
+        const val=a.get?a.get():S[a.key];
+        const shown=(val==null||(a.blank&&val===0&&!a.allowZero))?"":val;
+        rows+=`<div class="jm-arow"><label>${a.label}</label><span class="jm-aval"><input type="number" inputmode="decimal" step="${a.step}" value="${shown}"${a.blank?` placeholder="${a.ph!=null?a.ph:"—"}"`:""} data-i="${i}"><i>${a.unit||""}</i></span></div>`; });
       d.innerHTML=rows;
-      d.querySelectorAll("input").forEach(inp=>inp.oninput=()=>{ const k=inp.dataset.key, raw=inp.value.trim(), v=parseFloat(raw);
-        if(inp.dataset.blank==="1" && (raw===""||v===0)){ S[k]=0; persist(k); render(); return; }
-        if(!isNaN(v) && (v>0 || (v===0 && inp.dataset.zero==="1"))){ S[k]=v; persist(k); render(); } });
+      d.querySelectorAll("input[data-i]").forEach(inp=>inp.oninput=()=>{ const a=list[+inp.dataset.i], raw=inp.value.trim(), v=parseFloat(raw);
+        const put=(x)=>{ if(a.set) a.set(x); else { S[a.key]=(x==null?0:x); persist(a.key); } render(); };
+        if(a.blank && (raw==="" || (v===0 && !a.allowZero))){ put(null); return; }
+        if(!isNaN(v) && (v>0 || (v===0 && a.allowZero))) put(v); });
+      d.querySelectorAll("button[data-bi]").forEach(b=>b.onclick=()=>{ try{ list[+b.dataset.bi].onClick(); }catch(e){}
+        if(cur.wasteKey && S[cur.wasteKey]!=null) curWaste=S[cur.wasteKey]; buildControls(); render(); });
       // the info rows show live rates; refresh them when an input changes
       d.addEventListener("change",()=>{ buildControls(); });
       aw.appendChild(d);
