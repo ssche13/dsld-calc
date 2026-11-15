@@ -301,6 +301,17 @@ input:focus,select:focus{border-color:var(--gold)}
 .calc-display-sub{font-family:'IBM Plex Mono',monospace;font-size:clamp(.78rem,min(3.6vw,2.4vh),1.1rem);color:var(--lcd-sub);text-align:right;margin-top:2px}
 .mem-indicator{position:absolute;top:4px;left:8px;font-size:clamp(.55rem,1.6vh,.75rem);font-weight:700;color:var(--lcd-text);opacity:0}
 .mem-indicator.active{opacity:1}
+/* Operator signs as big as the digits (they were ~9 px on the orange keys) */
+.key.key-sign{font-size:clamp(1.15rem,6vw,1.7rem)}
+/* Paper tape: the last results, like the Construction Master's paperless tape. Tap one to use it. */
+.calc-tape{display:flex;flex-direction:column;align-items:flex-end;gap:0;margin:2px 0 0;min-height:0}
+.tape-line{background:none;border:0;padding:0 2px;font-family:'IBM Plex Mono',monospace;font-size:clamp(.6rem,min(2.6vw,1.6vh),.78rem);color:var(--lcd-sub);opacity:.72;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;line-height:1.35}
+.tape-line:active{opacity:1}
+@media (max-height:760px){.calc-tape .tape-line:nth-last-child(n+3){display:none}}
+/* Send the result to Notes or to the Job Math box you were filling */
+.calc-send{position:absolute;bottom:6px;left:8px;display:flex;gap:6px;z-index:2}
+.calc-send button{border:1px solid var(--lcd-border);background:transparent;color:var(--lcd-sub);border-radius:6px;padding:2px 7px;font-family:'IBM Plex Mono',monospace;font-size:clamp(.56rem,2.4vw,.7rem);font-weight:700;cursor:pointer}
+.calc-send button:active{background:var(--lcd-border)}
 .keypad{display:flex;flex-direction:column;gap:6px;flex:4 1 0}
 .key-row{display:flex;gap:6px;flex:1 1 0}
 .key-row.num-block{margin-top:8px;padding-top:10px;border-top:1px solid var(--line)}
@@ -505,7 +516,10 @@ input:focus,select:focus{border-color:var(--gold)}
 #view-tools .tl-panel[hidden]{ display:none; }
 
 #view-tools .ms-tools{ display:flex; align-items:center; gap:6px; padding:8px 10px; flex-wrap:wrap; background:var(--panel); border-bottom:1px solid var(--border); }
-#view-tools .sk-tools{ display:flex; align-items:center; gap:6px; padding:8px 10px; flex-wrap:nowrap; overflow-x:auto; -webkit-overflow-scrolling:touch; background:var(--panel); border-bottom:1px solid var(--border); }
+#view-tools .sk-tools{ display:flex; align-items:center; gap:6px; padding:8px 10px; flex-wrap:wrap; background:var(--panel); border-bottom:1px solid var(--border); }
+#view-tools .lv-pitch{ font-family:'IBM Plex Mono',monospace; font-size:1.5rem; font-weight:700; color:var(--gold); text-align:center; }
+#view-tools .lv-hint{ font-size:.72rem; color:var(--muted); text-align:center; }
+#view-tools .lv-use,#view-tools .ms-use{ min-height:44px; padding:0 16px; border-radius:10px; border:0; background:var(--gold); color:#111; font:inherit; font-weight:700; cursor:pointer; }
 #view-tools .sk-tools > *{ flex:0 0 auto; }
 #view-tools .ms-status{ padding:6px 12px; font-size:.74rem; color:var(--label); background:var(--panel); border-bottom:1px solid var(--border); }
 #view-tools .ms-photo{ padding:7px 11px; border:1px solid var(--gold-btn); background:var(--gold-btn); color:var(--gold-fg); border-radius:8px; font-size:.78rem; font-weight:700; cursor:pointer; }
@@ -565,7 +579,7 @@ input:focus,select:focus{border-color:var(--gold)}
 
 <!-- ═══ DSLD Header ═══ -->
 <div class="dsld-header">
-  <a href="https://www.dsldhomes.com/" target="_blank" rel="noopener" class="dsld-logo" style="text-decoration:none">DSLD <span class="brand-word">Homes</span></a>
+  <span class="dsld-logo">DSLD <span class="brand-word">Homes</span></span>
   <div class="dsld-divider"></div>
   <nav class="hdr-nav" id="hdr-nav" aria-label="Calculators">
     <a class="hdr-nav-item active" href="#calculator" data-route="calculator" title="Calculator" aria-label="Calculator">
@@ -603,6 +617,8 @@ input:focus,select:focus{border-color:var(--gold)}
 <div class="calc-shell">
   <div class="calc-display">
     <span class="mem-indicator" id="kp-mem">M</span>
+    <div class="calc-send"><button type="button" onclick="noteAddCalc()" aria-label="Send the result to Notes">&rarr; Notes</button><button type="button" onclick="kpSendJob()" aria-label="Send the result to Job Math">&rarr; Job Math</button></div>
+    <div class="calc-tape" id="kp-tape" aria-label="Last results - tap one to use it"></div>
     <div class="calc-display-mode" id="kp-mode"></div>
     <div class="calc-display-expr" id="kp-expr"></div>
     <div class="calc-display-main" id="kp-main">0</div>
@@ -672,8 +688,8 @@ input:focus,select:focus{border-color:var(--gold)}
       <button class="key key-num" onclick="kpPress('4')">4</button>
       <button class="key key-num" onclick="kpPress('5')">5</button>
       <button class="key key-num" onclick="kpPress('6')">6</button>
-      <button class="key key-gold" onclick="kpPress('&times;')">&times;</button>
-      <button class="key key-gold" onclick="kpPress('&divide;')">&divide;</button>
+      <button class="key key-gold key-sign" onclick="kpPress('&times;')">&times;</button>
+      <button class="key key-gold key-sign" onclick="kpPress('&divide;')">&divide;</button>
     </div>
     <!-- Row 6: ) M+ 1 2 3 -->
     <div class="key-row">
@@ -682,8 +698,8 @@ input:focus,select:focus{border-color:var(--gold)}
       <button class="key key-num" onclick="kpPress('1')">1</button>
       <button class="key key-num" onclick="kpPress('2')">2</button>
       <button class="key key-num" onclick="kpPress('3')">3</button>
-      <button class="key key-gold" onclick="kpPress('+')">+</button>
-      <button class="key key-gold" onclick="kpPress('-')">&minus;</button>
+      <button class="key key-gold key-sign" onclick="kpPress('+')">+</button>
+      <button class="key key-gold key-sign" onclick="kpPress('-')">&minus;</button>
     </div>
     <!-- Row 7: CE On/C 0 00 . = -->
     <div class="key-row">
@@ -691,7 +707,7 @@ input:focus,select:focus{border-color:var(--gold)}
       <button class="key key-red" onclick="kpPress('C')">On/C</button>
       <button class="key key-num" style="flex:2" onclick="kpPress('0')">0</button>
       <button class="key key-num" onclick="kpPress('.')">.</button>
-      <button class="key key-gold" style="flex:2" onclick="kpPress('=')">=</button>
+      <button class="key key-gold key-sign" style="flex:2" onclick="kpPress('=')">=</button>
     </div>
   </div>
 </div>
@@ -1059,6 +1075,7 @@ input:focus,select:focus{border-color:var(--gold)}
         <button class="ms-scale" type="button">Set scale</button>
         <span class="ms-ref" hidden><input type="text" class="ms-reflen" placeholder="e.g. 4' 0&quot;"><button class="ms-setref" type="button">OK</button></span>
         <button class="ms-clear" type="button">Clear</button>
+        <button class="ms-use" type="button" hidden>Use as length</button>
       </div>
       <div class="ms-status">Load a photo, then set a known length to calibrate.</div>
       <div class="ms-canvas-wrap"><canvas class="ms-canvas"></canvas></div>
@@ -1068,6 +1085,9 @@ input:focus,select:focus{border-color:var(--gold)}
       <button class="lv-grant" type="button" hidden>Enable level</button>
       <div class="lv-ring"><div class="lv-center"></div><div class="lv-bubble"></div></div>
       <div class="lv-read">Hold your phone flat</div>
+      <div class="lv-pitch" aria-live="polite"></div>
+      <div class="lv-hint">Lay the phone flat on the rafter or roof to read its pitch.</div>
+      <button class="lv-use" type="button" hidden>Use as pitch</button>
     </div>
 
     <div class="tl-panel" id="tl-compass" hidden>
@@ -1323,10 +1343,8 @@ input:focus,select:focus{border-color:var(--gold)}
   </div>
   <div class="guide-nav">
     <button class="guide-nav-btn active" data-guide="guide-calc" onclick="showGuideSection('guide-calc')">Calculator</button>
-    <button class="guide-nav-btn" data-guide="guide-roof" onclick="showGuideSection('guide-roof')">Roof</button>
-    <button class="guide-nav-btn" data-guide="guide-roofarea" onclick="showGuideSection('guide-roofarea')">Roof Area</button>
-    <button class="guide-nav-btn" data-guide="guide-stair" onclick="showGuideSection('guide-stair')">Stairs</button>
-    <button class="guide-nav-btn" data-guide="guide-concrete" onclick="showGuideSection('guide-concrete')">Concrete</button>
+    <button class="guide-nav-btn" data-guide="guide-jobmath" onclick="showGuideSection('guide-jobmath')">Job Math</button>
+    <button class="guide-nav-btn" data-guide="guide-tools" onclick="showGuideSection('guide-tools')">Tools</button>
     <button class="guide-nav-btn" data-guide="guide-converter" onclick="showGuideSection('guide-converter')">Converter</button>
     <button class="guide-nav-btn" data-guide="guide-money" onclick="showGuideSection('guide-money')">Mortgage</button>
     <button class="guide-nav-btn" data-guide="guide-business" onclick="showGuideSection('guide-business')">Business</button>
@@ -1378,8 +1396,43 @@ input:focus,select:focus{border-color:var(--gold)}
       </div>
       <div class="guide-block">
         <div class="guide-block-title">Switching Calculators</div>
-        <p>Tap any of the six icons in the header &mdash; <strong>Calc</strong>, <strong>Roof</strong>, <strong>Area</strong>, <strong>Stair</strong>, <strong>Conc</strong>, <strong>Conv</strong> &mdash; to jump straight to that calculator. The current one is highlighted in gold.</p>
-        <p>You can also swipe left or right anywhere on the screen to move between them.</p>
+        <p>Tap any of the six icons in the header &mdash; <strong>Calc</strong>, <strong>Job</strong>, <strong>Conv</strong>, <strong>Money</strong>, <strong>Note</strong>, <strong>Tools</strong> &mdash; to jump straight there. The current one is highlighted.</p>
+        <p>You can also swipe left or right on an empty part of the screen to move between them.</p>
+      </div>
+      <div class="guide-block">
+        <div class="guide-block-title">Tape &amp; Send</div>
+        <p>The last results stay on a <strong>paper tape</strong> at the top of the display. Tap a line to use that number again.</p>
+        <p><span class="guide-key">&rarr; Notes</span> drops the result into Job Notes. <span class="guide-key">&rarr; Job Math</span> puts a feet-inch result into the Job Math box you were filling.</p>
+      </div>
+    </div>
+    <!-- Job Math Guide -->
+    <div id="guide-jobmath" class="guide-section">
+      <div class="guide-title">Job Math</div>
+      <div class="guide-desc">Pick a tool, enter what you know, and the answer stays in the strip at the top while you scroll.</div>
+      <div class="guide-block">
+        <div class="guide-block-title">Typing a Length</div>
+        <p>A bare number is <strong>feet</strong>: <strong>20</strong> = 20&prime;. <strong>20 6</strong>, <strong>20-6</strong> or <strong>20&prime; 6</strong> = 20&prime; 6&Prime;. <strong>20 6 1/2</strong> = 20&prime; 6&frac12;&Prime;. <strong>20.5</strong> = 20&prime; 6&Prime;. Boxes marked <strong>in</strong> read a bare number as inches.</p>
+        <p>On a phone, tapping a size box opens a keypad like the Calc tab: <span class="guide-key">Feet</span> <span class="guide-key">Inch</span> <span class="guide-key">/</span>, <span class="guide-key">+</span> <span class="guide-key">&minus;</span> to add lengths, <span class="guide-key">Calc</span> to pull in the Calc tab's result, then <span class="guide-key">Use</span>.</p>
+      </div>
+      <div class="guide-block">
+        <div class="guide-block-title">Jobs</div>
+        <p><span class="guide-key">+ Add</span> puts the answer on the current job. Jobs are saved on this phone; keep one per lot. Tap a line to reopen its calculator with the same numbers.</p>
+        <p>Lengths show the <strong>stock</strong> to buy (the next even foot, 8&prime; and up) and the job totals each length. Share, copy, send to Notes, or <strong>Price this job</strong> into Money &rsaquo; Markup.</p>
+      </div>
+      <div class="guide-block">
+        <div class="guide-block-title">Factors</div>
+        <p>Every tool's factors are in <strong>Assumptions</strong>. Change one and it is saved on this phone; the answer says <strong>Custom</strong> until you tap Reset.</p>
+        <p>Tap <strong>&#9734;</strong> next to a tool's name to keep it in <strong>My tools</strong> at the top.</p>
+      </div>
+    </div>
+    <!-- Tools Guide -->
+    <div id="guide-tools" class="guide-section">
+      <div class="guide-title">Tools</div>
+      <div class="guide-desc">Field helpers that use the phone's camera and sensors.</div>
+      <div class="guide-block">
+        <div class="guide-block-title">Measure &amp; Level</div>
+        <p><strong>Measure</strong>: load a photo, set a known length, then tap two points. <span class="guide-key">Use as length</span> sends it to Job Math.</p>
+        <p><strong>Level</strong>: lay the phone flat on a rafter to read its pitch. <span class="guide-key">Use in Roof rafter</span> opens the rafter tool at that pitch.</p>
       </div>
     </div>
     <!-- Roof Guide -->
@@ -1568,7 +1621,7 @@ input:focus,select:focus{border-color:var(--gold)}
       <div class="guide-desc">A scratch pad that saves itself on your phone, built to collect numbers from the other calculators instead of retyping them.</div>
       <div class="guide-block">
         <div class="guide-block-title">Pulling In Results</div>
-        <p>Run any calculator, then tap <span class="guide-key">+ Add to Notes</span> at the bottom of the results. The whole result &mdash; every label and value, with the date &mdash; drops into your notes.</p>
+        <p>On the Calc tab tap <span class="guide-key">&rarr; Notes</span>; in Job Math open <strong>Jobs</strong> and tap <span class="guide-key">Send to Notes</span>. The result &mdash; every label and value, with the date &mdash; drops into your notes.</p>
         <p>Do a roof, a stair, and a concrete pour, and you have the full takeoff stacked up in one place.</p>
         <div class="guide-example">COMMON RAFTER (Mar 14, 2026 8:12 AM)<br>&nbsp;&nbsp;&nbsp;&nbsp;Rise: 8.00 ft<br>&nbsp;&nbsp;&nbsp;&nbsp;Rafter Length: <span class="result">14.42 ft</span><br>&nbsp;&nbsp;&nbsp;&nbsp;Slope Angle: 33.69&deg;</div>
       </div>
@@ -2281,8 +2334,33 @@ document.addEventListener('DOMContentLoaded',()=>{const tc=document.querySelecto
       ctx.mainOvr=fmt(r)+' SF';ctx.modeText='SF';
       ctx.subText=fmt(r/9)+' SY';
     }else if(!ftUsed){ctx.modeText='';ctx.subText=''}
-    ctx.lastFt=false;ctx.showEq=true;ctx.state=READY;render();
+    ctx.lastFt=false;ctx.showEq=true;ctx.state=READY;render();tapePush();
   }
+
+  /* === Paper tape: the last results; tap a line to use its number again === */
+  var TAPE=[];try{TAPE=JSON.parse(localStorage.getItem('dsld-tape')||'[]')||[]}catch(e){TAPE=[]}
+  if(!Array.isArray(TAPE))TAPE=[];TAPE=TAPE.filter(function(t){return t&&typeof t==='object'&&isFinite(t.val)});
+  function tapePush(){var e=getEff(),m=elMain(),x=elExpr();var main=m?m.textContent:'';if(!main||main==='0'||main==='ERROR')return;
+    var line={expr:(x?x.textContent:'').trim(),main:main,val:e.val,ft:!!e.ft,dims:ctx.dims||1},last=TAPE[TAPE.length-1];
+    if(last&&last.expr===line.expr&&last.main===line.main)return;   // pressing = again adds no copy
+    TAPE.push(line);if(TAPE.length>20)TAPE=TAPE.slice(-20);
+    try{localStorage.setItem('dsld-tape',JSON.stringify(TAPE))}catch(err){}tapeRender()}
+  function tapeRender(){var el=document.getElementById('kp-tape');if(!el)return;el.innerHTML='';
+    TAPE.slice(-3).forEach(function(t){var b=document.createElement('button');b.type='button';b.className='tape-line';
+      b.textContent=(t.expr?t.expr.replace(/\s*=\s*$/,'')+' = ':'')+t.main;b.title='Use '+t.main;b.onclick=function(){tapeUse(t)};el.appendChild(b)})}
+  /* Reusing a tape number after "=" starts a new calculation, the way a digit does (so the last
+     result's SF / CF unit, tokens and running total don't carry over); mid-calculation it is the next operand. */
+  function tapeUse(t){resetConvToggle();ctx.showEq=false;
+    if(ctx.state===READY){ctx.acc=0;ctx.op=null;ctx.tokens=[];ctx.parenStack=[];ctx.lastFt=false;ctx.dims=(t.dims>=2?t.dims:0)}
+    resetEntry();
+    if(t.ft&&t.dims<2){showFtIn(t.val*12);ctx.fBase=t.val*12}else{setDec(t.val)}
+    ctx.state=ENTERING_STD;ctx.freshResult=true;render()}
+  /* What is on the display, for the Job Math keypad's Calc key and the Send button (read only) */
+  window.kpCurrent=function(){var e=getEff(),m=elMain();return{val:e.val,ft:!!e.ft,dims:e.dims||ctx.dims||1,text:m?m.textContent:''}};
+  window.kpSendJob=function(){var c=window.kpCurrent();
+    if(!c.text||c.text==='0'||c.text==='ERROR'){toast('Nothing on the calculator yet');return}
+    if(!c.ft||c.dims>=2||!(c.val>0)){toast('Job Math takes a feet-inch length — enter one with Feet / Inch');return}
+    if(window.JobMath&&JobMath.receiveLength)JobMath.receiveLength(c.val*12);else toast('Job Math is not loaded')};
 
   function openParenHandler(){
     var st=ctx.state;
@@ -2524,7 +2602,7 @@ document.addEventListener('DOMContentLoaded',()=>{const tc=document.querySelecto
     var k=keyMap[e.key]||e.key;
     if(handlers[k]){e.preventDefault();kpPress(k)}
   });
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',render);else render();
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){render();tapeRender()});else{render();tapeRender()}
 })();
 
 /* ── Money: Mortgage & Business ──
@@ -3293,7 +3371,7 @@ function calcFootings(){
 
 /* ── User Guide ── */
 (function(){
-  const sectionMap={calculator:'guide-calc',roof:'guide-roof',roofarea:'guide-roofarea',stair:'guide-stair',concrete:'guide-concrete',converter:'guide-converter',money:'guide-money',notes:'guide-notes'};
+  const sectionMap={calculator:'guide-calc',jobmath:'guide-jobmath',tools:'guide-tools',roof:'guide-roof',roofarea:'guide-roofarea',stair:'guide-stair',concrete:'guide-concrete',converter:'guide-converter',money:'guide-money',notes:'guide-notes'};
   /* Shows which build is actually running, so "is the update reaching my phone?"
      is answerable by looking instead of guessing. Reads the live service worker
      cache name, so it can never drift from what was deployed. */
@@ -3402,12 +3480,50 @@ if(location.protocol==="file:"||location.hostname==="localhost"||location.hostna
     if(whole===0&&!fr) inpart='0"';
     return (f>0? f+"' ":"")+inpart;
   }
-  function parseFeetIn(s){ if(typeof s==="number")return s; s=(s||"").trim(); if(!s)return NaN;
-    let ft=0,inch=0; const fm=s.match(/(\d+(?:\.\d+)?)\s*'/); if(fm){ft=parseFloat(fm[1]);s=s.replace(fm[0],"");}
-    const im=s.match(/(\d+(?:\.\d+)?)/); if(im)inch=parseFloat(im[1]);
-    const fr={"⅛":.125,"¼":.25,"⅜":.375,"½":.5,"⅝":.625,"¾":.75,"⅞":.875};
-    for(const k in fr) if(s.includes(k))inch+=fr[k];
-    return ft*12+inch; }
+/* LENPARSE:BEGIN - read a typed length, in inches (NaN = not a length; the box keeps its old value).
+   Marks win: ' ft foot feet = feet, " in inch = inches. With no marks the FIRST number is feet
+   (inches in an inch box), a second number is inches, and a fraction belongs to the number before it:
+     20 -> 20'   20 6 -> 20' 6"   20-6 -> 20' 6"   20 6 1/2 -> 20' 6 1/2"   20.5 -> 20' 6"
+     12 1/2 -> 12' 6"   20' 6 -> 20' 6"   20ft 6in -> 20' 6"   6" -> 6"   6 1/2" -> 6 1/2"   20 6" -> 20' 6"
+   Fixes the July trap where a bare 20 in a ft-in box read as 20 inches (1' 8"). */
+function parseLen(s, bare){
+  if(typeof s==="number") return s;
+  s=String(s==null?"":s).toLowerCase().trim(); if(!s) return NaN;
+  const U={"⅛":"1/8","¼":"1/4","⅜":"3/8","½":"1/2","⅝":"5/8","¾":"3/4","⅞":"7/8"};
+  s=s.replace(/[⅛¼⅜½⅝¾⅞]/g,m=>" "+U[m]+" ").replace(/[′’‘`]/g,"'").replace(/[″“”]/g,'"').replace(/[–—]/g,"-");
+  s=s.replace(/''/g,'"');   // two single quotes = inches (6'' = 6")
+  s=s.replace(/(\d)\s*(feet|foot|ft)(?![a-z])\.?/g,"$1'").replace(/(\d)\s*(inches|inch|in)(?![a-z])\.?/g,'$1"');
+  // a comma is a separator like a space (20,6 = 20' 6"), never a thousands mark in a length box
+  s=s.replace(/'\s*-\s*/g,"' ").replace(/(\d)\s*-\s*(?=\d)/g,"$1 ").replace(/,/g," ");
+  if(/[^0-9.\/'"\s]/.test(s)) return NaN;
+  const toks=s.match(/\d+(?:\.\d+)?\s*\/\s*\d+(?:\.\d+)?|\d*\.\d+|\d+|['"]/g); if(!toks) return NaN;
+  const num=t=>{ if(t.includes("/")){ const p=t.split("/").map(x=>+x.trim()); return p[1]?p[0]/p[1]:NaN; } return +t; };
+  const groups=[]; let cur=[];
+  for(const t of toks){ if(t==="'"||t==='"'){ groups.push({v:cur,m:t}); cur=[]; } else cur.push(t.replace(/\s+/g,"")); }
+  if(cur.length) groups.push({v:cur,m:null});
+  // fill slots: a whole / decimal number takes the next slot, a fraction adds to the slot before it
+  const fill=(vals,slots)=>{ const out=slots.map(()=>0); let i=-1;
+    for(const t of vals){ if(t.includes("/")){ out[Math.max(i,0)]+=num(t); if(i<0)i=0; } else { i++; if(i>=slots.length) return null; out[i]+=num(t); } }
+    return out; };
+  let feet=0, inch=0, haveFeet=false, haveInch=false;
+  for(const g of groups){
+    if(!g.v.length){ if(g.m) continue; else break; }
+    if(g.m==="'"){ if(haveFeet||haveInch) return NaN; const o=fill(g.v,["f"]); if(!o) return NaN; feet=o[0]; haveFeet=true; }
+    else if(g.m==='"'){ if(haveInch) return NaN;
+      const wholes=g.v.filter(t=>!t.includes("/")).length;
+      if(!haveFeet && wholes>=2){ const o=fill(g.v,["f","i"]); if(!o) return NaN; feet=o[0]; inch=o[1]; haveFeet=true; }
+      else { const o=fill(g.v,["i"]); if(!o) return NaN; inch=o[0]; }
+      haveInch=true; }
+    else { if(haveInch){   // a fraction after the Inch key adds to the inches (6 Inch 1 / 2 = 6 1/2"), as on the Calc tab
+        if(g.v.every(t=>t.includes("/"))){ inch+=g.v.reduce((s2,t)=>s2+num(t),0); continue; } return NaN; }
+      if(haveFeet){ const o=fill(g.v,["i"]); if(!o) return NaN; inch=o[0]; haveInch=true; }
+      else if(bare==="in"){ const o=fill(g.v,["i"]); if(!o){ const o2=fill(g.v,["f","i"]); if(!o2) return NaN; feet=o2[0]; inch=o2[1]; } else inch=o[0]; haveInch=true; }
+      else { const o=fill(g.v,["f","i"]); if(!o) return NaN; feet=o[0]; inch=o[1]; haveFeet=true; haveInch=true; } }
+  }
+  const total=feet*12+inch; return isFinite(total)?total:NaN;
+}
+/* LENPARSE:END */
+  const parseFeetIn=(s,bare)=>parseLen(s,bare);
 
   const fmtNum = (n) => (Math.round((+n||0)*100)/100).toLocaleString();
 
@@ -3475,15 +3591,16 @@ const HVAC={
 /* HVACMATH:END */
 
   const BD=BRICK.DEFAULTS, SIZES3=["King","Queen","Modular"];
-  // Brick factors are adjustable (his ruling 11-14 "the brick factors should be adjustable").
-  // Defaults = the standard; perSF / perLF / mortarCF overrides of 0 = "use the standard from
+  // Brick factors are adjustable. Defaults = the standard; perSF / perLF / mortarCF overrides of 0 = "use the standard from
   // the size + joint". Everything brick-related is remembered on this device only.
   const BRICK_STD={brickJoint:BD.joint, mortarJoint:BD.mortarJoint, mortarWaste:BD.mortarWaste, mortarBagCF:BD.bagCF,
     brickWastePct:BD.waste, rowlockWastePct:BD.rowlockWaste};
   SIZES3.forEach(s=>{ BRICK_STD["perSF"+s]=0; BRICK_STD["perLF"+s]=0; BRICK_STD["mortarCF"+s]=0; });
   const S=Object.assign({bagYield:0.45, concreteInc:0.5, tileBox:15, paintCov:350, coats:2, cmuPerSf:1.125, truckYd:10, studOC:16,
     cubeKing:0, strapKing:0, cubeQueen:0, strapQueen:0, cubeModular:0, strapModular:0}, BRICK_STD);
-  const PERSIST=[...Object.keys(BRICK_STD), "cubeKing","strapKing","cubeQueen","strapQueen","cubeModular","strapModular"];
+  // the standard value of every factor, before this device's saved changes are applied
+  const S_DEFAULT=Object.assign({}, S);
+  const PERSIST=Object.keys(S);   // every factor is adjustable and remembered on this device
   const ZERO_OK=new Set(["mortarWaste","brickWastePct","rowlockWastePct"]);
   PERSIST.forEach(k=>{ try{ const raw=localStorage.getItem("jm."+k); if(raw==null||raw==="") return; const v=parseFloat(raw);
     if(!isNaN(v) && (v>0 || (v===0 && ZERO_OK.has(k)))) S[k]=v; }catch(e){} });
@@ -3498,17 +3615,23 @@ function brickRates(size){ const r=brickBaseRates(size);
   if(S["mortarCF"+size]>0) r.mortarCF=S["mortarCF"+size];
   return r; }
 // which factors differ from the standard, in words (empty = all standard)
-function brickCustom(size, kind){ const c=[], same=(a,b)=>Math.abs(a-b)<1e-12;
+// waste = the waste the tool is using right now (a reopened job line can carry its own)
+function brickCustom(size, kind, waste){ const c=[], same=(a,b)=>Math.abs(a-b)<1e-12;
   if(!same(S.brickJoint,BD.joint)) c.push(`joint ${frac8(S.brickJoint)}"`);
-  if(kind==="brick"){ if(S["perSF"+size]>0) c.push(`${fmtNum(S["perSF"+size])} brick / SF`);
-    if(!same(S.brickWastePct,BD.waste)) c.push(`brick waste ${fmtNum(S.brickWastePct)}%`); }
-  if(kind==="rowlock"){ if(S["perLF"+size]>0) c.push(`${fmtNum(S["perLF"+size])} rowlock / LF`);
-    if(!same(S.rowlockWastePct,BD.rowlockWaste)) c.push(`rowlock waste ${fmtNum(S.rowlockWastePct)}%`); }
+  if(kind==="brick"){ const w=waste==null?S.brickWastePct:waste; if(S["perSF"+size]>0) c.push(`${fmtNum(S["perSF"+size])} brick / SF`);
+    if(!same(w,BD.waste)) c.push(`brick waste ${fmtNum(w)}%`); }
+  if(kind==="rowlock"){ const w=waste==null?S.rowlockWastePct:waste; if(S["perLF"+size]>0) c.push(`${fmtNum(S["perLF"+size])} rowlock / LF`);
+    if(!same(w,BD.rowlockWaste)) c.push(`rowlock waste ${fmtNum(w)}%`); }
   if(!same(S.mortarJoint,BD.mortarJoint)) c.push(`mortar joint ${frac8(S.mortarJoint)}"`);
   if(S["mortarCF"+size]>0) c.push(`mortar ${S["mortarCF"+size]} cu ft / brick`);
   if(!same(S.mortarWaste,BD.mortarWaste)) c.push(`mortar waste ${fmtNum(S.mortarWaste)}%`);
   if(!same(S.mortarBagCF,BD.bagCF)) c.push(`bag ${fmtNum(S.mortarBagCF)} cu ft`);
   return c; }
+// lumber stock lengths: round a cut UP to the next even foot (2' steps), 8' shortest;
+// past 40' it is a splice or a special order
+const STOCK=[8,10,12,14,16,18,20,22,24,26,28,30,32,36,40];
+function stockFor(inches){ const ft=inches/12; for(const s of STOCK) if(ft<=s+1e-9) return s; return null; }
+function stockText(sk){ return sk?sk+"' stock":"over 40' (splice)"; }
 // inches -> whole + fraction to the 1/16 (9.625 -> 9⅝, 0.4375 -> 7/16)
 function frac8(x){ let w=Math.floor(x), s=Math.round((x-w)*16); if(s===16){w++;s=0;}
   const U={2:"⅛",4:"¼",6:"⅜",8:"½",10:"⅝",12:"¾",14:"⅞"};
@@ -3528,8 +3651,8 @@ function brickAssume(vr, isBrick){
     {label:"Mortar waste",key:"mortarWaste",unit:"%",step:1,allowZero:true},
     {label:"Mortar bag yield",key:"mortarBagCF",unit:"cu ft",step:0.05}];
   if(isBrick) a.push(
-    {label:vr.name+" bricks per cube",key:"cube"+vr.size,unit:"brk",step:1,blank:true},
-    {label:vr.name+" bricks per strap",key:"strap"+vr.size,unit:"brk",step:1,blank:true});
+    {label:vr.name+" bricks per cube",key:"cube"+vr.size,unit:"brk",step:1,blank:true,userData:true},
+    {label:vr.name+" bricks per strap",key:"strap"+vr.size,unit:"brk",step:1,blank:true,userData:true});
   a.push({button:"Reset factors to standard",onClick:resetBrick});
   a.push({info:"Every factor can be changed; a blank box uses the standard from the brick size and joint (shown in grey). Bricks / SF = 144 ÷ ((length + joint) × (height + joint)); rowlock / LF = 12 ÷ (height + joint); mortar cu ft / brick = (length + height) × width × mortar joint ÷ 1728, on the bricks before waste. Waste (the slider) is its own step. Changes and your cube / strap sizes are saved on this device only; the answer says <b>Custom</b> while any factor differs from the standard. Reset puts the factors back (it keeps your cube / strap sizes)."});
   return a;
@@ -3625,15 +3748,17 @@ const REG={
       let coach = ok
         ? {cls:"ok",icon:"ti-circle-check",html:`<b>Code-compliant.</b> ${n} risers at ${riser.toFixed(2)}" — under the 7¾" IRC max. Tread run ${fi(run)}.`}
         : {cls:"code",icon:"ti-alert-triangle",html:`<b>Riser too tall.</b> ${riser.toFixed(2)}" exceeds the 7¾" IRC max — add a riser (try ${n+1}) to bring it to ${(v.rise/(n+1)).toFixed(2)}".`};
+      const sk=stockFor(stringer);
       return{outs:[
         {l:"Risers",v:n,hero:true,sub:riser.toFixed(2)+'" each'},
         {l:"Treads",v:n-1,sub:'10½" deep'},
         {l:"Total run",v:fi(run)},
-        {l:"Stringer length",v:fi(stringer)}],
-      coach, job:{name:"Stair stringer",qty:fi(stringer)+" × 2",icon:"ti-stairs-up"}};}},
+        {l:"Stringer length",v:fi(stringer),sub:stockText(sk)}],
+      coach, job:{name:"Stair stringer",qty:`2 × ${sk?sk+"' stock":fi(stringer)} (cut ${fi(stringer)})`,icon:"ti-stairs-up",stock:sk?[{len:sk,count:2}]:null}};}},
 
   rafter:{name:"Roof rafter",icon:"ti-home-2",tab:"trade",
-    fields:[{k:"run",label:"Run (half span)",def:144},{k:"pitch",label:"Pitch (rise per 12)",def:6,pitch:true}],
+    fields:[{k:"run",label:"Run (half span)",def:144},{k:"pitch",label:"Pitch (rise per 12)",def:6,pitch:true},
+            {k:"count",label:"How many",def:1,num:true,unit:"count",min:1,max:200,compact:true,int:true}],
     draw(v,svg){const W=300,H=200,pad=34;const pitch=v.pitchVal||6;const run=v.run,rise=run*(pitch/12);
       const sc=Math.min((W-2*pad)/Math.max(run,1),(H-2*pad)/Math.max(rise,40));
       const rw=run*sc,rh=Math.min(H-2*pad,rise*sc),ax=pad,ay=H-pad;
@@ -3642,13 +3767,15 @@ const REG={
       <text x="${ax+rw+6}" y="${ay-rh/2}" fill="var(--muted)" font-size="12" font-family="var(--mono)">${pitch}/12</text>
       <text x="${ax+rw/2-6}" y="${ay-rh/2-6}" fill="var(--amber)" font-size="13" text-anchor="middle" font-weight="700">rafter</text>`;},
     compute(v){const pitch=v.pitchVal||6;const rise=v.run*(pitch/12);const rafter=Math.hypot(v.run,rise);
+      const sk=stockFor(rafter), n=Math.max(1,Math.round(v.count||1));
       return{outs:[
         {l:"Rafter length",v:fi(rafter),hero:true,sub:pitch+"/12 pitch"},
+        {l:"Stock",v:sk?sk+"'":"over 40'",sub:sk?`${n} × ${sk}' (cut ${fi(rafter)})`:"splice or special order"},
         {l:"Rise",v:fi(rise)},
         {l:"Plumb cut",v:(Math.atan2(rise,v.run)*180/Math.PI).toFixed(1)+"°"},
         {l:"Seat cut",v:(90-Math.atan2(rise,v.run)*180/Math.PI).toFixed(1)+"°"}],
-      coach:{cls:"why",icon:"ti-bulb",html:`<b>Cut list.</b> Rafter ${fi(rafter)} before the bird's-mouth. Set your saw to the plumb-cut angle for the ridge.`},
-      job:{name:"Rafter stock",qty:fi(rafter),icon:"ti-home-2"}};}},
+      coach:{cls:"why",icon:"ti-bulb",html:`<b>Cut list.</b> Rafter ${fi(rafter)} before the bird's-mouth${sk?`, from ${sk}' stock (the next even foot up)`:""}. Set your saw to the plumb-cut angle for the ridge.`},
+      job:{name:"Rafter "+pitch+"/12",qty:`${n} × ${sk?sk+"' stock":fi(rafter)} (cut ${fi(rafter)})`,icon:"ti-home-2",stock:sk?[{len:sk,count:n}]:null}};}},
 
   tile:{name:"Tile / flooring",icon:"ti-grid-dots",tab:"trade",waste:10,
     assume:[{label:"Coverage per box",key:"tileBox",unit:"sq ft",step:1}],
@@ -3704,7 +3831,7 @@ const REG={
 
   column:{name:"Column / cylinder",icon:"ti-cylinder",tab:"volume",waste:10,
     assume:[{label:"60 lb bag yield",key:"bagYield",unit:"ft³",step:0.01}],
-    fields:[{k:"dia",label:"Diameter",def:24,unit:"in",whole:true},{k:"hgt",label:"Height",def:96,unit:"in",whole:true}],
+    fields:[{k:"dia",label:"Diameter",def:24,unit:"in",whole:true},{k:"hgt",label:"Height",def:96}],
     draw(v,svg){const W=300,H=200;const r=Math.min(52,Math.max(14,v.dia));const cx=W/2,topY=42,botY=162,ry=r*0.28;
       svg.innerHTML=`<ellipse cx="${cx}" cy="${botY}" rx="${r}" ry="${ry}" fill="var(--blue-d)" fill-opacity=".6" stroke="var(--blue-d)" stroke-width="1.6"/>
       <rect x="${cx-r}" y="${topY}" width="${r*2}" height="${botY-topY}" fill="var(--blue)" fill-opacity=".18"/>
@@ -3759,19 +3886,22 @@ const REG={
 
   brick:{name:"Brick veneer",icon:"ti-bricks",tab:"masonry",waste:10,wasteKey:"brickWastePct",
     variants:[{name:"King",size:"King"},{name:"Queen",size:"Queen"},{name:"Modular",size:"Modular"}],
+    picks:[{key:"mode",label:"Enter",options:["Wall size","Brick SF"],def:"Wall size"}],
+    customOf:(vr,v,w)=>brickCustom(vr.size,"brick",w),
     assume:vr=>brickAssume(vr,true),
-    fields:[{k:"len",label:"Wall length",def:480},{k:"hgt",label:"Wall height",def:96}],
+    fields:[{k:"len",label:"Wall length",def:480,show:v=>v.mode!=="Brick SF"},{k:"hgt",label:"Wall height",def:96,show:v=>v.mode!=="Brick SF"},
+            {k:"sf",label:"Brick SF (openings out)",def:320,num:true,unit:"sq ft",max:6000,show:v=>v.mode==="Brick SF"}],
     draw(v,svg){const W=300,H=200,pad=30;const rw=W-2*pad,rh=Math.min(128,Math.max(50,v.hgt*0.55)),x=pad,y=(H-rh)/2;
       const rows=6,bh=rh/rows;let g="";
       for(let i=0;i<rows;i++){const yy=y+i*bh;g+=`<line x1="${x}" y1="${yy}" x2="${x+rw}" y2="${yy}" stroke="var(--blue)" stroke-width=".7" opacity=".5"/>`;
         const off=(i%2)*(rw/16);for(let bx=x+off;bx<x+rw+1;bx+=rw/8){g+=`<line x1="${Math.min(bx,x+rw)}" y1="${yy}" x2="${Math.min(bx,x+rw)}" y2="${yy+bh}" stroke="var(--blue)" stroke-width=".7" opacity=".5"/>`;}}
       svg.innerHTML=`<rect x="${x}" y="${y}" width="${rw}" height="${rh}" fill="var(--blue-soft)" stroke="var(--blue)" stroke-width="2.5"/>${g}
       <text x="${x+rw/2}" y="${y+rh+18}" fill="var(--muted)" font-size="12" text-anchor="middle" font-family="var(--mono)">${fi(v.len)} × ${fi(v.hgt)}</text>`;},
-    compute(v,waste,vr){const sf=(v.len/12)*(v.hgt/12);const r=brickRates(vr.size);
+    compute(v,waste,vr){const sf=v.mode==="Brick SF"?(+v.sf||0):(v.len/12)*(v.hgt/12);const r=brickRates(vr.size);
       const br=BRICK.count({sf},r,waste/100,0);
       const mortar=BRICK.mortarBags({sf},r,S.mortarWaste/100,S.mortarBagCF);
       const cube=S["cube"+vr.size], strap=S["strap"+vr.size]; const ord=BRICK.order(br,cube,strap);
-      const custom=brickCustom(vr.size,"brick");
+      const custom=brickCustom(vr.size,"brick",waste);
       const outs=[
         {l:"Brick needed",v:br.toLocaleString(),hero:true,sub:vr.name+" · "+r.perSF.toFixed(2)+" / SF + "+waste+"% waste"},
         {l:"Order",v:ord||"—",sub:ord?cube.toLocaleString()+" / cube"+(strap?" · "+strap+" / strap":""):"add your cube size in Assumptions"},
@@ -3786,6 +3916,7 @@ const REG={
 
   rowlock:{name:"Rowlock course",icon:"ti-layout-rows",tab:"masonry",waste:10,wasteKey:"rowlockWastePct",
     variants:[{name:"King",size:"King"},{name:"Queen",size:"Queen"},{name:"Modular",size:"Modular"}],
+    customOf:(vr,v,w)=>brickCustom(vr.size,"rowlock",w),
     assume:vr=>brickAssume(vr,false),
     fields:[{k:"len",label:"Course length",def:120}],
     draw(v,svg){const W=300,H=200,pad=30;const rw=W-2*pad,x=pad,y=86,bh=36,n=14,bw=rw/n;let g="";
@@ -3794,7 +3925,7 @@ const REG={
     compute(v,waste,vr){const lf=v.len/12;const r=brickRates(vr.size);
       const br=BRICK.count({rl:lf},r,0,waste/100);
       const mortar=BRICK.mortarBags({rl:lf},r,S.mortarWaste/100,S.mortarBagCF);
-      const custom=brickCustom(vr.size,"rowlock");
+      const custom=brickCustom(vr.size,"rowlock",waste);
       const outs=[
         {l:"Brick needed",v:br.toLocaleString(),hero:true,sub:vr.name+" · single course"},
         {l:"Rate",v:r.perLF.toFixed(2),sub:"brick / LF"},
@@ -3855,17 +3986,18 @@ const REG={
       <text x="${W/2}" y="${y2+18}" fill="var(--muted)" font-size="12" text-anchor="middle" font-family="var(--mono)">${fi(v.len)} × ${fi(v.wid)} · ridge + hips</text>`;},
     compute(v){const pitch=v.pitchVal||6;const runIn=v.wid/2;const p=pitch/12;
       const common=runIn*Math.sqrt(1+p*p);const hip=runIn*Math.sqrt(2+p*p);const ridge=Math.max(0,v.len-v.wid);
+      const hs=stockFor(hip), cs=stockFor(common);
       return{outs:[
-        {l:"Hip / valley rafter",v:fi(hip),hero:true,sub:"each (× up to 4)"},
-        {l:"Common rafter",v:fi(common),sub:"run "+fi(runIn)},
+        {l:"Hip / valley rafter",v:fi(hip),hero:true,sub:"each (× up to 4) · "+stockText(hs)},
+        {l:"Common rafter",v:fi(common),sub:"run "+fi(runIn)+" · "+stockText(cs)},
         {l:"Ridge length",v:fi(ridge),sub:"length − width"},
         {l:"Pitch",v:pitch+"/12"}],
       coach:{cls:"why",html:`<b>Equal-pitch hip roof.</b> Hips and valleys share one length — <b>${fi(hip)}</b> — running 45° in plan. Common rafter <b>${fi(common)}</b> for a ${fi(runIn)} run; the ridge = length − width = <b>${fi(ridge)}</b>. Add tail/overhang before you cut.`},
-      job:{name:"Roof framing (hip)",qty:"ridge "+fi(ridge)}};}},
+      job:{name:"Roof framing (hip)",qty:`4 hips ${hs?hs+"' stock":fi(hip)} · ridge ${fi(ridge)}`,stock:hs?[{len:hs,count:4}]:null}};}},
 
   /* ---------- HVAC / energy (from the Suite's desktop popup) ---------- */
   ductleak:{name:"Duct leakage (TDL)",tab:"hvac",
-    fields:[{k:"sqft",label:"Living sq ft",def:1800,num:true,unit:"sq ft",max:6000},{k:"returns",label:"Returns",def:4,num:true,unit:"count",max:12},
+    fields:[{k:"sqft",label:"Living sq ft",def:1800,num:true,unit:"sq ft",max:6000},{k:"returns",label:"Returns",def:4,num:true,unit:"count",max:12,compact:true,int:true},
             {k:"measured",label:"Measured total duct leakage",def:80,num:true,unit:"CFM25",max:600}],
     draw(v,svg){hvacSvg(svg,"TDL "+fmtNum(v.measured)+" CFM25");},
     compute(v){const d=HVAC.ductLimits(v.sqft,v.returns);const pass=v.measured<=d.applicable;const A=HVAC.fmt(d.applicable,0);
@@ -3919,7 +4051,7 @@ const REG={
       job:{name:"Blower door",qty:A+" ACH50"}};}},
 
   vent:{name:"Ventilation (62.2)",tab:"hvac",
-    fields:[{k:"sqft",label:"Living sq ft",def:1800,num:true,unit:"sq ft",max:6000},{k:"br",label:"Bedrooms",def:3,num:true,unit:"count",max:8}],
+    fields:[{k:"sqft",label:"Living sq ft",def:1800,num:true,unit:"sq ft",max:6000},{k:"br",label:"Bedrooms",def:3,num:true,unit:"count",max:8,compact:true,int:true}],
     draw(v,svg){hvacSvg(svg,"ASHRAE 62.2");},
     compute(v){const c=HVAC.ventCFM(v.sqft,v.br);const C=HVAC.fmt(c,0);
       return{outs:[
@@ -3974,19 +4106,99 @@ function hvacSvg(svg,label){const W=300,H=200;
 
   /* ---------- state ---------- */
   const ORDER = HOME.flatMap(([,ks]) => ks).filter(k => REG[k]);
-  let cur=null, curKey=null, curVals={}, curWaste=10, reverse=false, curVariant=0, curRes=null, assumeOpen=false;
-  let job={ name:"Untitled job", items:[] };
-  function step(d){ const i=ORDER.indexOf(curKey); if(i<0)return; openCalc(ORDER[(i+d+ORDER.length)%ORDER.length]); }
+  let cur=null, curKey=null, curVals={}, curWaste=10, reverse=false, curVariant=0, curRes=null, assumeOpen=false, lastLenK=null;
+  const TOUCH=!!(window.matchMedia && window.matchMedia("(pointer:coarse)").matches);
+  // set() returns false when the phone's storage refuses (full / private mode); arr() never returns a non-array
+  const LSX={ get(k,d){ try{ const v=localStorage.getItem(k); return v==null?d:JSON.parse(v); }catch(e){ return d; } },
+              set(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); return true; }catch(e){ return false; } },
+              arr(k){ const v=LSX.get(k,[]); return Array.isArray(v)?v.filter(x=>typeof x==="string"):[]; } };
+  const say=(m)=>{ try{ if(typeof window.toast==="function") window.toast(m); }catch(e){} };
+  const esc=(s)=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  const groupOf=(k)=>{ const g=HOME.find(([,ks])=>ks.includes(k)); return g?{label:g[0],keys:g[1].filter(x=>REG[x])}:{label:"",keys:ORDER}; };
+  // the arrows stay inside the tool's own group (they used to walk all 25 tools, HVAC included)
+  function step(d){ const g=groupOf(curKey), i=g.keys.indexOf(curKey); if(i<0)return; openCalc(g.keys[(i+d+g.keys.length)%g.keys.length]); }
 
-  /* ---------- home ---------- */
+  /* ---------- look and feel for the new parts (one style block, scoped, theme colours) ---------- */
+  (function(){ if(document.getElementById("jm-ux-style")) return; const st=document.createElement("style"); st.id="jm-ux-style";
+    st.textContent=`
+#jobmath #jm-sticky{position:sticky;top:var(--hdr-h,0px);z-index:6;display:flex;align-items:center;gap:10px;padding:8px 12px;margin:8px 0 6px;border-radius:10px;
+  background:var(--navy,var(--blue-d,#1f3a5f));color:#fff;border:1px solid var(--navy-lt,var(--border));box-shadow:0 2px 10px rgba(0,0,0,.28)}
+#jobmath #jm-sticky .jm-sl{font-size:.66rem;opacity:.82;line-height:1.2;text-transform:uppercase;letter-spacing:.04em}
+#jobmath #jm-sticky .jm-sv{font-family:var(--mono,monospace);font-weight:700;font-size:1.3rem;color:var(--gold,var(--amber));line-height:1.15;overflow-wrap:anywhere}
+#jobmath #jm-sticky .jm-sadd{margin-left:auto;flex-shrink:0;min-height:40px;padding:0 14px;border-radius:9px;border:0;font:inherit;font-weight:700;background:var(--gold,var(--amber));color:#111;cursor:pointer}
+#jobmath .jm-scustom{background:var(--amber,#e8a020);color:#111;border-radius:5px;padding:0 5px;font-size:.6rem;font-weight:700;margin-left:4px;letter-spacing:0}
+#jobmath .jm-star{background:none;border:0;font-size:1.35rem;line-height:1;cursor:pointer;color:var(--gold,var(--amber));padding:0 4px}
+#jobmath .jm-slrow{display:flex;align-items:center;gap:8px}
+#jobmath .jm-slrow .jm-slider{flex:1;min-width:0}
+#jobmath .jm-step{flex-shrink:0;min-width:44px;min-height:44px;border:1px solid var(--border);border-radius:10px;background:var(--card);color:inherit;font-size:1.3rem;font-weight:700;cursor:pointer;touch-action:manipulation}
+#jobmath .jm-cgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px 10px;margin-top:6px}
+#jobmath .jm-cfield .jm-crow{display:flex;gap:6px;align-items:center}
+#jobmath .jm-cfield .jm-diminput{text-align:center;min-width:0;width:100%}
+#jobmath .jm-arow label{text-transform:none!important;letter-spacing:normal!important}
+#jobmath .jm-reopen{background:none;border:0;padding:0;font:inherit;color:inherit;text-align:left;text-decoration:underline dotted;cursor:pointer}
+#jobmath .jm-jobpick{flex:1;min-width:0;min-height:40px;border:1px solid var(--border);border-radius:8px;background:var(--inp,var(--card));color:inherit;font:inherit;padding:0 8px}
+@media (max-width:700px){ #jobmath .jm-canvas svg{max-height:130px} }
+#jm-pad{position:fixed;left:50%;bottom:0;width:100%;max-width:560px;transform:translate(-50%,105%);transition:transform .18s ease;z-index:250;box-sizing:border-box;
+  background:var(--bg,#111);border-top:2px solid var(--gold,#e8a020);padding:8px 10px calc(10px + env(safe-area-inset-bottom));box-shadow:0 -8px 24px rgba(0,0,0,.45)}
+#jm-pad.open{transform:translate(-50%,0)}
+#jm-pad .pk-head{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+#jm-pad .pk-label{flex:1;font-size:.78rem;font-weight:600;color:var(--muted,#aaa)}
+#jm-pad .pk-x{min-width:44px;min-height:36px;border-radius:8px;border:1px solid var(--border,#444);background:var(--card,#222);color:inherit;font-size:1rem;cursor:pointer}
+#jm-pad .pk-disp{background:var(--lcd,#cfd8c0);border:2px solid var(--lcd-border,#888);border-radius:10px;padding:6px 10px;margin-bottom:8px;text-align:right;font-family:'IBM Plex Mono',var(--mono,monospace)}
+#jm-pad .pk-entry{font-size:1.45rem;font-weight:700;color:var(--lcd-text,#111);min-height:1.8rem;overflow-wrap:anywhere}
+#jm-pad .pk-entry.ph{opacity:.45;font-size:1rem}
+#jm-pad .pk-read{font-size:.8rem;color:var(--lcd-sub,#333)}
+#jm-pad .pk-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+#jm-pad .pk{min-height:50px;border:0;border-radius:10px;font-family:'IBM Plex Mono',var(--mono,monospace);font-weight:700;font-size:1.2rem;cursor:pointer;touch-action:manipulation;
+  background:var(--key-num,#2b3037);color:var(--key-num-fg,#fff)}
+#jm-pad .pk.g{background:var(--gold,#e8a020);color:#111;font-size:1rem}
+#jm-pad .pk.f{background:var(--key-func-bg,#3a414a);color:var(--key-func-fg,#fff);border:1px solid var(--border,transparent)}
+#jm-pad .pk.r{background:var(--key-red,#c0392b);color:#fff}
+#jm-pad .pk.u{background:var(--gold,#e8a020);color:#111;font-size:1rem}
+#jm-pad .pk:active{transform:scale(.96);filter:brightness(1.15)}
+#jm-pad .pk[hidden]{display:none}`;
+    document.head.appendChild(st); })();
+
+  /* ---------- jobs: saved on this device, one per lot / plan ---------- */
+  const JOBS_KEY="jm.jobs.v1";
+  // read fresh from storage and clean anything malformed (a hand-edited or old value must not break the tab)
+  function readJobs(){ const raw=LSX.get(JOBS_KEY,null);
+    const jobs=(raw&&Array.isArray(raw.jobs)?raw.jobs:[]).filter(j=>j&&typeof j==="object").map((j,i)=>({
+      id:typeof j.id==="string"&&j.id?j.id:"j"+i+"_"+Date.now().toString(36), name:String(j.name||"Untitled job"),
+      created:j.created||Date.now(), items:(Array.isArray(j.items)?j.items:[]).filter(it=>it&&typeof it==="object").map(it=>Object.assign({},it,{
+        name:String(it.name==null?"":it.name), qty:String(it.qty==null?"":it.qty), price:isFinite(+it.price)?+it.price:0,
+        stock:Array.isArray(it.stock)?it.stock.filter(s=>s&&isFinite(+s.len)&&isFinite(+s.count)):null }))}));
+    return {current:raw&&typeof raw.current==="string"?raw.current:null, jobs}; }
+  let JOBS=readJobs();
+  let saveWarned=false;
+  function saveJobs(){ const ok=LSX.set(JOBS_KEY,JOBS);
+    if(!ok && !saveWarned){ saveWarned=true; say("Could not save the job — the phone's storage is full or blocked"); }
+    if(ok) saveWarned=false; return ok; }
+  // every change re-reads first, so two open tabs never overwrite each other's lines
+  function mutate(fn){ JOBS=readJobs(); const j=curJob(); fn(j); return saveJobs(); }
+  window.addEventListener("storage",e=>{ if(e.key!==JOBS_KEY) return; JOBS=readJobs(); updateBadge(); if(!$("#jm-jobs").hidden) renderJobs(); });
+  function newJob(name){ const j={id:"j"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),name:name||"Untitled job",items:[],created:Date.now()};
+    JOBS.jobs.push(j); JOBS.current=j.id; saveJobs(); return j; }
+  function curJob(){ let j=JOBS.jobs.find(x=>x.id===JOBS.current); if(!j) j=JOBS.jobs[JOBS.jobs.length-1]||newJob("Untitled job"); if(JOBS.current!==j.id){ JOBS.current=j.id; saveJobs(); } return j; }
+  function stockSummary(j){ const m={}; j.items.forEach(it=>(it.stock||[]).forEach(s=>{ m[s.len]=(m[s.len]||0)+(+s.count||0); }));
+    return Object.keys(m).map(Number).sort((a,b)=>a-b).map(k=>`${k}' × ${m[k]}`).join(" · "); }
+  function jobTotal(j){ return j.items.reduce((a,b)=>a+(+b.price||0),0); }
+  function jobText(j){ const lines=[j.name,"".padEnd(j.name.length,"="),...j.items.map(it=>`${it.name} — ${it.qty}${it.price?"  $"+(+it.price).toFixed(2):""}`)];
+    const st=stockSummary(j); if(st) lines.push("","Stock lengths: "+st);
+    lines.push("","Estimated total: $"+jobTotal(j).toFixed(2)); return lines.join("\n"); }
+  const money=(n)=>"$"+(+n||0).toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:2});
+
+  /* ---------- home: "My tools" (starred + recent) on top, then the groups ---------- */
   function buildHome(){
     const h=$("#jm-home"); h.innerHTML="";
-    HOME.forEach(([label,keys])=>{
+    const star=LSX.arr("jm.star").filter(k=>REG[k]), rec=LSX.arr("jm.recent").filter(k=>REG[k]);
+    const mine=[...star,...rec.filter(k=>!star.includes(k))].slice(0,6);
+    (mine.length?[["My tools",mine]]:[]).concat(HOME).forEach(([label,keys])=>{
       h.appendChild(el("div","jm-eyebrow",label));
       const g=el("div","jm-grid");
       keys.forEach(k=>{ const c=REG[k]; if(!c) return;
         const b=el("button","jm-tool"); b.type="button";
-        b.innerHTML=`<span class="jm-tname">${c.name}</span>`;
+        b.innerHTML=`<span class="jm-tname">${label==="My tools"&&star.includes(k)?"★ ":""}${c.name}</span>`;
         b.onclick=()=>openCalc(k);
         g.appendChild(b);
       });
@@ -3994,19 +4206,32 @@ function hvacSvg(svg,label){const W=300,H=200;
     });
   }
 
-  function openCalc(key){
-    cur=REG[key]; curKey=key; curVals={}; reverse=false; curVariant=0;
+  function openCalc(key, opts){
+    cur=REG[key]; curKey=key; curVals={}; reverse=false; curVariant=0; lastLenK=null;
     cur.fields.forEach(f=>curVals[f.k]=f.def);
     (cur.picks||[]).forEach(p=>{ curVals[p.key]=(typeof p.def==="function"?p.def():p.def)||p.options[0]; });
     const pf=cur.fields.find(f=>f.pitch); if(pf) curVals.pitchVal=pf.def||6;
     curWaste=(cur.wasteKey && S[cur.wasteKey]!=null) ? S[cur.wasteKey] : (cur.waste||10);
+    if(opts){ if(opts.vals) Object.assign(curVals,opts.vals);
+      if(opts.variant!=null && cur.variants && opts.variant<cur.variants.length) curVariant=opts.variant;
+      if(opts.waste!=null && cur.waste!==undefined) curWaste=opts.waste;
+      if(opts.reverse && cur.name==="Concrete slab") reverse=true; }
     $("#jm-title").textContent=cur.name;
-    const _i=ORDER.indexOf(key); const _c=$("#jm-counter"); if(_c) _c.textContent=_i>=0?(_i+1)+" / "+ORDER.length:"";
+    const g=groupOf(key), _i=g.keys.indexOf(key), _c=$("#jm-counter");
+    if(_c) _c.textContent=_i>=0?(_i+1)+" / "+g.keys.length+(g.label?" · "+g.label:""):"";
+    starButton();
     $("#jm-home").hidden=true; $("#jm-detail").hidden=false;
-    buildChips(); buildFields(); buildControls(); render();
+    const rec=LSX.arr("jm.recent").filter(k=>k!==key); rec.unshift(key); LSX.set("jm.recent",rec.slice(0,6));
+    padClose(); buildChips(); buildFields();
+    if(reverse && opts && opts.rvyd>0){ const rng=$("#jm-fields")._rvyd; if(rng){ rng.value=opts.rvyd; const l=$("#jm-rvyd"); if(l) l.textContent=(+rng.value).toFixed(1); } }
+    buildControls(); render();
     $("#jm-calc").scrollTop=0;
   }
-  function backHome(){ $("#jm-detail").hidden=true; $("#jm-home").hidden=false; }
+  function backHome(){ padClose(); $("#jm-detail").hidden=true; $("#jm-home").hidden=false; buildHome(); }
+  function starButton(){ let b=$("#jm-star"); if(!b){ b=el("button","jm-star"); b.id="jm-star"; b.type="button"; $("#jm-title").insertAdjacentElement("afterend",b); }
+    const st=LSX.arr("jm.star"), on=st.includes(curKey);
+    b.textContent=on?"★":"☆"; b.title=on?"Remove from My tools":"Add to My tools"; b.setAttribute("aria-label",b.title);
+    b.onclick=()=>{ const s=LSX.arr("jm.star").filter(k=>k!==curKey); if(!on) s.unshift(curKey); LSX.set("jm.star",s.slice(0,6)); starButton(); }; }
 
   function buildChips(){
     const row=$("#jm-chiprow"); row.innerHTML="";
@@ -4029,23 +4254,51 @@ function hvacSvg(svg,label){const W=300,H=200;
     }
   }
 
+  // − / + : 1" steps, whole feet once a length is over 4'; counts by their own step
+  function stepBy(f,dir){
+    if(f.pitch){ curVals.pitchVal=Math.min(12,Math.max(1,(curVals.pitchVal||6)+dir)); return; }
+    const v=+curVals[f.k]||0; let st, nv;
+    if(f.num){ st=f.step||1; nv=v+dir*st; nv=Math.max(f.min||0,+nv.toFixed(4)); }
+    else if(f.unit==="in"){ st=f.def<=12?0.5:1; nv=Math.max(0.5,v+dir*st); }
+    else { const big=dir>0?v>=48:v>48;   // over 4': step to the next / previous WHOLE foot (20' 6" + -> 21' 0")
+      nv=big?(dir>0?(Math.floor(v/12+1e-9)+1)*12:(Math.ceil(v/12-1e-9)-1)*12):v+dir; nv=Math.max(1,nv); }
+    if(f.num && f.max && nv>f.max*4) nv=f.max*4;
+    curVals[f.k]=nv;
+  }
+  function stepBtn(t,dir,f){ const b=el("button","jm-step",t); b.type="button"; b.setAttribute("aria-label",(dir>0?"More ":"Less ")+f.label);
+    b.onclick=()=>{ stepBy(f,dir); render(); }; return b; }
+
   function buildFields(){
     const wrap=$("#jm-fields"); wrap.innerHTML="";
     if(reverse && cur.name==="Concrete slab"){ reverseSlabUI(wrap); return; }
+    let grid=null;
     cur.fields.forEach(f=>{
       if(f.show && !f.show(curVals)) return;
-      const fld=el("div","jm-field");
       const fu=typeof f.unit==="function"?f.unit(curVals):f.unit;
       const unit=f.pitch?"rise /12":(fu||"ft-in");
+      const isLen=!f.pitch&&!f.num, bare=f.unit==="in"?"in":"ft";
+      const fld=el("div","jm-field");
       fld.innerHTML=`<div class="jm-flabel"><span>${f.label}</span><span class="jm-u">${unit}</span></div>`;
-      const rowE=el("div","jm-dimrow");
       const inp=el("input","jm-diminput"); inp.type="text"; inp.dataset.k=f.k; inp.dataset.pitch=f.pitch?"1":""; inp.dataset.num=f.num?"1":"";
-      if(f.num) inp.inputMode="decimal";
+      if(f.num||f.pitch) inp.inputMode="decimal";
+      if(isLen){
+        inp.title=bare==="in"?"Inches: 4, 3 1/2, or 1' 2":"Feet first: 20 = 20', 20 6 = 20' 6\", 20 6 1/2 = 20' 6 1/2\"";
+        // remember the last size box used, for the Calc tab's Send and Measure (focus alone misses some taps)
+        ["focus","pointerdown","change"].forEach(ev=>inp.addEventListener(ev,()=>{ lastLenK=f.k; }));
+        if(TOUCH){ inp.readOnly=true; inp.addEventListener("click",()=>padOpen(f,inp)); }   // phones: the classic keypad, not the letter keyboard
+      }
       inp.value=f.pitch?((curVals.pitchVal||6)+"/12"):(f.num?fmtNum(curVals[f.k]):fi(curVals[f.k]));
       inp.onchange=()=>{ if(f.pitch){let n=parseInt(inp.value,10); if(n>=1&&n<=12)curVals.pitchVal=n;}
-        else if(f.num){let v=parseFloat(String(inp.value).replace(/,/g,"")); if(!isNaN(v)&&v>=(f.min||0))curVals[f.k]=v;}
-        else {let v=parseFeetIn(inp.value); if(!isNaN(v)&&v>0)curVals[f.k]=v;} render(); };
-      rowE.appendChild(inp);
+        else if(f.num){let v=parseFloat(String(inp.value).replace(/,/g,"")); if(!isNaN(v)&&v>=(f.min||0))curVals[f.k]=f.int?Math.round(v):v;}
+        else {let v=parseLen(inp.value,bare); if(!isNaN(v)&&v>0)curVals[f.k]=v;
+          else if(String(inp.value).trim()) say("Couldn't read “"+String(inp.value).trim()+"” as a length — try 20, 20 6 or 20' 6\""); }
+        render(); };
+      if(f.compact){   // counts: − box +, two to a row, no slider
+        fld.classList.add("jm-cfield"); const row=el("div","jm-crow"); row.append(stepBtn("−",-1,f),inp,stepBtn("+",1,f)); fld.appendChild(row);
+        if(!grid){ grid=el("div","jm-cgrid"); wrap.appendChild(grid); } grid.appendChild(fld); return;
+      }
+      grid=null;
+      const rowE=el("div","jm-dimrow"); rowE.appendChild(inp);
       if(VOICE){
         const mic=el("button","jm-iconbtn"); mic.type="button"; mic.innerHTML=MIC; mic.title="Voice entry"; mic.setAttribute("aria-label","Voice entry for "+f.label);
         mic.onclick=()=>startVoice(mic,f);
@@ -4061,8 +4314,9 @@ function hvacSvg(svg,label){const W=300,H=200;
       sl.dataset.k=f.k; sl.dataset.pitch=f.pitch?"1":"";
       sl.value=f.pitch?(curVals.pitchVal||6):curVals[f.k];
       sl.setAttribute("aria-label",f.label+" slider");
-      sl.oninput=()=>{ if(f.pitch)curVals.pitchVal=+sl.value; else curVals[f.k]=+sl.value; render(); };
-      fld.appendChild(sl);
+      // lengths snap to whole feet once over 4' (a 1" step on a 341 px track was too fine for a thumb)
+      sl.oninput=()=>{ let v=+sl.value; if(isLen&&bare==="ft"&&v>48) v=Math.round(v/12)*12; if(f.pitch)curVals.pitchVal=v; else curVals[f.k]=v; render(); };
+      const srow=el("div","jm-slrow"); srow.append(stepBtn("−",-1,f),sl,stepBtn("+",1,f)); fld.appendChild(srow);
       wrap.appendChild(fld);
     });
   }
@@ -4078,6 +4332,15 @@ function hvacSvg(svg,label){const W=300,H=200;
     wrap.appendChild(fld); wrap.appendChild(note); wrap._rvyd=rng;
   }
 
+  /* ---------- factors: every one remembered, flagged Custom when it differs, with a reset ---------- */
+  function assumeList(){ return !cur||!cur.assume?[]:(typeof cur.assume==="function"?cur.assume(cur.variants?cur.variants[curVariant]:null,curVals):cur.assume); }
+  function genericCustom(list){ const out=[];
+    (list||[]).forEach(a=>{ if(!a.key||a.userData||S_DEFAULT[a.key]===undefined) return;
+      if(Math.abs((+S[a.key])-(+S_DEFAULT[a.key]))>1e-12) out.push(`${a.label.toLowerCase()} ${fmtNum(S[a.key])}${a.unit?" "+a.unit:""}`); });
+    return out; }
+  function customNow(list){ const vr=cur&&cur.variants?cur.variants[curVariant]:null;
+    return cur&&cur.customOf?cur.customOf(vr,curVals,curWaste):genericCustom(list||assumeList()); }
+
   function buildControls(){
     const ww=$("#jm-wastewrap"); ww.innerHTML="";
     if(cur.waste!==undefined && !reverse){
@@ -4091,9 +4354,13 @@ function hvacSvg(svg,label){const W=300,H=200;
     }
     const aw=$("#jm-assumewrap"); aw.innerHTML="";
     if(cur.assume && !reverse){
-      const list=typeof cur.assume==="function"?cur.assume(cur.variants?cur.variants[curVariant]:null,curVals):cur.assume;
+      const list=assumeList().slice();
+      // tools without their own reset get one for their factors
+      if(!list.some(a=>a.button) && list.some(a=>a.key&&!a.userData&&S_DEFAULT[a.key]!==undefined))
+        list.push({button:"Reset to standard",onClick:()=>{ assumeList().forEach(a=>{ if(a.key&&!a.userData&&S_DEFAULT[a.key]!==undefined){ S[a.key]=S_DEFAULT[a.key]; persist(a.key); } }); }});
+      const n=customNow(list).length;
       const d=el("details","jm-assume"); d.open=assumeOpen; d.ontoggle=()=>{assumeOpen=d.open;};
-      let rows=`<summary>${cur.assumeTitle||"Assumptions — adjust for your supplier"}</summary>`;
+      let rows=`<summary>${cur.assumeTitle||"Assumptions — adjust for your supplier"} · ${n?`<b style="color:var(--amber)">${n} custom</b>`:"all standard"}</summary>`;
       // an item is bound to S[key], or to its own get()/set(); blank:true = an empty box means "standard"
       // (the grey placeholder shows that standard); a button item runs onClick (e.g. reset)
       list.forEach((a,i)=>{
@@ -4104,7 +4371,7 @@ function hvacSvg(svg,label){const W=300,H=200;
         rows+=`<div class="jm-arow"><label>${a.label}</label><span class="jm-aval"><input type="number" inputmode="decimal" step="${a.step}" value="${shown}"${a.blank?` placeholder="${a.ph!=null?a.ph:"—"}"`:""} data-i="${i}"><i>${a.unit||""}</i></span></div>`; });
       d.innerHTML=rows;
       d.querySelectorAll("input[data-i]").forEach(inp=>inp.oninput=()=>{ const a=list[+inp.dataset.i], raw=inp.value.trim(), v=parseFloat(raw);
-        const put=(x)=>{ if(a.set) a.set(x); else { S[a.key]=(x==null?0:x); persist(a.key); } render(); };
+        const put=(x)=>{ if(a.set) a.set(x); else { S[a.key]=(x==null?(S_DEFAULT[a.key]!==undefined&&!a.blank?S_DEFAULT[a.key]:0):x); persist(a.key); } render(); };
         if(a.blank && (raw==="" || (v===0 && !a.allowZero))){ put(null); return; }
         if(!isNaN(v) && (v>0 || (v===0 && a.allowZero))) put(v); });
       d.querySelectorAll("button[data-bi]").forEach(b=>b.onclick=()=>{ try{ list[+b.dataset.bi].onClick(); }catch(e){}
@@ -4120,7 +4387,9 @@ function hvacSvg(svg,label){const W=300,H=200;
       if(d.dataset.pitch==="1") d.value=(curVals.pitchVal||6)+"/12";
       else if(d.tagName==="INPUT") d.value=d.dataset.num==="1"?fmtNum(curVals[k]):fi(curVals[k]);
     });
-    $$("#jm-fields .jm-slider").forEach(s=>{ const val=s.dataset.pitch==="1"?(curVals.pitchVal||6):curVals[s.dataset.k];
+    // only sliders bound to a field (the reverse-solve "on hand" slider keeps its own value; it used to snap to mid-range)
+    $$("#jm-fields .jm-slider").forEach(s=>{ if(!s.dataset.k && s.dataset.pitch!=="1") return;
+      const val=s.dataset.pitch==="1"?(curVals.pitchVal||6):curVals[s.dataset.k];
       if(+val>+s.max) s.max=val; s.value=val; });
     const svg=$("#jm-diagram"); if(cur.draw) try{cur.draw(curVals,svg);}catch(e){}
     let res;
@@ -4137,7 +4406,20 @@ function hvacSvg(svg,label){const W=300,H=200;
     } else {
       res=cur.compute(curVals,curWaste,cur.variants?cur.variants[curVariant]:null);
     }
+    // any tool: say so when its factors are not the standard
+    const customs=reverse?[]:customNow();
+    if(customs.length && !cur.customOf){
+      res.outs.push({l:"Factors",v:"Custom",sub:customs.join(" · ")+" · Reset in Assumptions"});
+      res.coach={cls:"code",html:`<b>Custom factors: ${customs.join(" · ")}.</b> `+res.coach.html};
+      if(res.job) res.job=Object.assign({},res.job,{name:res.job.name+" (custom factors)"});
+    }
     curRes=res;
+    // the answer stays in sight while the inputs scroll
+    let strip=$("#jm-sticky");
+    if(!strip){ strip=el("div",""); strip.id="jm-sticky"; const anchor=$(".jm-dhead")||$("#jm-star")||$("#jm-title"); anchor.insertAdjacentElement("afterend",strip); }
+    const hero=res.outs.find(o=>o.hero)||res.outs[0];
+    strip.innerHTML=`<div style="min-width:0"><div class="jm-sl">${hero.l}${customs.length?`<span class="jm-scustom">Custom</span>`:""}</div><div class="jm-sv">${hero.v}</div></div><button type="button" class="jm-sadd" aria-label="Add to job">+ Add</button>`;
+    strip.querySelector(".jm-sadd").onclick=addToJob;
     const o=$("#jm-outs"); o.innerHTML="";
     res.outs.forEach(out=>{ const c=el("div","jm-out"+(out.hero?" hero":""));
       c.innerHTML=`<div class="jm-ol">${out.l}</div><div class="jm-ov">${out.v}</div>${out.sub?`<div class="jm-osub">${out.sub}</div>`:""}`; o.appendChild(c); });
@@ -4145,46 +4427,133 @@ function hvacSvg(svg,label){const W=300,H=200;
     const c=el("div","jm-coach jm-coach-"+res.coach.cls); c.innerHTML=res.coach.html; cw.appendChild(c);
   }
 
+  /* ---------- the classic keypad for size boxes (touch phones) ----------
+     Feet / Inch / fraction entry like the Calc tab; "Calc" pulls the Calc tab's feet-inch result;
+     + and − add lengths; "Use" puts the value in the box. A bare number is feet. */
+  let padEl=null; const PAD={f:null,inp:null,entry:""};
+  function padBuild(){
+    if(padEl) return padEl;
+    padEl=document.createElement("div"); padEl.id="jm-pad"; padEl.setAttribute("role","dialog"); padEl.setAttribute("aria-label","Length keypad");
+    const K=(t,cls,a)=>`<button type="button" class="pk ${cls}" data-a="${esc(a==null?t:a)}">${t}</button>`;
+    padEl.innerHTML=`<div class="pk-head"><span class="pk-label"></span><button type="button" class="pk-x" data-a="close" aria-label="Close keypad">✕</button></div>
+      <div class="pk-disp"><div class="pk-entry"></div><div class="pk-read"></div></div>
+      <div class="pk-grid">
+        ${K("7","n")}${K("8","n")}${K("9","n")}${K("Feet","g","'")}
+        ${K("4","n")}${K("5","n")}${K("6","n")}${K("Inch","g",'"')}
+        ${K("1","n")}${K("2","n")}${K("3","n")}${K("/","f")}
+        ${K("0","n")}${K(".","n")}${K("⌫","f","back")}${K("+","f","plus")}
+        ${K("C","r","clear")}${K("Calc","f","calc")}${K("−","f","minus")}${K("Use ✓","u","use")}
+      </div>`;
+    document.body.appendChild(padEl);
+    // a tap anywhere else (another tab, the page) closes it; the size boxes reopen it
+    document.addEventListener("pointerdown",e=>{ if(!PAD.f||padEl.contains(e.target)) return; if(e.target.closest&&e.target.closest(".jm-diminput")) return; padClose(); },true);
+    padEl.addEventListener("click",e=>{ const b=e.target.closest("button[data-a]"); if(b) padKey(b.dataset.a); });
+    return padEl;
+  }
+  function padOpen(f,inp){
+    padBuild(); PAD.f=f; PAD.inp=inp; PAD.entry=""; lastLenK=f.k;
+    padEl.querySelector(".pk-label").textContent=f.label+" · now "+fi(curVals[f.k]);
+    padEl.querySelector('[data-a="calc"]').hidden=typeof window.kpCurrent!=="function";
+    padRender(); padEl.classList.add("open");
+    setTimeout(()=>{ try{ inp.scrollIntoView({block:"center",behavior:"smooth"}); }catch(e){} },60);
+  }
+  function padClose(){ if(padEl) padEl.classList.remove("open"); PAD.f=null; PAD.inp=null; }
+  function padEval(){ const s=PAD.entry.trim(); if(!s||!PAD.f) return NaN; const bare=PAD.f.unit==="in"?"in":"ft";
+    let total=0, sign=1, ok=true;
+    s.split(/\s([+−])\s/).forEach((part,i)=>{ if(i%2){ sign=part==="+"?1:-1; return; } const v=parseLen(part,bare); if(isNaN(v)) ok=false; else total+=sign*v; });
+    return ok?total:NaN; }
+  function padRender(){ if(!padEl) return; const e=padEl.querySelector(".pk-entry"), r=padEl.querySelector(".pk-read");
+    e.textContent=PAD.entry||"type a length"; e.classList.toggle("ph",!PAD.entry);
+    const v=padEval();
+    r.textContent=PAD.entry?(isNaN(v)?"not a length yet":v<=0?"comes to zero or less — check the entry":"reads as "+fi(v))
+      :(PAD.f&&PAD.f.unit==="in"?"a bare number = inches":"a bare number = feet · e.g. 20 Feet 6 Inch 1 / 2"); }
+  // an exact length as keypad text: whole feet + inches, the fraction to 1/16 when it is one, else decimal inches
+  // (fi() rounds to 1/8, which would change a 6 1/16" value sent from Calc or Measure)
+  function lenText(inches){ const neg=inches<0; let a=Math.abs(inches), ft=Math.floor(a/12+1e-9), r=a-ft*12; if(r<1e-9) r=0;
+    const w=Math.floor(r+1e-9), fr=r-w, s16=Math.round(fr*16), exact=Math.abs(fr*16-s16)<1e-6;
+    let t=(ft?ft+"' ":"");
+    if(exact){ let n=s16,d=16; while(n&&n%2===0){n/=2;d/=2;} t+=(w||(!n&&!ft)?w:"")+(n?(w?" ":"")+n+"/"+d:"")+'"'; if(!w&&!n&&ft) t=ft+"'"; }
+    else t+=(+r.toFixed(4))+'"';
+    return (neg?"-":"")+t.trim(); }
+  function padKey(a){
+    let E=PAD.entry; const endsNum=/[\d.]$/.test(E), endsOp=/\s[+−]\s$/.test(E);
+    if(a==="close"){ padClose(); return; }
+    if(a==="clear") E="";
+    else if(a==="back") E=endsOp?E.slice(0,-3):/['"] $/.test(E)?E.slice(0,-2):E.slice(0,-1);
+    else if(/^\d$/.test(a)||a===".") E+=a;
+    else if(a==="'"||a==='"'){ if(endsNum) E+=a+" "; }
+    else if(a==="/"){ if(/\d$/.test(E)) E+="/"; }
+    else if(a==="plus"||a==="minus"){ if(E && !endsOp && !/\/$/.test(E)) E=E.replace(/\s+$/,"")+(a==="plus"?" + ":" − "); }
+    else if(a==="calc"){ const c=typeof window.kpCurrent==="function"?window.kpCurrent():null;
+      if(c && c.ft && (c.dims||1)<2 && c.val>0){ const t=lenText(c.val*12); E=(!E||endsOp)?E+t:t; }
+      else { say("The Calc tab has no feet-inch result to use"); return; } }
+    else if(a==="use"){ const v=padEval(); if(v>0 && PAD.f){ curVals[PAD.f.k]=v; padClose(); render(); } else { const r=padEl.querySelector(".pk-read"); r.textContent="type a length first"; } return; }
+    PAD.entry=E; padRender();
+  }
+
   /* ---------- jobs ---------- */
   function addToJob(){ if(!curRes)return; const j=curRes.job;
-    job.items.push({name:j.name,qty:j.qty,price:0}); updateBadge(); flashAdd(); }
-  function flashAdd(){ const b=$("#jm-addbtn"); const t=b.textContent; b.textContent="✓ Added to job"; b.classList.add("added");
-    setTimeout(()=>{b.textContent=t;b.classList.remove("added");},1100); }
-  function updateBadge(){ const b=$("#jm-jobcount"); if(job.items.length){b.hidden=false;b.textContent=job.items.length;} else b.hidden=true; }
+    const rv=reverse?$("#jm-fields")._rvyd:null;
+    const item={name:j.name,qty:j.qty,price:0,tool:curKey,vals:Object.assign({},curVals),variant:curVariant,waste:curWaste,stock:j.stock||null,
+      reverse:!!reverse, rvyd:rv?+rv.value:null};
+    const ok=mutate(jb=>jb.items.push(item)); updateBadge();
+    if(ok) flashAdd(); else say("Not saved — the phone's storage is full or blocked"); }
+  function flashAdd(){ const b=$("#jm-addbtn"); const t=b.textContent; b.textContent="✓ Added to "+curJob().name; b.classList.add("added");
+    setTimeout(()=>{b.textContent=t;b.classList.remove("added");},1200); say("Added to "+curJob().name); }
+  function updateBadge(){ const b=$("#jm-jobcount"); const n=curJob().items.length; if(n){b.hidden=false;b.textContent=n;} else b.hidden=true; }
+  function reopen(it){ if(!it||!REG[it.tool]) return; showView("calc");
+    openCalc(it.tool,{vals:it.vals||{},variant:it.variant,waste:it.waste,reverse:!!it.reverse,rvyd:it.rvyd}); }
 
   function renderJobs(){
-    const s=$("#jm-jobs");
-    if(!job.items.length){ s.innerHTML=`<div class="jm-empty">No items yet.<br>Run a calculator and click “Add to job.”</div>`; return; }
-    const total=job.items.reduce((a,b)=>a+(+b.price||0),0);
-    const rows=job.items.map((it,i)=>`<tr>
-      <td class="jm-lname">${it.name}</td>
-      <td class="jm-lqty">${it.qty}</td>
-      <td class="jm-lprice">$ <input type="number" inputmode="decimal" value="${it.price||""}" placeholder="0" data-i="${i}"></td>
+    const s=$("#jm-jobs"), j=curJob(), total=jobTotal(j), st=stockSummary(j);
+    const opts=JOBS.jobs.map(x=>`<option value="${x.id}"${x.id===j.id?" selected":""}>${esc(x.name)} (${x.items.length})</option>`).join("");
+    const rows=j.items.map((it,i)=>`<tr>
+      <td class="jm-lname">${REG[it.tool]?`<button type="button" class="jm-reopen" data-ro="${i}" title="Open this calculator again">${esc(it.name)}</button>`:esc(it.name)}</td>
+      <td class="jm-lqty">${esc(it.qty)}</td>
+      <td class="jm-lprice">$ <input type="number" inputmode="decimal" value="${it.price||""}" placeholder="0" data-i="${i}" aria-label="Price"></td>
       <td><button class="jm-del" data-del="${i}" type="button" aria-label="remove">✕</button></td></tr>`).join("");
     s.innerHTML=`
-      <div class="jm-jobbar">
-        <input class="jm-jobname" id="jm-jobname" value="${job.name}">
-        <div class="jm-jobactions">
-          <button class="jm-btn" id="jm-copyjob" type="button">Copy list</button>
-          <button class="jm-btn jm-btn-ghost" id="jm-clearjob" type="button">Clear</button>
-        </div>
-      </div>
-      <table class="jm-jobtable">
-        <thead><tr><th>Item</th><th>Quantity</th><th>Unit price</th><th></th></tr></thead>
+      <div class="jm-jobbar"><select class="jm-jobpick" id="jm-jobpick" aria-label="Job">${opts}</select>
+        <button class="jm-btn jm-btn-ghost" id="jm-newjob" type="button">+ New job</button></div>
+      <div class="jm-jobbar"><input class="jm-jobname" id="jm-jobname" value="${esc(j.name)}" placeholder="Lot / plan / elevation" aria-label="Job name"></div>
+      ${j.items.length?`<table class="jm-jobtable">
+        <thead><tr><th>Item <span style="font-weight:400;opacity:.7">· tap to reopen</span></th><th>Quantity</th><th>Price</th><th></th></tr></thead>
         <tbody>${rows}</tbody>
-        <tfoot><tr><td colspan="2" class="jm-totlabel">Estimated total</td><td class="jm-totval" id="jm-jtotal">$${total.toFixed(0)}</td><td></td></tr></tfoot>
-      </table>
-      <p class="jm-hint">Prices are entered manually. “Copy list” puts a clean materials list on your clipboard.</p>`;
-    $("#jm-jobname").onchange=(e)=>{ job.name=e.target.value||"Untitled job"; };
-    s.querySelectorAll(".jm-lprice input").forEach(inp=>inp.oninput=()=>{ job.items[+inp.dataset.i].price=parseFloat(inp.value)||0;
-      $("#jm-jtotal").textContent="$"+job.items.reduce((a,b)=>a+(+b.price||0),0).toFixed(0); });
-    s.querySelectorAll(".jm-del").forEach(b=>b.onclick=()=>{ job.items.splice(+b.dataset.del,1); updateBadge(); renderJobs(); });
-    $("#jm-clearjob").onclick=()=>{ job.items=[]; updateBadge(); renderJobs(); };
-    $("#jm-copyjob").onclick=()=>{ const lines=[job.name,"".padEnd(job.name.length,"="),
-      ...job.items.map(it=>`${it.name} — ${it.qty}${it.price?"  $"+(+it.price).toFixed(2):""}`),
-      "", "Estimated total: $"+total.toFixed(2)].join("\n");
-      if(navigator.clipboard) navigator.clipboard.writeText(lines);
-      const b=$("#jm-copyjob"); b.textContent="Copied ✓"; setTimeout(()=>b.textContent="Copy list",1200); };
+        <tfoot><tr><td colspan="2" class="jm-totlabel">Estimated total</td><td class="jm-totval" id="jm-jtotal">${money(total)}</td><td></td></tr></tfoot>
+      </table>${st?`<p class="jm-hint"><b>Stock lengths:</b> ${st}</p>`:""}`
+      :`<div class="jm-empty">No items in this job yet.<br>Run a calculator and tap “+ Add”.</div>`}
+      <div class="jm-jobactions" style="flex-wrap:wrap;gap:6px;margin-top:10px">
+        <button class="jm-btn" id="jm-sharejob" type="button">Share</button>
+        <button class="jm-btn" id="jm-copyjob" type="button">Copy list</button>
+        ${typeof window.noteAppend==="function"?`<button class="jm-btn" id="jm-notejob" type="button">Send to Notes</button>`:""}
+        ${document.getElementById("mk-mat")?`<button class="jm-btn" id="jm-pricejob" type="button">Price this job</button>`:""}
+        <button class="jm-btn jm-btn-ghost" id="jm-clearjob" type="button">Clear items</button>
+        <button class="jm-btn jm-btn-ghost" id="jm-deljob" type="button">Delete job</button>
+      </div>
+      <p class="jm-hint">Saved on this device. You type each price; the total adds the Price boxes. “Price this job” puts the total into Money › Markup as the materials; add your labor there.</p>`;
+    const q=(id)=>s.querySelector("#"+id);
+    // every change re-reads storage first (mutate), so a second open tab's lines are never overwritten;
+    // lines are found by position in the fresh copy of THIS job
+    const jid=j.id, fresh=()=>{ JOBS=readJobs(); return JOBS.jobs.find(x=>x.id===jid)||curJob(); };
+    q("jm-jobpick").onchange=(e)=>{ JOBS=readJobs(); JOBS.current=e.target.value; saveJobs(); updateBadge(); renderJobs(); };
+    q("jm-newjob").onclick=()=>{ JOBS=readJobs(); newJob("Job "+(JOBS.jobs.length+1)); updateBadge(); renderJobs(); const n=s.querySelector("#jm-jobname"); if(n){ n.focus(); n.select(); } };
+    q("jm-jobname").onchange=(e)=>{ const nm=e.target.value.trim()||"Untitled job"; mutate(jb=>{ jb.name=nm; }); renderJobs(); };
+    s.querySelectorAll(".jm-lprice input").forEach(inp=>inp.oninput=()=>{ const p=parseFloat(String(inp.value).replace(/,/g,""))||0, i=+inp.dataset.i;
+      mutate(jb=>{ if(jb.items[i]) jb.items[i].price=p; }); const t=s.querySelector("#jm-jtotal"); if(t) t.textContent=money(jobTotal(curJob())); });
+    s.querySelectorAll(".jm-del").forEach(b=>b.onclick=()=>{ const i=+b.dataset.del; mutate(jb=>{ jb.items.splice(i,1); }); updateBadge(); renderJobs(); });
+    s.querySelectorAll(".jm-reopen").forEach(b=>b.onclick=()=>reopen(fresh().items[+b.dataset.ro]));
+    q("jm-clearjob").onclick=()=>{ const jj=fresh(); if(!jj.items.length||window.confirm("Clear every item in “"+jj.name+"”?")){ mutate(jb=>{ jb.items=[]; }); updateBadge(); renderJobs(); } };
+    q("jm-deljob").onclick=()=>{ const jj=fresh(); if(window.confirm("Delete the job “"+jj.name+"” and its items?")){ JOBS=readJobs(); JOBS.jobs=JOBS.jobs.filter(x=>x.id!==jid); JOBS.current=null; saveJobs(); updateBadge(); renderJobs(); } };
+    const copy=(txt,btn)=>{ try{ navigator.clipboard.writeText(txt); }catch(e){} if(btn){ const t=btn.textContent; btn.textContent="Copied ✓"; setTimeout(()=>btn.textContent=t,1200); } };
+    q("jm-copyjob").onclick=(e)=>copy(jobText(fresh()),e.currentTarget);
+    q("jm-sharejob").onclick=(e)=>{ const jj=fresh(), txt=jobText(jj); if(navigator.share) navigator.share({title:jj.name,text:txt}).catch(()=>{}); else copy(txt,e.currentTarget); };
+    const nb=q("jm-notejob"); if(nb) nb.onclick=()=>{ window.noteAppend(jobText(fresh())); say("Job sent to Notes"); };
+    const pb=q("jm-pricejob"); if(pb) pb.onclick=()=>{ const c=document.getElementById("mk-mat"); if(!c) return; const tot=jobTotal(fresh());
+      if(c.value && Math.abs(+c.value-tot)>0.005 && !window.confirm("Money › Markup already has materials of $"+c.value+". Replace it with this job's "+money(tot)+"?")) return;
+      c.value=tot.toFixed(2); c.dispatchEvent(new Event("input",{bubbles:true})); c.dispatchEvent(new Event("change",{bubbles:true}));
+      location.hash="#money";
+      setTimeout(()=>{ try{ const t=document.querySelector('#view-money [data-tab="bzmk"]'); if(t) t.click(); c.scrollIntoView({block:"center"}); }catch(e){} },120);
+      say("Job total "+money(tot)+" → Money › Markup materials"); };
   }
 
   function renderRef(){
@@ -4206,13 +4575,23 @@ function hvacSvg(svg,label){const W=300,H=200;
         ${Object.entries(BRICK.SIZES).map(([n,z])=>{ const r=BRICK.rates(z,BRICK.DEFAULTS.joint,BRICK.DEFAULTS.mortarJoint);
           return `<tr><td>${n} ${frac8(z.L)} × ${frac8(z.H)}</td><td>${r.perSF.toFixed(2)} / SF · ${r.perLF.toFixed(2)} rowlock / LF · ${r.mortarCF.toFixed(4)} cu ft mortar</td></tr>`; }).join("")}
         <tr><td>Waste (its own step)</td><td>brick ${BRICK.DEFAULTS.waste}% · rowlock ${BRICK.DEFAULTS.rowlockWaste}% · mortar ${BRICK.DEFAULTS.mortarWaste}%</td></tr>
-        <tr><td>Mortar</td><td>figured at a ${frac8(BRICK.DEFAULTS.mortarJoint)}" joint on bricks before waste · not field-checked</td></tr></tbody></table>${INTERNAL_REF}`;
+        <tr><td>Mortar</td><td>figured at a ${frac8(BRICK.DEFAULTS.mortarJoint)}" joint on bricks before waste · not field-checked</td></tr></tbody></table>
+      <div class="jm-eyebrow">Lumber stock lengths</div>
+      <table class="jm-reftable"><tbody><tr><td>Round a cut up to</td><td>${STOCK.map(s=>s+"'").join(" ")}</td></tr></tbody></table>
+      <div class="jm-eyebrow">Typing a length</div>
+      <table class="jm-reftable"><tbody>
+        <tr><td>20</td><td>20' (a bare number is feet)</td></tr>
+        <tr><td>20 6 · 20-6 · 20' 6</td><td>20' 6"</td></tr>
+        <tr><td>20 6 1/2</td><td>20' 6½"</td></tr>
+        <tr><td>20.5</td><td>20' 6"</td></tr>
+        <tr><td>6"</td><td>6 inches (an inch box reads a bare number as inches)</td></tr></tbody></table>${INTERNAL_REF}`;
   }
 
   /* ---------- internal nav ---------- */
   function showView(v){
     $$(".jm-navbtn").forEach(b=>b.classList.toggle("on",b.dataset.jm===v));
     ["calc","jobs","ref"].forEach(name=>{ $("#jm-"+name).hidden = (name!==v); });
+    if(v!=="calc") padClose();
     if(v==="jobs") renderJobs();
   }
   $$(".jm-navbtn").forEach(b=>b.onclick=()=>showView(b.dataset.jm));
@@ -4222,6 +4601,26 @@ function hvacSvg(svg,label){const W=300,H=200;
   const _pv=$("#jm-prev"), _nx=$("#jm-next");
   if(_pv) _pv.onclick=()=>step(-1);
   if(_nx) _nx.onclick=()=>step(1);
+  window.addEventListener("hashchange",()=>{ if(location.hash!=="#jobmath") padClose(); });
+
+  /* ---------- hand-offs from the other tabs (Calc Send, Level, Measure) ---------- */
+  const inJobMath=()=>!document.getElementById("view-jobmath")||location.hash==="#jobmath";
+  window.JobMath={
+    parseLen,
+    state(){ return {tool:curKey, lastLenK, padOpen:!!(padEl&&PAD.f), detailOpen:!$("#jm-detail").hidden}; },   // read only, for checks
+    // open a tool with some inputs set, e.g. JobMath.open("rafter",{pitchVal:8})
+    // (if that tool is already open, only the given inputs change: Level's pitch keeps your run and count)
+    open(key,vals){ if(!REG[key]) return false; if(!inJobMath()) location.hash="#jobmath"; showView("calc");
+      if(curKey===key && cur && !$("#jm-detail").hidden){ Object.assign(curVals,vals||{}); padClose(); render(); }
+      else openCalc(key,{vals}); return true; },
+    // a length in inches from another tab: into the open keypad, else the last size box used
+    receiveLength(inches){ if(!(inches>0)) return false;
+      if(!inJobMath()) location.hash="#jobmath";
+      if(padEl && PAD.f){ PAD.entry=lenText(inches); padRender(); say("Sent "+fi(inches)+" to the keypad · tap Use"); return true; }
+      const f=cur && !$("#jm-detail").hidden && cur.fields.find(x=>x.k===lastLenK && !x.num && !x.pitch && (!x.show||x.show(curVals)));
+      if(f){ showView("calc"); curVals[f.k]=inches; render(); say(fi(inches)+" → "+f.label); return true; }
+      say("Open a Job Math tool and tap a size box, then send again"); return false; }
+  };
 
   buildHome(); renderRef(); updateBadge();
 })();
@@ -14376,15 +14775,23 @@ function findAlignmentPattern(matrix, alignmentPatternQuads, topRight, topLeft, 
       for(const m of measures)drawLine(m.a,m.b,"#e8a020",fmt(dist(m.a,m.b)));
       for(const q of pts){const c=toCanvas(q);ctx.fillStyle="#c0392b";ctx.beginPath();ctx.arc(c.x,c.y,5,0,Math.PI*2);ctx.fill();} }
     fileInput.addEventListener("change",e=>{const f=e.target.files&&e.target.files[0];if(!f)return;const url=URL.createObjectURL(f);const im=new Image();
-      im.onload=()=>{img=im;imgW=im.naturalWidth;imgH=im.naturalHeight;scalePxPerIn=null;scaleLine=null;measures.length=0;pts=[];mode="idle";refWrap.hidden=true;fit();setStatus('Tap “Set scale”, then the two ends of a known length.');URL.revokeObjectURL(url);};
+      im.onload=()=>{img=im;imgW=im.naturalWidth;imgH=im.naturalHeight;scalePxPerIn=null;scaleLine=null;measures.length=0;pts=[];mode="idle";refWrap.hidden=true;fit();useLabel();setStatus('Tap “Set scale”, then the two ends of a known length.');URL.revokeObjectURL(url);};
       im.onerror=()=>setStatus("Couldn't load that image.");im.src=url;});
     canvas.addEventListener("pointerdown",e=>{ if(!img)return; e.preventDefault(); const q=toImg(e);
       if(mode==="scale"){pts.push(q);redraw(); if(pts.length===2){scaleLine={a:pts[0],b:pts[1]};pts=[];mode="idle";refWrap.hidden=false;refInput.value="";refInput.focus();setStatus("Enter the real length of that line, then OK.");redraw();}}
-      else{ if(!scalePxPerIn){setStatus('Set a scale first — tap “Set scale”.');return;} pts.push(q);redraw(); if(pts.length===2){measures.push({a:pts[0],b:pts[1]});pts=[];redraw();setStatus("Tap two more points to measure again.");} } });
+      else{ if(!scalePxPerIn){setStatus('Set a scale first — tap “Set scale”.');return;} pts.push(q);redraw(); if(pts.length===2){measures.push({a:pts[0],b:pts[1]});pts=[];redraw();setStatus("Tap two more points to measure again.");
+        useLabel();} } });
+    // the "Use as length" button always names what it will send (new scale, a new measure, or none after Clear)
+    function useLabel(){ const u=p.querySelector(".ms-use"), m=measures[measures.length-1];
+      if(!u)return; if(!m||!scalePxPerIn||!window.JobMath){u.hidden=true;return;}
+      u.hidden=false; u.textContent="Use "+fmt(dist(m.a,m.b))+" as length"; }
+    // hand the last measured length to the Job Math box you were filling
+    p.querySelector(".ms-use").addEventListener("click",()=>{ const m=measures[measures.length-1]; if(!m||!scalePxPerIn||!window.JobMath)return;
+      JobMath.receiveLength(dist(m.a,m.b)/scalePxPerIn); });
     p.querySelector(".ms-scale").addEventListener("click",()=>{if(!img){setStatus("Load a photo first.");return;}mode="scale";pts=[];refWrap.hidden=true;setStatus("Tap the two ends of a known length.");});
-    p.querySelector(".ms-setref").addEventListener("click",()=>{const inch=parseFeetIn(refInput.value);if(!inch||isNaN(inch)){setStatus("Enter a length like 4 ft or 48 in.");return;}
-      if(scaleLine){scalePxPerIn=dist(scaleLine.a,scaleLine.b)/inch;refWrap.hidden=true;mode="measure";setStatus("Scale set — tap two points to measure.");redraw();}});
-    p.querySelector(".ms-clear").addEventListener("click",()=>{measures.length=0;pts=[];redraw();setStatus(scalePxPerIn?"Cleared. Tap two points to measure.":"Cleared.");});
+    p.querySelector(".ms-setref").addEventListener("click",()=>{const inch=(window.JobMath&&JobMath.parseLen)?JobMath.parseLen(refInput.value,"ft"):parseFeetIn(refInput.value);if(!inch||isNaN(inch)){setStatus("Enter a length like 4 (feet), 4 6 or 48\" (inches).");return;}
+      if(scaleLine){scalePxPerIn=dist(scaleLine.a,scaleLine.b)/inch;refWrap.hidden=true;mode="measure";setStatus("Scale set — tap two points to measure.");redraw();useLabel();}});
+    p.querySelector(".ms-clear").addEventListener("click",()=>{measures.length=0;pts=[];redraw();useLabel();setStatus(scalePxPerIn?"Cleared. Tap two points to measure.":"Cleared.");});
     return { show(){ requestAnimationFrame(fit); }, hide(){} };
   }
 
@@ -14434,11 +14841,18 @@ function findAlignmentPattern(matrix, alignmentPatternQuads, topRight, topLeft, 
   function initLevel(p){
     const bubble=p.querySelector(".lv-bubble"), read=p.querySelector(".lv-read"), grant=p.querySelector(".lv-grant"), ring=p.querySelector(".lv-ring");
     let on=false;
+    const pitchEl=p.querySelector(".lv-pitch"), useBtn=p.querySelector(".lv-use"); let lastPitch=null;
+    // flat on a sloped surface, the tilt from level is acos(cos(beta) x cos(gamma)); pitch = 12 x tan(tilt)
     function handler(e){ const g=e.gamma||0, b=e.beta||0;
       const gx=Math.max(-1,Math.min(1,g/30)), gy=Math.max(-1,Math.min(1,b/30));
       const rad=(ring.clientWidth||220)/2-22; bubble.style.transform="translate("+(gx*rad)+"px,"+(gy*rad)+"px)";
       read.textContent=(Math.abs(g)).toFixed(1)+"° L/R · "+(Math.abs(b)).toFixed(1)+"° F/B";
+      const tilt=Math.acos(Math.max(-1,Math.min(1,Math.cos(b*Math.PI/180)*Math.cos(g*Math.PI/180))));
+      lastPitch=(tilt<Math.PI/2-0.01)?12*Math.tan(tilt):null;
+      if(pitchEl) pitchEl.textContent=lastPitch==null?"":lastPitch.toFixed(1)+" / 12 pitch";
+      if(useBtn){ useBtn.hidden=!(window.JobMath&&lastPitch!=null&&lastPitch>=0.5); if(!useBtn.hidden) useBtn.textContent="Use "+Math.min(12,Math.max(1,Math.round(lastPitch)))+"/12 in Roof rafter"; }
       p.classList.toggle("lv-flat", Math.abs(g)<0.6 && Math.abs(b)<0.6); }
+    if(useBtn) useBtn.addEventListener("click",()=>{ if(lastPitch==null||!window.JobMath) return; JobMath.open("rafter",{pitchVal:Math.min(12,Math.max(1,Math.round(lastPitch)))}); });
     function start(){ if(on)return; on=true; window.addEventListener("deviceorientation",handler); }
     function stop(){ on=false; window.removeEventListener("deviceorientation",handler); }
     if(grant) grant.addEventListener("click",()=>requestOri(ok=>{ if(ok){ grant.hidden=true; start(); } else read.textContent="Motion access denied"; }));
